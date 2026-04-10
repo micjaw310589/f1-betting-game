@@ -1,17 +1,5 @@
 # f1-betting-game
 
-## 1 Architektura
+## Opis skrócony projektu
 
-## 2 Analiza i wybór Al
-
-## 3 Specyfikacja
-
-## 4 Dokumentacja i UML
-
-## 5 Przygotowanie klas
-
-## 6 DAL
-
-## 7 BLL
-
-## 8 Testy
+## Instrukcja obsługi

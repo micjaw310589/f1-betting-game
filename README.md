@@ -6,7 +6,7 @@
 
 ## 3 Specyfikacja
 
-## 4 dokumentacja i UML
+## 4 Dokumentacja i UML
 
 ## 5 Przygotowanie klas
 

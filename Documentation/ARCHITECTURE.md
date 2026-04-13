@@ -3,7 +3,7 @@
 tl;dr:
 - Architektura klient-serwer.
 - Frontend: **Angular**; podzielony na 4 główne moduły.
-- Backend: **ASP.NET Core Web API (C#)**, architektura 3-warstwowa + Background Workers
+- Backend: **ASP.NET Core Web API (C#)**, architektura 3-warstwowa (Clean Architecture) + Background Workers
 - Repozytorium: Relacyjna baza danych **Microsoft SQL Server** + połączenie z zewnętrznym API (OpenF1)
 
 ## Frontend

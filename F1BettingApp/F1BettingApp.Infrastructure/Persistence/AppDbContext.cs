@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using F1BettingApp.Domain.Entities;
 
 namespace F1BettingApp.Infrastructure.Persistence
 {
@@ -8,10 +9,8 @@ namespace F1BettingApp.Infrastructure.Persistence
         {
         }
 
-        // DbSets would be defined here
-        // public DbSet<User> Users { get; set; }
-        // public DbSet<Bet> Bets { get; set; }
-        // public DbSet<Race> Races { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<Bet> Bets { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

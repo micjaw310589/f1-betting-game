@@ -1,58 +1,67 @@
-### Specyfikacja projektu: `f1-betting-game`
+# Specyfikacja Projektu: f1-betting-game
+
+## 1. Cel projektu i ogólny zarys aplikacji
+Aplikacja to internetowa gra bazodanowa pozwalająca użytkownikom na obstawianie wyników wyścigów Formuły 1 na punkty. Każdy zarejestrowany gracz otrzymuje wirtualne saldo, którym dysponuje w celu dokonywania zakładów. Dzięki integracji z publicznym API OpenF1, aplikacja uzyskuje informacje o nadchodzących, trwających oraz zakończonych wyścigach, a także o stanie mistrzostw świata. 
+
+Użytkownicy mogą obstawiać zawody w kilku kategoriach, np.:
+* TOP 3 kierowców w wyścigu.
+* Kierowca z najszybszym czasem okrążenia wyścigu.
+* Zespół z najszybszym pit stopem.
+* Liczba kierowców, którzy nie dojechali do mety (DNF).
+
+System przechowuje historię zakładów, udostępnia personalne statystyki oraz prezentuje rankingi graczy (ogólne i okresowe).
 
 ---
 
-#### 1. Cel i ogólny zarys aplikacji
-Aplikacja `f1-betting-game` to internetowa gra bazodanowa pozwalająca użytkownikom na obstawianie wyników wyścigów Formuły 1 na punkty. Każdy zarejestrowany gracz otrzymuje wirtualne saldo, którym dysponuje w celu dokonywania zakładów związanych z przebiegiem wyścigów. Dzięki integracji z publicznym API OpenF1, aplikacja jest na bieżąco z aktualnym kalendarzem, stanem mistrzostw oraz wynikami.
-
-#### 2. Stos technologiczny
-* **Frontend:** Angular (SPA).
-* **Backend:** ASP.NET Core Web API (C#).
-* **Baza Danych:** Microsoft SQL Server (Relacyjna baza danych).
-* **Zewnętrzne integracje:** API OpenF1.
+## 2. Stos Technologiczny (Tech Stack)
+* **Frontend:** Angular (aplikacja typu Single Page Application).
+* **Backend:** ASP.NET Core Web API w języku C#.
+* **Baza Danych:** Relacyjna baza danych Microsoft SQL Server. W komunikacji z bazą wykorzystany zostanie Entity Framework Core jako ORM.
+* **Integracje z zewnątrz:** Publiczne API OpenF1 do pobierania wyników.
+* **Zadania w tle:** Wbudowany `BackgroundService` lub biblioteka Hangfire.
 
 ---
 
-#### 3. Główne funkcjonalności
-System oferuje użytkownikom szereg możliwości w ramach gry oraz przeglądania statystyk:
-* **Obstawianie wyścigów:** Możliwość typowania wielu zdarzeń, w tym: TOP 3 kierowców w wyścigu, kierowcy z najszybszym okrążeniem, zespołu z najszybszym pit stopem oraz liczby kierowców, którzy nie ukończą zawodów (DNF). Zestaw tych kategorii może być w przyszłości rozbudowywany.
-* **Dane F1:** Dostęp do informacji o nadchodzących, trwających i zakończonych wyścigach oraz podgląd stanu mistrzostw świata. 
-* **Statystyki gracza:** Śledzenie własnej historii zakładów oraz przeglądanie spersonalizowanych statystyk.
-* **Rankingi (Leaderboards):** Wyświetlanie tabeli wyników graczy w ujęciu ogólnym oraz w określonych przedziałach czasowych (np. z ostatniego miesiąca).
+## 3. Wymagania Niefunkcjonalne
+Dla zachowania prostoty we wczesnej fazie projektu przyjąto optymalne, ale nieskomplikowane założenia:
+* **Wydajność (Performance):** Aplikacja musi sprawnie przetwarzać dużą ilość zapytań o zapis zakładu na krótko przed startem wyścigu. Pula połączeń do bazy (Connection Pooling) w EF Core powinna to zapewnić. Przetwarzanie i przeliczanie punktów odbywa się całkowicie asynchronicznie, co zapobiega spowolnieniom widocznych dla użytkownika zapytań HTTP.
+* **Bezpieczeństwo (Security):** System uwierzytelniania wykorzystuje mechanizm JWT (JSON Web Tokens), dodawany do zapytań przez interceptory HTTP w Angularze. Zastosowane zostaną standardowe Guardy chroniące poszczególne widoki. Przechowywane hasła użytkowników muszą być bezpiecznie hashowane (`PasswordHash` w bazie).
+* **Skalowalność (Scalability):** Podział na niezależne warstwy (Frontend SPA, Web API, Worker w tle, Baza danych). W pierwszej fazie aplikacja może działać na jednym serwerze (skalowalność wertykalna).
+* **Kompatybilność:** Responsywny interfejs użytkownika w Angularze dostosowany do urządzeń desktopowych oraz mobilnych.
 
 ---
 
-#### 4. Architektura systemu i podział na moduły
-Projekt bazuje na architekturze klient-serwer z wyraźnym podziałem odpowiedzialności. 
+## 4. Architektura, Przepływ Danych i Endpointy API
 
-**Frontend (Angular)**
-Aplikacja typu Single Page Application (SPA) podzielona na moduły funkcjonalne (tzw. _lazy-loaded features_):
-* **Auth Module (`auth`):** Zarządzanie profilem, rejestracja oraz logowanie.
-* **Betting Module (`betting`):** Formularze umożliwiające obstawianie zdarzeń (zwycięzcy, DNF itp.) oraz widok nadchodzących wyścigów.
-* **Dashboard / Leaderboard Module (`leaderboard`):** Prezentacja tabel punktacyjnych, historii zakładów oraz statystyk globalnych.
-* **F1 Data Module (`race-details`):** Karta informacyjna z kalendarzem wyścigów i danymi zespołów (tryb tylko do odczytu).
-* *Komunikacja:* Aplikacja wykorzystuje interceptory HTTP do wstrzykiwania tokenów JWT i globalnego zarządzania błędami.
+Aplikacja zbudowana jest w architekturze klient-serwer. Backend podzielony jest na trzy warstwy (Clean Architecture): Prezentacji (API), Logiki Biznesowej (Application) i Danych (Infrastructure).
 
-**Backend (C# ASP.NET Core)**
-Zaprojektowany w oparciu o architekturę trójwarstwową (Clean Architecture):
-* **Warstwa Prezentacji (API):** Odpowiada za wystawianie endpointów RESTful (np. `BetsController`, `RacesController`) oraz uwierzytelnianie na bazie JWT.
-* **Warstwa Logiki Biznesowej (Application/Core):** Miejsce na zasady gry, walidację (np. czy wyścig już wystartował) i zasady punktacji (dokładne i częściowe trafienia). Przechowuje interfejsy, DTOs i serwisy.
-* **Warstwa Danych i Infrastruktury (Infrastructure):** Komunikuje się z bazą SQL Server poprzez Entity Framework Core jako ORM oraz implementuje klienta do API OpenF1.
-* **Warstwa Domenowa (Domain):** Zawiera modele encji (User, Bet, Race, Driver, Team), enumeratory definiujące statusy oraz specyficzne wyjątki domenowe.
+**Przykładowe endpointy Web API:**
+Zgodnie ze strukturą kontrolerów, wystawione zostaną:
+* `POST /api/auth/register` - rejestracja konta.
+* `POST /api/auth/login` - logowanie i wydanie tokena JWT.
+* `GET /api/races` - pobranie kalendarza wyścigów dla modułu `F1 Data Module`.
+* `POST /api/bets` - utworzenie nowego zakładu.
+* `GET /api/leaderboard` - pobranie ogólnego rankingu dla modułu `Dashboard`.
+
+**Przepływ Danych (Zapis i Rozliczanie Zakładów):**
+1. **Zapis:** Klient Angular wysyła żądanie z tokenem JWT poprzez interceptor. API w warstwie prezentacji odbiera żądanie, po czym warstwa logiki weryfikuje zasady (np. walidacja czasu zakładu). Na końcu EF Core zapisuje encję `Bet` w tabeli `Bets`.
+2. **Przetwarzanie w tle (Background Jobs):** System wykorzystuje zadania uruchamiane w tle zamiast reagować na odświeżanie strony przez użytkowników. `Job 1` cyklicznie sprawdza status wyścigu i po jego zakończeniu pobiera oficjalne wyniki z OpenF1. Następnie uruchamiany jest `Job 2`, który iteruje po nierozstrzygniętych zakładach, oblicza punkty i aktualizuje pola `TotalPoints` graczy oraz zapisuje stan w tabeli `LeaderboardHistory`.
 
 ---
 
-#### 5. Przetwarzanie asynchroniczne (Background Jobs)
-Kluczowym założeniem architektury jest odciążenie zapytań użytkowników poprzez zastosowanie procesów w tle (BackgroundService lub Hangfire).
-* **Job 1 (Cykliczny monitor):** Sprawdza status wyścigów. Po zakończeniu Grand Prix i ogłoszeniu oficjalnych wyników, pobiera je z API OpenF1.
-* **Job 2 (Procesowanie wyników):** Wykorzystuje dane pobrane przez Job 1, przechodzi przez nierozstrzygnięte zakłady w systemie, kalkuluje punkty i dodaje je do rankingów graczy.
+## 5. Plan Testowania
+
+Biorąc pod uwagę rozmiar projektu i integrację zewnętrzną, przyjmiemy uproszczoną, ale skuteczną piramidę testów:
+* **Testy Jednostkowe (Unit Testing):** Weryfikacja warstwy logiki biznesowej (`F1BettingApp.Application`). Testowanie walidatorów (np. blokada zakładu sekundę po starcie) oraz kalkulatora punktacji (poprawne naliczanie przy trafnym typie Top 3 vs częściowym trafnym typie).
+* **Testy Integracyjne (Integration Testing):** Testy na styku warstw: weryfikacja czy zapytania do bazy poprzez Entity Framework (ORM) zapisują prawidłowe relacje między zakładami a użytkownikami. Weryfikacja parsera danych odbierającego mockowane odpowiedzi z API OpenF1.
+* **Testy Wydajnościowe (Performance Testing):** Skrypty obciążeniowe (np. za pomocą k6) symulujące duży ruch na endpoincie `/api/bets` na kilka minut przed zablokowaniem sesji zakładów.
+* **Testy Akceptacyjne (User Acceptance Testing - UAT):** Ręczne przejście przez krytyczne ścieżki w aplikacji z perspektywy gracza: założenie konta, wpłacenie punktów, poprawne wyświetlanie wyścigów w kalendarzu, oddanie ważnego zakładu i weryfikacja salda po symulowanym zakończeniu wyścigu.
 
 ---
 
-#### 6. Struktura bazy danych
-Baza danych (Microsoft SQL Server) służy jako podstawowe repozytorium danych użytkowników oraz jako warstwa _cache_ dla informacji pobieranych z OpenF1. Główne encje w systemie to:
-* `Users`: Id, Username, Email, PasswordHash, TotalPoints.
-* `Drivers` / `Teams`: Dane zsynchronizowane z OpenF1, niezbędne do działania formularzy typowania.
-* `Races`: Id, Name, Date, Status (Scheduled, Finished, ResultsProcessed).
-* `Bets`: Id, UserId, RaceId, DriverId_Prediction, FastLap_Prediction, PointsAwarded, Status.
-* `LeaderboardHistory`: Przechowuje archiwalne pozycje graczy po każdym wyścigu, co pozwala na generowanie m.in. wykresów formy.
+## 6. Plan Deploymentu
+
+Zaproponowano najprostszy model wdrożeniowy, pozwalający zredukować koszty utrzymania bez użycia złożonych usług chmurowych (jak Kubernetes), opierający się na jednym maszynie:
+* **Serwer:** Standardowy wirtualny serwer prywatny (VPS) z systemem Linux (np. Ubuntu).
+* **Baza Danych:** Zespół użyje instancji Microsoft SQL Server Express Edition zainstalowanej bezpośrednio na środowisku docelowym.
+* **Certyfikaty:** Darmowe certyfikaty Let's Encrypt (Certbot) do zabezpieczenia całości komunikacji szyfrowaniem HTTPS.

@@ -1,4 +1,4 @@
-using F1BettingGame.Models.F1;
+ using F1BettingGame.Models.F1;
 
 namespace F1BettingGame.Models.Results;
 

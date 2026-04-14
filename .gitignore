@@ -1,0 +1,12 @@
+/F1BettingApp/F1BettingApp.Application/obj/Debug
+/F1BettingApp/F1BettingApp.API/obj
+/F1BettingApp/F1BettingApp.Infrastructure/obj/Debug
+/F1BettingApp/F1BettingApp.Infrastructure/bin/Debug
+/F1BettingApp/F1BettingApp.Infrastructure/obj
+/F1BettingApp/F1BettingApp.Domain/obj
+/F1BettingApp/F1BettingApp.Application/obj
+/F1BettingApp/F1BettingApp.Domain/bin
+/F1BettingApp/F1BettingApp.Tests/obj
+F1BettingApp/F1BettingApp.sln
+/F1BettingApp/F1BettingApp.Tests/bin
+/F1BettingApp/F1BettingApp.Application/bin

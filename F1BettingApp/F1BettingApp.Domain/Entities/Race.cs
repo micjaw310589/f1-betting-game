@@ -1,3 +1,5 @@
+using F1BettingApp.Domain.Enums;
+
 namespace F1BettingApp.Domain.Entities;
 
 public class Race

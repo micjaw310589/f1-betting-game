@@ -1,3 +1,4 @@
+using F1BettingApp.Application.DTOs;
 using System.Threading.Tasks;
 
 namespace F1BettingApp.Application.Interfaces

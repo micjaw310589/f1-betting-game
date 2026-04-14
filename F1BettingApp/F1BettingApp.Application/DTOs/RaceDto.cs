@@ -1,3 +1,5 @@
+using F1BettingApp.Domain.Enums;
+
 namespace F1BettingApp.Application.DTOs
 {
     public class RaceDto
@@ -7,5 +9,6 @@ namespace F1BettingApp.Application.DTOs
         public string Circuit { get; set; }
         public DateTime RaceDate { get; set; }
         public string Country { get; set; }
+        public RaceStatus Status { get; set; }
     }
 }

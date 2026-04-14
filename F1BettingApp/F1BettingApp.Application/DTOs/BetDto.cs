@@ -1,8 +1,8 @@
 using F1BettingApp.Domain.Enums;
 
-namespace F1BettingApp.Domain.Entities
+namespace F1BettingApp.Application.DTOs
 {
-    public class Bet
+    public class BetDto
     {
         public int Id { get; set; }
         public int UserId { get; set; }

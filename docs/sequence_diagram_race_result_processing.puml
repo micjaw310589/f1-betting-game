@@ -1,0 +1,140 @@
+@startuml F1_BettingApp_Sequence_RaceProcessing
+
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequence {
+  BackgroundColor #FEFEFE
+  BorderColor #333333
+  ActorBackgroundColor #E8F5E9
+  ActorBorderColor #1B5E20
+  ParticipantBackgroundColor #F3E5F5
+  ParticipantBorderColor #6A1B9A
+  ArrowColor #333333
+}
+
+title F1 Betting Application — Sequence Diagram: Race Result Processing (Background Job)\n
+
+participant "⏱️ Scheduler/Timer\n(IHostedService)" as scheduler
+participant "🏁 RaceResultWorker\n(Background Job)" as race_worker
+participant "🌍 OpenF1 API\nClient" as openf1
+participant "⚙️ Application Layer\nRaceService" as race_service
+participant "🔧 Infrastructure\nRepository" as repo
+participant "💾 Database\n(SQL Server)" as db
+
+autonumber
+
+note over scheduler
+  Background Job Trigger:
+  • Runs on schedule (e.g., every 5 mins)
+  • Checks if race finished
+  • Processes results automatically
+  • No user interaction needed
+end note
+
+scheduler -> race_worker: 1. Trigger RaceResultWorker\n(Check for finished races)
+
+race_worker -> repo: 2. GetAllAsync()\n(Races with status != ResultsProcessed)
+
+repo -> db: 3. SELECT * FROM Races\nWHERE status != 'ResultsProcessed'\nAND date < NOW()
+
+db --> repo: 4. Return list of races\nto process
+
+repo --> race_worker: 5. Return races
+
+loop For each finished race
+  
+  race_worker -> race_worker: 6. Check if race finished\n(date passed)
+  
+  alt Race not finished yet
+    race_worker -> race_worker: 7. Skip race, continue
+  else Race is finished
+    
+    race_worker -> openf1: 8. FetchRaceResults(raceId)\nfrom OpenF1 API
+    
+    note over openf1
+      OpenF1 API:
+      • External data source
+      • Provides race results
+      • Driver positions & times
+      • Points awarded
+    end note
+    
+    openf1 --> race_worker: 9. Return race results JSON\n{drivers, positions, points}
+    
+    race_worker -> race_worker: 10. Parse results
+    
+    race_worker -> race_service: 11. ProcessRaceResultsAsync(\n  raceId, results)
+    
+    note over race_service
+      RaceService:
+      • Update race status
+      • Calculate bet payouts
+      • Determine winners/losers
+      • Process all bets
+    end note
+    
+    race_service -> repo: 12. GetByIdAsync(raceId)
+    repo -> db: 13. SELECT * FROM Races\nWHERE race_id = @raceId
+    db --> repo: 14. Return Race
+    repo --> race_service: 15. Return Race
+    
+    race_service -> repo: 16. GetAllAsync()\n(All bets for this race)
+    repo -> db: 17. SELECT * FROM Bets\nWHERE race_id = @raceId\nAND status = 'Pending'
+    db --> repo: 18. Return Bets
+    repo --> race_service: 19. Return Bets
+    
+    loop For each bet on this race
+      race_service -> race_service: 20. Determine if bet won\nCompare prediction vs actual result
+      
+      alt Prediction matches result
+        race_service -> race_service: 21. Mark bet as WON
+        race_service -> race_service: 22. Calculate points\nfrom odds
+      else Prediction doesn't match
+        race_service -> race_service: 23. Mark bet as LOST
+      end
+      
+      race_service -> repo: 24. UpdateAsync(bet)
+      repo -> db: 25. UPDATE Bets\nSET status = @status,\npoints = @points\nWHERE bet_id = @bet_id
+      db --> repo: 26. Update successful
+      repo --> race_service: 27. Confirmation
+      
+    end
+    
+    note over race_service
+      Aggregated Results:
+      • Total bets processed
+      • Winners count
+      • Total points distributed
+    end note
+    
+    race_service -> repo: 28. UpdateAsync(race)\nSet status to ResultsProcessed
+    repo -> db: 29. UPDATE Races\nSET status = 'ResultsProcessed'\nWHERE race_id = @race_id
+    db --> repo: 30. Update successful
+    repo --> race_service: 31. Return confirmation
+    
+    race_service --> race_worker: 32. Return processing result
+    
+  end
+  
+end
+
+race_worker -> race_worker: 33. Log completion\n(Races processed: X)
+
+note bottom
+  **Background Processing Benefits:**
+  • Non-blocking: Doesn't affect user interactions
+  • Automatic: No manual processing needed
+  • Scheduled: Runs at specific intervals
+  • Transactional: Database consistency guaranteed
+  • Auditable: Processing logged for analysis
+  
+  **Result Processing Flow:**
+  1. Fetch finished races from database
+  2. Poll OpenF1 API for official results
+  3. For each bet, determine win/loss status
+  4. Update bet records with status & points
+  5. Update race status to ResultsProcessed
+  6. User points automatically updated
+end note
+
+@enduml

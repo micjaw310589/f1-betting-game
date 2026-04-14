@@ -1,0 +1,232 @@
+@startuml F1_BettingApp_LayeredArchitecture
+
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowColor #333333
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+}
+
+title F1 Betting Application — Layered Architecture Diagram\n
+
+' ============================================================
+'  PRESENTATION LAYER (UI)
+' ============================================================
+rectangle "👤 PRESENTATION LAYER - User Interface" #E3F2FD {
+  rectangle "Angular SPA" {
+    rectangle "🔐 Auth Module" as auth_ui
+    rectangle "🎲 Betting Module" as betting_ui
+    rectangle "📊 Dashboard/Leaderboard" as dashboard_ui
+    rectangle "ℹ️ F1 Data Module" as f1_ui
+  }
+  rectangle "🔌 HTTP Client & Interceptors" as http_client
+}
+
+note right of auth_ui
+  Single Page Application
+  Component-based architecture
+  Reactive forms
+  State management
+end note
+
+' ============================================================
+'  API LAYER (Presentation)
+' ============================================================
+rectangle "🌐 API LAYER - REST Endpoints" #BBDEFB {
+  rectangle "Controllers" {
+    rectangle "AuthController" as auth_controller
+    rectangle "BetsController" as bets_controller
+    rectangle "RacesController" as races_controller
+    rectangle "UsersController" as users_controller
+  }
+  rectangle "🔐 Authentication & Authorization" as auth_layer
+  rectangle "📋 Request/Response Handling" as request_handling
+}
+
+note right of auth_controller
+  RESTful Web API
+  JWT-based authentication
+  ASP.NET Core
+  Swagger/OpenAPI documentation
+end note
+
+' ============================================================
+'  APPLICATION LAYER (Business Logic)
+' ============================================================
+rectangle "⚙️ APPLICATION LAYER - Business Logic" #F3E5F5 {
+  rectangle "Services" {
+    rectangle "BettingService" as betting_service
+    rectangle "RaceService" as race_service
+    rectangle "UserService" as user_service
+    rectangle "RankingService" as ranking_service
+  }
+  rectangle "🗺️ Data Mapping (AutoMapper)" as mapper
+  rectangle "✅ Validation (FluentValidation)" as validator
+  rectangle "📦 DTOs (Data Transfer Objects)" as dtos
+}
+
+note right of betting_service
+  Core business rules
+  Domain-driven design
+  Service layer pattern
+  Dependency injection
+end note
+
+' ============================================================
+'  DOMAIN LAYER (Models)
+' ============================================================
+rectangle "📋 DOMAIN LAYER - Models & Enums" #FFF9C4 {
+  rectangle "Entities" {
+    rectangle "User" as user_entity
+    rectangle "Bet" as bet_entity
+    rectangle "Race" as race_entity
+    rectangle "Driver" as driver_entity
+    rectangle "Team" as team_entity
+  }
+  rectangle "Enumerations" {
+    rectangle "BetStatus\n(Pending, Won, Lost, Canceled)" as bet_enum
+    rectangle "RaceStatus\n(Scheduled, InProgress, Finished, ResultsProcessed)" as race_enum
+  }
+}
+
+note right of user_entity
+  Domain-driven design
+  Pure business objects
+  No dependencies
+  Validation rules
+end note
+
+' ============================================================
+'  INFRASTRUCTURE LAYER (Data Access)
+' ============================================================
+rectangle "🔧 INFRASTRUCTURE LAYER - Data & Integration" #E8F5E9 {
+  rectangle "Data Persistence" {
+    rectangle "DbContext\n(Entity Framework Core)" as dbcontext
+    rectangle "Generic Repositories" as repositories
+    rectangle "Database Migrations" as migrations
+  }
+  rectangle "External Integrations" {
+    rectangle "OpenF1 API Client" as openf1_client
+    rectangle "HTTP Client Factory" as http_factory
+  }
+  rectangle "Background Services" {
+    rectangle "RaceResultWorker" as race_worker
+    rectangle "OddsSyncWorker" as odds_worker
+    rectangle "LeaderboardUpdateWorker" as leaderboard_worker
+  }
+}
+
+note right of dbcontext
+  Entity Framework Core
+  ORM abstraction
+  LINQ queries
+  Code-first approach
+end note
+
+' ============================================================
+'  DATA LAYER (Database)
+' ============================================================
+rectangle "💾 DATA LAYER - Microsoft SQL Server" #FFE0B2 {
+  rectangle "Database (F1BettingAppDb)" {
+    rectangle "Tables" {
+      rectangle "✓ Users\n✓ Bets\n✓ Races" as tables1
+      rectangle "✓ Drivers\n✓ Teams\n✓ Indexes" as tables2
+    }
+    rectangle "Views & Stored Procedures" as views
+  }
+}
+
+note right of tables1
+  Relational database
+  ACID transactions
+  Indexes on FK & status
+  Referential integrity
+end note
+
+' ============================================================
+'  EXTERNAL SERVICES
+' ============================================================
+rectangle "🌍 EXTERNAL SERVICES" #F1F8E9 {
+  rectangle "OpenF1 API\n(Race Data, Standings)" as openf1
+  rectangle "Cache Layer\n(Optional Redis)" as cache
+}
+
+' ============================================================
+'  CONNECTIONS & DATA FLOW
+' ============================================================
+
+' UI to API
+http_client --> auth_controller
+http_client --> bets_controller
+http_client --> races_controller
+http_client --> users_controller
+
+' API to Application
+auth_controller --> user_service
+bets_controller --> betting_service
+races_controller --> race_service
+
+' Application Internal
+user_service --> mapper
+betting_service --> mapper
+race_service --> mapper
+ranking_service --> mapper
+
+user_service --> validator
+betting_service --> validator
+race_service --> validator
+
+mapper --> dtos
+validator --> dtos
+
+' Application to Domain
+betting_service --> bet_entity
+race_service --> race_entity
+user_service --> user_entity
+ranking_service --> ranking_service
+
+bet_entity --> bet_enum
+race_entity --> race_enum
+
+' Domain to Infrastructure
+user_service --> repositories
+betting_service --> repositories
+race_service --> repositories
+ranking_service --> repositories
+
+' Infrastructure to Data
+repositories --> dbcontext
+dbcontext --> migrations
+
+' Data Access
+dbcontext --> tables1
+dbcontext --> tables2
+dbcontext --> views
+
+' Background Jobs
+race_worker --> repositories
+odds_worker --> repositories
+leaderboard_worker --> repositories
+
+race_worker --> openf1_client
+odds_worker --> openf1_client
+
+' External Integration
+openf1_client --> openf1
+openf1_client --> cache
+
+' ============================================================
+'  LEGEND & KEY POINTS
+' ============================================================
+note bottom
+  **Key Principles:**
+  • Clean Architecture: Each layer has single responsibility
+  • Dependency Rule: Inner layers don't depend on outer layers
+  • Separation of Concerns: UI, Business Logic, Data are separated
+  • SOLID Principles: Applied throughout the application
+  • Entity Framework Core: ORM for database abstraction
+  • Background Workers: Async processing for race results & odds
+end note
+
+@enduml

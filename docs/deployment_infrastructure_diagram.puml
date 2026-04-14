@@ -1,0 +1,253 @@
+@startuml F1_BettingApp_Deployment
+
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam node {
+  BackgroundColor #E1F5FF
+  BorderColor #01579B
+  ArrowColor #01579B
+}
+skinparam database {
+  BackgroundColor #FFF9C4
+  BorderColor #F57F17
+}
+
+title F1 Betting Application — Deployment & Infrastructure Diagram\n
+
+' ============================================================
+'  CLIENT TIER
+' ============================================================
+node "🖥️ CLIENT TIER" as client_tier #E3F2FD {
+  node "End User's Browser" as browser {
+    component [Angular SPA] as spa
+    component [Local Storage\n(JWT Token)] as local_storage
+  }
+}
+
+note right of browser
+  • Single Page Application
+  • Runs in browser
+  • Loads once, interactive UI
+  • HTTP requests to API
+end note
+
+' ============================================================
+'  CDN / STATIC ASSETS
+' ============================================================
+node "🌐 CDN / Static Assets" as cdn #E0F2F1 {
+  component [JavaScript Bundles] as js_bundles
+  component [CSS Stylesheets] as css_styles
+  component [Images & Media] as media
+}
+
+note right of cdn
+  Optional:
+  • Serve Angular build
+  • Cache static assets
+  • Global distribution
+  • Fast content delivery
+end note
+
+' ============================================================
+'  API TIER
+' ============================================================
+node "🔌 API TIER - Azure / AWS / On-Premise" as api_tier #BBDEFB {
+  node "Load Balancer" as lb {
+    component [Traffic Distribution] as traffic
+  }
+  
+  node "API Server 1 (ASP.NET Core)" as api_server_1 {
+    component [F1BettingApp.API] as api1
+    component [Controllers] as controllers1
+    component [Middleware] as middleware1
+  }
+  
+  node "API Server 2 (ASP.NET Core)" as api_server_2 {
+    component [F1BettingApp.API] as api2
+    component [Controllers] as controllers2
+    component [Middleware] as middleware2
+  }
+  
+  node "Application Services" as app_tier {
+    component [BettingService] as betting_svc
+    component [RaceService] as race_svc
+    component [UserService] as user_svc
+    component [RankingService] as ranking_svc
+  }
+  
+  node "Background Jobs Host" as bg_host {
+    component [RaceResultWorker] as result_worker
+    component [OddsSyncWorker] as odds_worker
+    component [IHostedService] as hosted_service
+  }
+}
+
+note right of api_tier
+  • Multiple API instances
+  • Load balanced
+  • Auto-scaling
+  • Stateless design
+  • Background job processing
+  • .NET 8 runtime
+end note
+
+' ============================================================
+'  CACHE TIER (Optional)
+' ============================================================
+node "⚡ CACHE TIER (Optional)" as cache_tier #F1F8E9 {
+  component [Redis Cache] as redis
+}
+
+note right of cache_tier
+  Optional caching layer:
+  • Session data
+  • API response caching
+  • Leaderboard snapshots
+  • Race standings
+end note
+
+' ============================================================
+'  DATA TIER
+' ============================================================
+node "DATA TIER" as data_tier #FFE0B2 {
+  database "Microsoft SQL Server (Primary)" as sql_db_primary {
+    table [Users Table]
+    table [Bets Table]
+    table [Races Table]
+    table [Drivers Table]
+    table [Teams Table]
+  }
+  
+  database "SQL Server (Backup / Read Replica)" as sql_db_backup {
+    table [Users_Backup]
+    table [Bets_Backup]
+  }
+}
+
+note right of data_tier
+  • ACID transactions
+  • Referential integrity
+  • Backup & recovery
+  • Indexed queries
+  • Read replicas for reporting
+end note
+
+' ============================================================
+'  EXTERNAL SERVICES
+' ============================================================
+node "🌍 EXTERNAL SERVICES" as external_tier #F1F8E9 {
+  component [OpenF1 API] as openf1_api
+  component [HTTPS / JSON] as api_protocol
+}
+
+note right of external_tier
+  • Official F1 data
+  • Race results & standings
+  • Driver/Team information
+  • Cached in local DB
+end note
+
+' ============================================================
+'  MONITORING & LOGGING
+' ============================================================
+node "📊 MONITORING & LOGGING" as monitoring #F5F5F5 {
+  component [Application Insights\n/ DataDog] as app_insights
+  component [Log Aggregation\n(Serilog / ELK)] as logging
+  component [Performance Monitoring] as perf_monitor
+}
+
+note right of monitoring
+  • Error tracking
+  • Performance metrics
+  • Log centralization
+  • Alerting
+  • Health checks
+end note
+
+' ============================================================
+'  CONNECTIONS
+' ============================================================
+
+' Client to API
+browser --> cdn: Load static assets
+spa --> lb: HTTP/HTTPS requests
+local_storage --> spa: JWT tokens
+
+' Load Balancer Distribution
+lb --> api_server_1
+lb --> api_server_2
+
+' API Servers to Services
+api_server_1 --> app_tier
+api_server_2 --> app_tier
+
+app_tier --> betting_svc
+app_tier --> race_svc
+app_tier --> user_svc
+app_tier --> ranking_svc
+
+' Cache Integration
+app_tier ..> redis: Optional caching
+
+' API to Database
+betting_svc --> sql_db_primary
+race_svc --> sql_db_primary
+user_svc --> sql_db_primary
+
+' Background Jobs
+bg_host --> hosted_service
+hosted_service --> result_worker
+hosted_service --> odds_worker
+
+result_worker --> sql_db_primary
+odds_worker --> sql_db_primary
+result_worker --> openf1_api
+
+' Database Backup
+sql_db_primary ..> sql_db_backup: Replication\n(Optional)
+
+' Monitoring
+api_server_1 ..> app_insights: Logs & metrics
+api_server_2 ..> app_insights: Logs & metrics
+bg_host ..> app_insights: Job logs
+sql_db_primary ..> perf_monitor: Performance data
+
+' ============================================================
+'  DEPLOYMENT NOTES
+' ============================================================
+
+note over bottom
+  **Deployment Architecture Characteristics:**
+  
+  **Scalability:**
+  • Horizontal scaling: Add more API servers
+  • Database replication: Read replicas for reporting
+  • Caching layer: Reduce database load
+  
+  **Availability:**
+  • Load balancer: Distributes traffic
+  • Multiple API instances: Redundancy
+  • Database backups: Data protection
+  • Background job reliability: Transactional processing
+  
+  **Security:**
+  • HTTPS/TLS: Encrypted communication
+  • JWT tokens: Stateless authentication
+  • SQL parameterization: Injection prevention
+  • CORS policies: Cross-origin control
+  
+  **Performance:**
+  • Async operations: Non-blocking API
+  • Indexed queries: Fast data retrieval
+  • Caching: Reduced database hits
+  • CDN: Fast static asset delivery
+  
+  **Deployment Options:**
+  • On-Premise: Full control
+  • Azure: App Service, SQL Database, Redis
+  • AWS: EC2, RDS, ElastiCache
+  • Docker: Containerized deployment
+  • Kubernetes: Container orchestration
+end note
+
+@enduml

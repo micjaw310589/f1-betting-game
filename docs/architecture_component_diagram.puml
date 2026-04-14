@@ -1,0 +1,257 @@
+@startuml F1_BettingApp_Components
+
+!define TECH_COLOR #E1F5FF
+!define DOMAIN_COLOR #FFF9C4
+!define APP_COLOR #F3E5F5
+!define INFRA_COLOR #E8F5E9
+
+skinparam component {
+  BackgroundColor TECH_COLOR
+  BorderColor #01579B
+  ArrowColor #01579B
+}
+
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+}
+
+title F1 Betting Application — Component Architecture Diagram\n
+
+' ============================================================
+'  CLIENT LAYER
+' ============================================================
+package "Frontend - Client Layer" <<rectangle>> #E3F2FD {
+  component [Angular SPA] as angular_spa
+  component [Auth Module] as auth_module
+  component [Betting Module] as betting_module
+  component [Dashboard/Leaderboard] as dashboard_module
+  component [F1 Data Module] as f1data_module
+  component [HTTP Interceptors] as http_interceptors
+}
+
+' ============================================================
+'  PRESENTATION LAYER (API)
+' ============================================================
+package "F1BettingApp.API - Presentation Layer" <<rectangle>> #BBDEFB {
+  component [Web API Controllers] as api_controllers
+  component [BetsController] as bets_controller
+  component [RacesController] as races_controller
+  component [AuthController] as auth_controller
+  component [Middleware/Auth] as api_middleware
+  component [JWT Handler] as jwt_handler
+}
+
+' ============================================================
+'  APPLICATION LAYER (Business Logic)
+' ============================================================
+package "F1BettingApp.Application - Business Logic Layer" <<rectangle>> #F3E5F5 {
+  component [Services] as app_services
+  component [BettingService] as betting_service
+  component [RaceService] as race_service
+  component [UserService] as user_service
+  component [RankingService] as ranking_service
+  component [DTOs] as dtos
+  component [Validators] as validators
+  component [AutoMapper] as automapper
+}
+
+' ============================================================
+'  DOMAIN LAYER (Models)
+' ============================================================
+package "F1BettingApp.Domain - Domain Layer" <<rectangle>> #FFF9C4 {
+  component [Entities] as domain_entities
+  component [User Entity] as user_entity
+  component [Bet Entity] as bet_entity
+  component [Race Entity] as race_entity
+  component [Driver Entity] as driver_entity
+  component [Team Entity] as team_entity
+  component [Enums] as enums
+  component [BetStatus Enum] as bet_status_enum
+  component [RaceStatus Enum] as race_status_enum
+}
+
+' ============================================================
+'  INFRASTRUCTURE LAYER (Data & External Services)
+' ============================================================
+package "F1BettingApp.Infrastructure - Infrastructure Layer" <<rectangle>> #E8F5E9 {
+  component [Data Persistence] as persistence
+  component [AppDbContext] as dbcontext
+  component [Repositories] as repositories
+  component [Generic Repo] as generic_repo
+  component [External APIs] as external_apis
+  component [OpenF1 Client] as openf1_client
+  component [Background Jobs] as background_jobs
+  component [RaceResultWorker] as race_worker
+  component [OddsSyncWorker] as odds_worker
+}
+
+' ============================================================
+'  DATABASE & EXTERNAL SERVICES
+' ============================================================
+database "SQL Server\nF1BettingAppDb" as sqldb {
+  folder "Tables" {
+    component [Users] as db_users
+    component [Bets] as db_bets
+    component [Races] as db_races
+    component [Drivers] as db_drivers
+    component [Teams] as db_teams
+  }
+}
+
+component [OpenF1 API] as openf1_api
+component [External Data Source] as external_data
+
+' ============================================================
+'  RELATIONSHIPS - FRONTEND TO API
+' ============================================================
+angular_spa --> http_interceptors
+http_interceptors --> api_controllers
+
+auth_module --> api_controllers
+betting_module --> api_controllers
+dashboard_module --> api_controllers
+f1data_module --> api_controllers
+
+' ============================================================
+'  RELATIONSHIPS - API LAYER
+' ============================================================
+api_controllers --> bets_controller
+api_controllers --> races_controller
+api_controllers --> auth_controller
+
+api_controllers --> api_middleware
+api_middleware --> jwt_handler
+
+' ============================================================
+'  RELATIONSHIPS - API TO APPLICATION
+' ============================================================
+bets_controller --> betting_service
+races_controller --> race_service
+auth_controller --> user_service
+
+betting_service --> validators
+race_service --> validators
+user_service --> validators
+
+' ============================================================
+'  RELATIONSHIPS - APPLICATION LAYER
+' ============================================================
+betting_service --> automapper
+race_service --> automapper
+user_service --> automapper
+
+betting_service --> dtos
+race_service --> dtos
+user_service --> dtos
+ranking_service --> dtos
+
+' ============================================================
+'  RELATIONSHIPS - APPLICATION TO DOMAIN
+' ============================================================
+betting_service --> domain_entities
+race_service --> domain_entities
+user_service --> domain_entities
+ranking_service --> domain_entities
+
+domain_entities --> user_entity
+domain_entities --> bet_entity
+domain_entities --> race_entity
+domain_entities --> driver_entity
+domain_entities --> team_entity
+
+domain_entities --> enums
+enums --> bet_status_enum
+enums --> race_status_enum
+
+' ============================================================
+'  RELATIONSHIPS - APPLICATION TO INFRASTRUCTURE
+' ============================================================
+betting_service --> repositories
+race_service --> repositories
+user_service --> repositories
+ranking_service --> repositories
+
+' ============================================================
+'  RELATIONSHIPS - INFRASTRUCTURE
+' ============================================================
+repositories --> generic_repo
+generic_repo --> dbcontext
+dbcontext --> persistence
+
+' ============================================================
+'  RELATIONSHIPS - DATABASE
+' ============================================================
+persistence --> sqldb
+
+dbcontext --> db_users
+dbcontext --> db_bets
+dbcontext --> db_races
+dbcontext --> db_drivers
+dbcontext --> db_teams
+
+' ============================================================
+'  RELATIONSHIPS - BACKGROUND JOBS
+' ============================================================
+background_jobs --> race_worker
+background_jobs --> odds_worker
+
+race_worker --> openf1_client
+odds_worker --> openf1_client
+
+openf1_client --> openf1_api
+openf1_api --> external_data
+
+' ============================================================
+'  RELATIONSHIPS - DATA SYNC
+' ============================================================
+race_worker --> repositories
+odds_worker --> repositories
+
+' ============================================================
+'  NOTES & LEGENDS
+' ============================================================
+note top of angular_spa
+  **Frontend (Angular)**
+  Single Page Application
+  Lazy-loaded feature modules
+end note
+
+note top of api_controllers
+  **REST API**
+  RESTful endpoints
+  JWT authentication
+end note
+
+note top of app_services
+  **Business Logic**
+  Domain-driven design
+  Validation & mapping
+end note
+
+note top of domain_entities
+  **Domain Models**
+  Core business entities
+  Status enumerations
+end note
+
+note top of persistence
+  **EF Core ORM**
+  Entity Framework Core
+  Code-first migrations
+end note
+
+note top of sqldb
+  **Microsoft SQL Server**
+  Relational database
+  Indexed queries
+end note
+
+note top of background_jobs
+  **Background Processing**
+  Race result monitoring
+  Odds synchronization
+  Leaderboard updates
+end note
+
+@enduml

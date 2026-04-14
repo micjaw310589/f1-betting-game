@@ -19,17 +19,3 @@ F1BettingApp/
     ├── Entities/                # User, Bet, Race, Driver, Team
     ├── Enums/                   # BetStatus (Pending, Won, Lost), RaceStatus
     └── Exceptions/              # Specyficzne błędy domenowe
-
-src/app/
-├── core/                        # Singletony (serwisy API, Guardy, Interceptory)
-│   ├── services/                # ApiService, AuthService, SignalRService
-│   ├── guards/                  # AuthGuard
-│   └── interceptors/            # AuthInterceptor (dodawanie tokena JWT)
-├── shared/                      # Komponenty współdzielone (Navbar, Footer, UI-kit, Pipes)
-├── features/                    # Moduły funkcjonalne (lazy-loaded)
-│   ├── auth/                    # Logowanie i rejestracja
-│   ├── betting/                 # Lista wyścigów i formularz obstawiania
-│   ├── leaderboard/             # Tabela wyników i profile użytkowników
-│   └── race-details/            # Szczegółowe info o danym GP
-├── models/                      # Interfejsy TypeScript (Race, Bet, User)
-└── styles/                      # Globalne style i zmienne SASS

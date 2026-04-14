@@ -1,0 +1,145 @@
+@startuml F1_BettingApp_Database_Schema
+
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #FFF9C4
+  BorderColor #F57F17
+  ArrowColor #F57F17
+  FontName Arial
+}
+
+title F1 Betting Application — Database Schema (Current Domain Models)\n
+
+' ============================================================
+'  CORE TABLES (Based on Domain Layer)
+' ============================================================
+
+entity "Users" as users {
+  * user_id          : INT            <<PK, IDENTITY>>
+  --
+  username           : VARCHAR(100)   <<UNIQUE, NOT NULL>>
+  email              : VARCHAR(150)   <<UNIQUE, NOT NULL>>
+  password_hash      : VARCHAR(255)   <<NOT NULL>>
+  points             : INT            <<DEFAULT 0, NOT NULL>>
+  created_at         : DATETIME2      <<DEFAULT GETDATE()>>
+}
+
+entity "Teams" as teams {
+  * team_id          : INT            <<PK, IDENTITY>>
+  --
+  name               : VARCHAR(100)   <<NOT NULL>>
+}
+
+entity "Drivers" as drivers {
+  * driver_id        : INT            <<PK, IDENTITY>>
+  --
+  name               : VARCHAR(100)   <<NOT NULL>>
+  team_id            : INT            <<FK, NOT NULL>>
+}
+
+entity "Races" as races {
+  * race_id          : INT            <<PK, IDENTITY>>
+  --
+  name               : VARCHAR(150)   <<NOT NULL>>
+  date               : DATETIME2      <<NOT NULL>>
+  status             : VARCHAR(20)    <<NOT NULL, DEFAULT 'Scheduled'>>
+  ' Scheduled, InProgress, Finished, ResultsProcessed
+}
+
+entity "Bets" as bets {
+  * bet_id           : INT            <<PK, IDENTITY>>
+  --
+  user_id            : INT            <<FK, NOT NULL>>
+  race_id            : INT            <<FK, NOT NULL>>
+  driver_id          : INT            <<FK, NOT NULL>>
+  amount             : DECIMAL(10,2)  <<NOT NULL>>
+  status             : VARCHAR(20)    <<NOT NULL, DEFAULT 'Pending'>>
+  ' Pending, Won, Lost, Canceled
+  created_at         : DATETIME2      <<DEFAULT GETDATE()>>
+}
+
+' ============================================================
+'  ENUMERATIONS REFERENCE (Stored as VARCHAR or SMALLINT)
+' ============================================================
+
+note right of races
+  **RaceStatus** values:
+  - Scheduled
+  - InProgress
+  - Finished
+  - ResultsProcessed
+end note
+
+note right of bets
+  **BetStatus** values:
+  - Pending
+  - Won
+  - Lost
+  - Canceled
+end note
+
+' ============================================================
+'  RELATIONSHIPS & FOREIGN KEYS
+' ============================================================
+
+users   ||--o{ bets              : "places"
+races   ||--o{ bets              : "contains"
+drivers ||--o{ bets              : "subject of"
+teams   ||--o{ drivers           : "employs"
+
+' ============================================================
+'  INDEXES (Performance Optimization)
+' ============================================================
+
+note bottom of users
+  **Recommended Indexes:**
+  - idx_users_username (UNIQUE)
+  - idx_users_email (UNIQUE)
+end note
+
+note bottom of bets
+  **Recommended Indexes:**
+  - idx_bets_user_id
+  - idx_bets_race_id
+  - idx_bets_driver_id
+  - idx_bets_status
+  - idx_bets_created_at
+  - Composite: (user_id, status)
+end note
+
+note bottom of drivers
+  **Recommended Indexes:**
+  - idx_drivers_team_id
+  - idx_drivers_name
+end note
+
+note bottom of races
+  **Recommended Indexes:**
+  - idx_races_status
+  - idx_races_date
+end note
+
+' ============================================================
+'  FUTURE EXPANSION ENTITIES (Referenced in docs)
+' ============================================================
+
+note top of users
+  **Future Extensions:**
+  Consider adding:
+  - role_id (Role-based access)
+  - is_active (Soft delete flag)
+  - updated_at (Audit tracking)
+  - wallet/balance management tables
+end note
+
+note top of races
+  **Future Extensions:**
+  Consider adding:
+  - circuit_id (Track reference)
+  - season_id (Season reference)
+  - round_number
+  - qualifying_datetime
+  - sprint_datetime
+end note
+
+@enduml

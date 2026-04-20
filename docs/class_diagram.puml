@@ -1,101 +1,165 @@
-@startuml F1_BettingApp_Classes
+@startuml F1BettingGame_DomainModel
+!theme blueprint
 
-skinparam linetype ortho
-skinparam class {
-  BackgroundColor #E1F5FF
-  BorderColor #01579B
-  ArrowColor #01579B
-  FontName Arial
+' === Entities ===
+entity User {
+  - Id : Guid
+  - Username : string {unique}
+  - Email : string {unique}
+  - PasswordHash : string
+  - ProfileImageUrl : string
+  - LastLogin : DateTime
+  - IsActive : boolean
+  - IsAdmin : boolean
+  --
+  + AddPoints(points: decimal) : void
+  + DeductPoints(points: decimal) : boolean
+  + HasSufficientBalance() : boolean
 }
 
-title F1 Betting Application — Class Diagram (Domain Layer)\n
+entity Race {
+  - Id : Guid
+  - Name : string
+  - Circuit : string
+  - Country : string
+  - OpenF1RaceId : int
+  - Season : int
+  - StartDate : DateTime
+  - Status : RaceStatus
+  --
+  + CanPlaceBets() : boolean
+  + IsRaceFinished() : boolean
+}
 
-' ============================================================
-'  ENUMERATORS
-' ============================================================
+entity Driver {
+  - Id : Guid
+  - FirstName : string
+  - LastName : string
+  - Number : int
+  - Country : string
+  - OpenF1DriverId : int
+  --
+  + GetFullName() : string
+}
 
+entity Team {
+  - Id : Guid
+  - Name : string
+  - Country : string
+  - OpenF1TeamId : int
+  - Base : string
+  --
+  + GetDrivers() : List<Driver>
+}
+
+entity Bet {
+  - Id : Guid
+  - UserId : Guid
+  - RaceId : Guid
+  - BetType : BetType
+  - Odds : decimal
+  - Stake : decimal
+  - PotentialWinnings : decimal
+  - Status : BetStatus
+  - CreatedAt : DateTime
+  --
+  + CalculatePotentialWinnings() : decimal
+  + ValidateBet() : boolean
+}
+
+entity Result {
+  - Id : Guid
+  - RaceId : Guid
+  - DriverId : Guid
+  - Position : int
+  - Points : decimal
+  - FastestLap : boolean
+  - PitStopTime : decimal
+  - IsPodiumFinish() : boolean
+  - IsPointsFinish() : boolean
+}
+
+entity LeaderboardHistory {
+  - Id : Guid
+  - UserId : Guid
+  - RaceId : Guid
+  - Season : int
+  - TotalPoints : decimal
+  - Rank : int
+  - CreatedAt : DateTime
+}
+
+entity Notification {
+  - Id : Guid
+  - UserId : Guid
+  - Title : string
+  - Message : string
+  - IsRead : boolean
+  - CreatedAt : DateTime
+  --
+  + MarkAsRead() : void
+}
+
+' === Enums (Conceptual) ===
 enum BetStatus {
-  Pending
-  Won
-  Lost
-  Canceled
+  PLACED,
+  WON,
+  LOST,
+  VOID
 }
-
+enum BetType {
+  RACE_WINNER,
+  PODIUM_FINISH,
+  TOP_10_FINISH,
+  FASTEST_LAP,
+  FASTEST_PIT_STOP,
+  // ... other types
+}
 enum RaceStatus {
-  Scheduled
-  InProgress
-  Finished
-  ResultsProcessed
+  SCHEDULED,
+  LIVE,
+  FINISHED,
+  POSTPONED
+}
+enum NotificationType {
+  BET_PLACED,
+  BET_WON,
+  BET_LOST,
+  RACE_RESULT_PROCESSED,
+  SYSTEM_MESSAGE
 }
 
-' ============================================================
-'  ENTITY CLASSES
-' ============================================================
+' === Relationships ===
 
-class User {
-  - Id: int <<PK>>
-  - Username: string
-  - Email: string
-  - PasswordHash: string
-  - Points: int
-  - CreatedAt: DateTime
-  --
-  + GetBets(): ICollection<Bet>
-}
+' User to Bet
+User "1" -- "*" Bet : places >
 
-class Race {
-  - Id: int <<PK>>
-  - Name: string
-  - Date: DateTime
-  - Status: RaceStatus
-  - Bets: ICollection<Bet>
-  --
-  + IsStarted(): bool
-  + IsFinished(): bool
-}
+' User to Notification
+User "1" -- "*" Notification : receives >
 
-class Driver {
-  - Id: int <<PK>>
-  - Name: string
-  - TeamId: int <<FK>>
-  - Team: Team
-  - Bets: ICollection<Bet>
-  --
-  + GetTeam(): Team
-}
+' Race structure (Race contains Drivers, Teams, etc. - Composition/Association)
+Race "1" -- "*" Driver : involves >
+Race "1" -- "*" Team : involves >
 
-class Team {
-  - Id: int <<PK>>
-  - Name: string
-  - Drivers: ICollection<Driver>
-  --
-  + GetAllDrivers(): ICollection<Driver>
-}
+' Bet depends on Race and User
+Bet "1" -- "1" Race : for >
+Bet "1" -- "1" User : by >
 
-class Bet {
-  - Id: int <<PK>>
-  - UserId: int <<FK>>
-  - RaceId: int <<FK>>
-  - DriverId: int <<FK>>
-  - Amount: decimal
-  - Status: BetStatus
-  - CreatedAt: DateTime
-  --
-  + IsWon(): bool
-  + IsLost(): bool
-  + IsPending(): bool
-  + CalculateWinnings(multiplier: decimal): decimal
-}
+' Result depends on Race and Driver
+Result "1" -- "1" Race : for >
+Result "1" -- "1" Driver : achieved by >
 
-' ============================================================
-'  RELATIONSHIPS
-' ============================================================
+' LeaderboardHistory depends on User and Race
+User "1" -- "*" LeaderboardHistory : tracked in >
+Race "1" -- "*" LeaderboardHistory : for >
 
-User "1" --o "*" Bet : "places"
-Race "1" --o "*" Bet : "contains"
-Driver "1" --o "*" Bet : "subject of"
-Team "1" --o "*" Driver : "employs"
-Bet "many" --> "one" BetStatus : "has status"
-Race "many" --> "one" RaceStatus : "has status"
+' Notification depends on User
+Notification "1" -- "1" User : for user >
+
+' General Relationship:
+note right of Race
+  Race holds information about
+  a specific event on a given circuit.
+end note
 
 @enduml

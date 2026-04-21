@@ -108,12 +108,14 @@ enum BetStatus {
   VOID
 }
 enum BetType {
-  RACE_WINNER,
-  PODIUM_FINISH,
-  TOP_10_FINISH,
-  FASTEST_LAP,
-  FASTEST_PIT_STOP,
-  // ... other types
+  RACE_WINNER
+  PODIUM_FINISH
+  TOP_10_FINISH
+  FASTEST_LAP
+  FASTEST_PIT_STOP
+  DNF_COUNT
+  DRIVER_VS_DRIVER
+  TEAM_VS_TEAM
 }
 enum RaceStatus {
   SCHEDULED,
@@ -137,21 +139,21 @@ User "1" -- "*" Bet : places >
 ' User to Notification
 User "1" -- "*" Notification : receives >
 
-' Race structure (Race contains Drivers, Teams, etc. - Composition/Association)
-Race "1" -- "*" Driver : involves >
-Race "1" -- "*" Team : involves >
+' Race structure
+Race "1" o-- "*" Driver : participates <
+Race "1" o-- "*" Team : participates <
+Race "1" *-- "*" Result : contains >
 
-' Bet depends on Race and User
-Bet "1" -- "1" Race : for >
-Bet "1" -- "1" User : by >
+' Bet relationships
+Bet "*" -- "1" Race : for >
+Bet "*" -- "1" User : placed by >
 
-' Result depends on Race and Driver
-Result "1" -- "1" Race : for >
-Result "1" -- "1" Driver : achieved by >
+' Result relationships
+Result "*" -- "1" Driver : achieved by >
 
-' LeaderboardHistory depends on User and Race
-User "1" -- "*" LeaderboardHistory : tracked in >
-Race "1" -- "*" LeaderboardHistory : for >
+' LeaderboardHistory relationships
+LeaderboardHistory "*" -- "1" User : records for >
+LeaderboardHistory "*" -- "1" Race : at >
 
 ' Notification depends on User
 Notification "1" -- "1" User : for user >

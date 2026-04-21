@@ -1,8 +1,9 @@
 @startuml
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/skinparam component {
-  BorderThickness 2
-}
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/fa
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Component.puml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Deployment.puml
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/fontawesome.puml
+
 !startuml
 
 title F1 Betting Game - Deployment Diagram

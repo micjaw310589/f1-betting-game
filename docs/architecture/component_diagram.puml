@@ -1,5 +1,5 @@
 @startuml
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/component/
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Component.puml
 title F1 Betting Game - Component Diagram
 
 component "Angular SPA (Presentation)" as SPA

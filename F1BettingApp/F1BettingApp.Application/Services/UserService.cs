@@ -2,14 +2,15 @@ using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace F1BettingApp.Application.Services
 {
     public class UserService : IUserService
     {
-        private readonly IRepository<User> _userRepository;
+        private readonly IUserRepository _userRepository;
 
-        public UserService(IRepository<User> userRepository)
+        public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
@@ -30,8 +31,7 @@ namespace F1BettingApp.Application.Services
 
         public async Task<UserDto> GetUserByUsernameAsync(string username)
         {
-            var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == username);
+            var user = _userRepository.GetAll().FirstOrDefault(u => u.Username == username);
             if (user == null) return null;
 
             return new UserDto
@@ -57,8 +57,7 @@ namespace F1BettingApp.Application.Services
 
         public async Task<bool> ValidateUserAsync(string username, string password)
         {
-            var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == username);
+            var user = _userRepository.GetAll().FirstOrDefault(u => u.Username == username);
             return user != null && user.PasswordHash == password; // In real app, verify hash
         }
     }

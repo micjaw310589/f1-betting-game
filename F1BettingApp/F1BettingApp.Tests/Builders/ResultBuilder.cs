@@ -153,7 +153,7 @@ namespace F1BettingApp.Tests.Builders
         public Result Build()
         {
             // Use the Result constructor for validation
-            var result = new Result(_raceId, _driverId, _position, _points, _fastestLap ?? TimeSpan.Zero, _pitStopTime)
+            var result = new Result(_raceId, _driverId, _position, _points, _fastestLap ?? TimeSpan.Zero, _pitStopTime ?? TimeSpan.Zero)
             {
                 Id = _id
             };

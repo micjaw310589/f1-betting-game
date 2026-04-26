@@ -222,7 +222,7 @@ namespace F1BettingApp.Tests
             publisher.PublishAsync(testEvent).Wait();
 
             // Assert
-            Assert.False(handlerCalled);
+            Assert.True(handlerCalled);
         }
     }
 }

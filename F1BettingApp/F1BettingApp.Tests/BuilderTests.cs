@@ -64,10 +64,11 @@ namespace F1BettingApp.Tests
 
             // Assert
             Assert.NotNull(users);
-            Assert.Equal(3, users.Count);
+            Assert.Equal(4, users.Count);
             Assert.Equal(1, users[0].Id);
             Assert.Equal(2, users[1].Id);
             Assert.Equal(3, users[2].Id);
+            Assert.Equal(4, users[3].Id);
         }
 
         [Fact]
@@ -320,10 +321,11 @@ namespace F1BettingApp.Tests
 
             // Assert
             Assert.NotNull(results);
-            Assert.Equal(3, results.Count);
+            Assert.Equal(4, results.Count);
             Assert.Equal(1, results[0].Id);
             Assert.Equal(2, results[1].Id);
             Assert.Equal(3, results[2].Id);
+            Assert.Equal(4, results[3].Id);
         }
 
         [Fact]

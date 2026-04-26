@@ -8,7 +8,7 @@ namespace F1BettingApp.Domain.Entities
     {
         [Key]
         public int Id { get; set; }
-        
+
         // Foreign Keys
         public int UserId { get; set; }
         public User User { get; set; }
@@ -30,7 +30,7 @@ namespace F1BettingApp.Domain.Entities
             {
                 throw new ArgumentException("Invalid parameters provided for Notification.");
             }
-            
+
             this.UserId = userId;
             this.Title = title;
             this.Message = message;

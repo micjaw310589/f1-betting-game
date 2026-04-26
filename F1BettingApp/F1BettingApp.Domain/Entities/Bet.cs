@@ -14,10 +14,6 @@ namespace F1BettingApp.Domain.Entities
         public decimal PotentialWinnings { get; set; }
         public BetStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
-        // New properties
-        public BetType BetType { get; set; }
-        public decimal Odds { get; set; }
-        public decimal PotentialWinnings { get; set; }
 
         public Bet(int userId, int raceId, int driverId, decimal amount, BetType betType, decimal odds)
         {

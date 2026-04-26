@@ -20,30 +20,69 @@ namespace F1BettingApp.Domain.Entities
         public bool IsActive { get; set; } = true;
         public bool IsAdmin { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? ProfileImageUrl { get; set; }
+        public DateTime? LastLogin { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsAdmin { get; set; }
 
-        public ICollection<Bet> Bets { get; set; }
-        public ICollection<Notification> Notifications { get; set; }
-
-        public void AddPoints(int amount)
+        public User(string username, string email, string passwordHash) : this(username, email, passwordHash, true, false)
         {
-            if (amount <= 0)
-                return;
-
-            Points += amount;
+            // Additional validation can be added here or in dedicated validation methods
         }
 
-        public bool DeductPoints(int amount)
+        public User(string username, string email, string passwordHash, bool isActive, bool isAdmin)
         {
-            if (amount <= 0 || !HasSufficientBalance(amount))
-                return false;
-
-            Points -= amount;
-            return true;
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("Username cannot be empty.", nameof(username));
+            }
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains("@") || !email.Contains("."))
+            {
+                throw new ArgumentException("Invalid email format.", nameof(email));
+            }
+            if (string.IsNullOrWhiteSpace(passwordHash))
+            {
+                throw new ArgumentException("Password hash is required.", nameof(passwordHash));
+            }
+            if (Points < 0)
+            {
+                throw new InvalidOperationException("Points cannot be negative.");
+            }
+            Username = username;
+            Email = email;
+            PasswordHash = passwordHash;
+            Points = 10000; // Start with 0 points or initial points if provided
+            CreatedAt = DateTime.Now;
+            IsActive = isActive;
+            IsAdmin = isAdmin;
+            LastLogin = null;
         }
 
-        public bool HasSufficientBalance(int amount)
+        public void AddPoints(int points)
         {
-            return amount > 0 && Points >= amount;
+            if (points <= 0)
+            {
+                throw new ArgumentException("Points must be positive.", nameof(points));
+            }
+            Points += points;
+        }
+
+        public void DeductPoints(int points)
+        {
+            if (points <= 0)
+            {
+                throw new ArgumentException("Points must be positive.", nameof(points));
+            }
+            if (Points < points)
+            {
+                throw new InvalidOperationException("Insufficient balance to deduct points.");
+            }
+            Points -= points;
+        }
+
+        public bool HasSufficientBalance(int requiredPoints)
+        {
+            return Points >= requiredPoints;
         }
     }
 }

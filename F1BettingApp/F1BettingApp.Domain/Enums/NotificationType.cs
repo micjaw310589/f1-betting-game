@@ -1,10 +1,14 @@
-namespace F1BettingApp.Domain.Enums;
-
-public enum NotificationType
+namespace F1BettingApp.Domain.Enums
 {
-    BetPlaced,
-    BetWon,
-    BetLost,
-    RaceResultProcessed,
-    SystemMessage
+    /// <summary>
+    /// Defines the types of notifications that can be generated within the betting application.
+    /// </summary>
+    public enum NotificationType
+    {
+        BetPlaced,
+        BetWon,
+        BetLost,
+        RaceResultProcessed,
+        SystemMessage
+    }
 }

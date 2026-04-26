@@ -13,12 +13,12 @@ Create sequence diagrams for key system workflows: user registration/authenticat
 - Include all relevant system components
 
 ## Acceptance Criteria
-- [ ] User registration sequence diagram completed
-- [ ] Bet placement sequence diagram completed
-- [ ] Race result processing sequence diagram completed
-- [ ] Leaderboard update sequence diagram completed
-- [ ] All diagrams use consistent notation and styling
-- [ ] Diagrams accurately represent system workflows
+- [x] User registration sequence diagram completed
+- [x] Bet placement sequence diagram completed
+- [x] Race result processing sequence diagram completed
+- [x] Leaderboard update sequence diagram completed
+- [x] All diagrams use consistent notation and styling
+- [x] Diagrams accurately represent system workflows
 
 ## Deliverables
 - `docs/sequence_diagram_user_registration.puml`

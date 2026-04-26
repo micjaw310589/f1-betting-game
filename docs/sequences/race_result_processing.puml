@@ -1,0 +1,55 @@
+@startuml
+title Race Result Processing Sequence Diagram
+
+participant "OpenF1 API" as OpenF1
+participant "RaceService" as RS
+participant "BettingService" as BS
+participant "LeaderboardService" as LS
+participant "Database" as DB
+
+note over OpenF1, RS: Triggered by race completion
+OpenF1 -> RS : POST /api/results/sync(raceId, results)
+activate RS
+
+RS -> OpenF1 : Fetch raw race results (Top 10, Fastest Lap, etc.)
+activate OpenF1
+OpenF1 --> RS : Raw result data structure
+deactivate OpenF1
+
+RS -> RS : Update Race Status to FINISHED
+RS -> DB : Save Race Status Update (raceId, status)
+activate DB
+DB --> RS : Success
+deactivate DB
+
+RS -> BS : processRaceResults(raceId, results)
+activate BS
+
+par Process Betting Results
+  BS -> BS : Iterate through results
+  BS -> BS : Identify winner, podium finishers, etc.
+  BS -> BS : Map Result to BetType (e.g., winner bets)
+  BS -> DB : Update Bet Status (WON/LOST)
+  activate DB
+  DB --> BS : Bets updated
+  deactivate DB
+end
+
+par Process Leaderboard/Points
+  BS -> LS : calculateAndAwardPoints(raceId, results)
+  activate LS
+  LS -> DB : Update LeaderboardHistory and Points for each user
+  activate DB
+  DB --> LS : History saved
+  deactivate DB
+  LS --> BS : Points awarded successfully
+  deactivate LS
+end
+
+BS --> RS : Results processed and saved
+deactivate BS
+
+RS --> API : Success notification (Race processed)
+deactivate RS
+
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Component.puml
+title F1 Betting Game - Component Diagram
+
+component "Angular SPA (Presentation)" as SPA
+component "ASP.NET Core Web API (Presentation)" as API
+component "Application Layer" as AppLayer
+component "Domain Layer" as Domain
+component "Infrastructure Layer" as Infra
+component "Database (SQL Server)" as DB
+component "OpenF1 Client" as OpenF1
+
+' API Gateway / Controllers -> Application Layer
+SPA --> API : HTTP Calls (REST)
+API --> AppLayer : Invokes Service Calls
+
+' Application Layer contains Use Cases/Business Logic
+AppLayer --> Domain : Uses Domain Entities/Rules
+
+' Domain Layer is the Core (Stable)
+Domain --> Infra : Defines Repository Interfaces
+Domain <.. Entity : Core Entities
+
+' Infrastructure Layer implements persistence and external communication
+Infra --> DB : Implements Repositories (EF Core)
+Infra --> OpenF1 : Integrates via OpenF1Client
+
+' Relationships Flow
+API --> AppLayer : Exposes API Endpoints
+AppLayer --> Infra : Interacts with Infrastructure components (e.g., Data Access)
+Infra --> Domain : Accesses Domain objects
+
+' External Dependency
+OpenF1 ..> Infra : Uses/Integrates with API
+@enduml

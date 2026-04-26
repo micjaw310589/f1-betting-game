@@ -1,0 +1,167 @@
+@startuml F1BettingGame_DomainModel
+!theme blueprint
+
+' === Entities ===
+entity User {
+  - Id : Guid
+  - Username : string {unique}
+  - Email : string {unique}
+  - PasswordHash : string
+  - ProfileImageUrl : string
+  - LastLogin : DateTime
+  - IsActive : boolean
+  - IsAdmin : boolean
+  --
+  + AddPoints(points: decimal) : void
+  + DeductPoints(points: decimal) : boolean
+  + HasSufficientBalance() : boolean
+}
+
+entity Race {
+  - Id : Guid
+  - Name : string
+  - Circuit : string
+  - Country : string
+  - OpenF1RaceId : int
+  - Season : int
+  - StartDate : DateTime
+  - Status : RaceStatus
+  --
+  + CanPlaceBets() : boolean
+  + IsRaceFinished() : boolean
+}
+
+entity Driver {
+  - Id : Guid
+  - FirstName : string
+  - LastName : string
+  - Number : int
+  - Country : string
+  - OpenF1DriverId : int
+  --
+  + GetFullName() : string
+}
+
+entity Team {
+  - Id : Guid
+  - Name : string
+  - Country : string
+  - OpenF1TeamId : int
+  - Base : string
+  --
+  + GetDrivers() : List<Driver>
+}
+
+entity Bet {
+  - Id : Guid
+  - UserId : Guid
+  - RaceId : Guid
+  - BetType : BetType
+  - Odds : decimal
+  - Stake : decimal
+  - PotentialWinnings : decimal
+  - Status : BetStatus
+  - CreatedAt : DateTime
+  --
+  + CalculatePotentialWinnings() : decimal
+  + ValidateBet() : boolean
+}
+
+entity Result {
+  - Id : Guid
+  - RaceId : Guid
+  - DriverId : Guid
+  - Position : int
+  - Points : decimal
+  - FastestLap : boolean
+  - PitStopTime : decimal
+  - IsPodiumFinish() : boolean
+  - IsPointsFinish() : boolean
+}
+
+entity LeaderboardHistory {
+  - Id : Guid
+  - UserId : Guid
+  - RaceId : Guid
+  - Season : int
+  - TotalPoints : decimal
+  - Rank : int
+  - CreatedAt : DateTime
+}
+
+entity Notification {
+  - Id : Guid
+  - UserId : Guid
+  - Title : string
+  - Message : string
+  - IsRead : boolean
+  - CreatedAt : DateTime
+  --
+  + MarkAsRead() : void
+}
+
+' === Enums (Conceptual) ===
+enum BetStatus {
+  PLACED,
+  WON,
+  LOST,
+  VOID
+}
+enum BetType {
+  RACE_WINNER
+  PODIUM_FINISH
+  TOP_10_FINISH
+  FASTEST_LAP
+  FASTEST_PIT_STOP
+  DNF_COUNT
+  DRIVER_VS_DRIVER
+  TEAM_VS_TEAM
+}
+enum RaceStatus {
+  SCHEDULED,
+  LIVE,
+  FINISHED,
+  POSTPONED
+}
+enum NotificationType {
+  BET_PLACED,
+  BET_WON,
+  BET_LOST,
+  RACE_RESULT_PROCESSED,
+  SYSTEM_MESSAGE
+}
+
+' === Relationships ===
+
+' User to Bet
+User "1" -- "*" Bet : places >
+
+' User to Notification
+User "1" -- "*" Notification : receives >
+
+' Race structure
+Race "1" o-- "*" Driver : participates <
+Race "1" o-- "*" Team : participates <
+Race "1" *-- "*" Result : contains >
+
+' Bet relationships
+Bet "*" -- "1" Race : for >
+Bet "*" -- "1" User : placed by >
+
+' Result relationships
+Result "*" -- "1" Driver : achieved by >
+
+' LeaderboardHistory relationships
+LeaderboardHistory "*" -- "1" User : records for >
+LeaderboardHistory "*" -- "1" Race : at >
+
+' Notification depends on User
+Notification "1" -- "1" User : for user >
+
+' General Relationship:
+note right of Race
+  Race holds information about
+  a specific event on a given circuit.
+end note
+
+@enduml

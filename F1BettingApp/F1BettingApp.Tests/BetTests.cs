@@ -19,24 +19,20 @@ namespace F1BettingApp.Tests
             Assert.Equal(BetType.RaceWinner, bet.BetType);
         }
 
-        [Theory]
-        [InlineData(0.00m)]
-        [InlineData(-1.00m)]
-        public void Constructor_InvalidAmount_ThrowsArgumentException(decimal invalidAmount)
+        [Fact]
+        public void Constructor_InvalidAmount_ThrowsArgumentException()
         {
             // Act & Assert
-            var ex = Record.Exception(() => new Bet(1, 1, 1, invalidAmount, BetType.RaceWinner, 2.5m));
-            Assert.IsType<ArgumentException>(ex);
+            Assert.Throws<ArgumentException>(() => new Bet(1, 1, 1, 0.00m, BetType.RaceWinner, 2.5m));
+            Assert.Throws<ArgumentException>(() => new Bet(1, 1, 1, -1.00m, BetType.RaceWinner, 2.5m));
         }
 
-        [Theory]
-        [InlineData(0.00m)]
-        [InlineData(-1.00m)]
-        public void Constructor_InvalidOdds_ThrowsArgumentException(decimal invalidOdds)
+        [Fact]
+        public void Constructor_InvalidOdds_ThrowsArgumentException()
         {
             // Act & Assert
-            var ex = Record.Exception(() => new Bet(1, 1, 1, 10.00m, BetType.RaceWinner, invalidOdds));
-            Assert.IsType<ArgumentException>(ex);
+            Assert.Throws<ArgumentException>(() => new Bet(1, 1, 1, 10.00m, BetType.RaceWinner, 0.00m));
+            Assert.Throws<ArgumentException>(() => new Bet(1, 1, 1, 10.00m, BetType.RaceWinner, -1.00m));
         }
 
         [Fact]

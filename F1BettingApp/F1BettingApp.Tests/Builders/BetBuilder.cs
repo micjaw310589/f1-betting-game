@@ -140,6 +140,16 @@ namespace F1BettingApp.Tests.Builders
         }
 
         /// <summary>
+        /// Sets the bet as pending (default state)
+        /// </summary>
+        /// <returns>The builder instance</returns>
+        public BetBuilder AsPending()
+        {
+            _status = BetStatus.Pending;
+            return this;
+        }
+
+        /// <summary>
         /// Sets the creation date
         /// </summary>
         /// <param name="createdAt">The creation date</param>

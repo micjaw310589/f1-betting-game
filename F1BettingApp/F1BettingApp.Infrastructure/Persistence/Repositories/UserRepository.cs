@@ -45,15 +45,15 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<IEnumerable<User>> GetLeaderboardAsync(int limit)
+        public async Task<IQueryable<User>> GetLeaderboardAsync(int limit)
         {
             try
             {
                 _logger.LogInformation($"Getting leaderboard with limit: {limit}");
-                return await _dbSet
+                return _dbSet
                     .OrderByDescending(u => u.Points)
                     .Take(limit)
-                    .ToListAsync();
+                    .AsQueryable();
             }
             catch (Exception ex)
             {

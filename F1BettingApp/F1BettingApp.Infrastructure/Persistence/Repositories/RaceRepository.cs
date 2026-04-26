@@ -18,15 +18,15 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             _logger = logger;
         }
 
-        public async Task<IEnumerable<Race>> GetUpcomingRacesAsync()
+        public async Task<IQueryable<Race>> GetUpcomingRacesAsync()
         {
             try
             {
                 _logger.LogInformation("Getting upcoming races");
-                return await _dbSet
+                return _dbSet
                     .Where(r => r.Status == RaceStatus.Scheduled)
                     .OrderBy(r => r.Date)
-                    .ToListAsync();
+                    .AsQueryable();
             }
             catch (Exception ex)
             {
@@ -51,15 +51,15 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<IEnumerable<Race>> GetCurrentSeasonRacesAsync(int seasonId)
+        public async Task<IQueryable<Race>> GetCurrentSeasonRacesAsync(int seasonId)
         {
             try
             {
                 _logger.LogInformation($"Getting races for season: {seasonId}");
-                return await _dbSet
+                return _dbSet
                     .Where(r => r.Season == seasonId)
                     .OrderBy(r => r.Date)
-                    .ToListAsync();
+                    .AsQueryable();
             }
             catch (Exception ex)
             {

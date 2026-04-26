@@ -18,14 +18,14 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             _logger = logger;
         }
 
-        public async Task<IEnumerable<Bet>> GetUserBetsAsync(int userId)
+        public async Task<IQueryable<Bet>> GetUserBetsAsync(int userId)
         {
             try
             {
                 _logger.LogInformation($"Getting bets for user: {userId}");
-                return await _dbSet
+                return _dbSet
                     .Where(b => b.UserId == userId)
-                    .ToListAsync();
+                    .AsQueryable();
             }
             catch (Exception ex)
             {
@@ -34,14 +34,14 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<IEnumerable<Bet>> GetPendingBetsForRaceAsync(int raceId)
+        public async Task<IQueryable<Bet>> GetPendingBetsForRaceAsync(int raceId)
         {
             try
             {
                 _logger.LogInformation($"Getting pending bets for race: {raceId}");
-                return await _dbSet
+                return _dbSet
                     .Where(b => b.RaceId == raceId && b.Status == BetStatus.Pending)
-                    .ToListAsync();
+                    .AsQueryable();
             }
             catch (Exception ex)
             {

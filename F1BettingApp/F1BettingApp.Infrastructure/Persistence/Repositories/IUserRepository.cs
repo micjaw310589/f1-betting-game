@@ -8,6 +8,6 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
     {
         Task<User> GetByEmailAsync(string email);
         Task<User> GetByUsernameAsync(string username);
-        Task<IEnumerable<User>> GetLeaderboardAsync(int limit);
+        Task<IQueryable<User>> GetLeaderboardAsync(int limit);
     }
 }

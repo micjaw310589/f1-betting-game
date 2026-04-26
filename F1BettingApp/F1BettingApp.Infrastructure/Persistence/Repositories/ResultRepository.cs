@@ -17,16 +17,16 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             _logger = logger;
         }
 
-        public async Task<IEnumerable<Result>> GetRaceResultsAsync(int raceId)
+        public async Task<IQueryable<Result>> GetRaceResultsAsync(int raceId)
         {
             try
             {
                 _logger.LogInformation($"Getting results for race: {raceId}");
-                return await _dbSet
+                return _dbSet
                     .Where(r => r.RaceId == raceId)
                     .Include(r => r.Driver)
                     .OrderBy(r => r.Position)
-                    .ToListAsync();
+                    .AsQueryable();
             }
             catch (Exception ex)
             {
@@ -35,16 +35,16 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             }
         }
 
-        public async Task<IEnumerable<Result>> GetDriverResultsAsync(int driverId)
+        public async Task<IQueryable<Result>> GetDriverResultsAsync(int driverId)
         {
             try
             {
                 _logger.LogInformation($"Getting results for driver: {driverId}");
-                return await _dbSet
+                return _dbSet
                     .Where(r => r.DriverId == driverId)
                     .Include(r => r.Race)
                     .OrderByDescending(r => r.Race.Date)
-                    .ToListAsync();
+                    .AsQueryable();
             }
             catch (Exception ex)
             {

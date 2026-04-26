@@ -6,7 +6,7 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
 {
     public interface INotificationRepository : IRepository<Notification>
     {
-        Task<IEnumerable<Notification>> GetUnreadNotificationsAsync(int userId);
+        Task<IQueryable<Notification>> GetUnreadNotificationsAsync(int userId);
         Task MarkAsReadAsync(int notificationId);
     }
 }

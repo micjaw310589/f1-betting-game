@@ -17,15 +17,15 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             _logger = logger;
         }
 
-        public async Task<IEnumerable<Notification>> GetUnreadNotificationsAsync(int userId)
+        public async Task<IQueryable<Notification>> GetUnreadNotificationsAsync(int userId)
         {
             try
             {
                 _logger.LogInformation($"Getting unread notifications for user: {userId}");
-                return await _dbSet
+                return _dbSet
                     .Where(n => n.UserId == userId && !n.IsRead)
                     .OrderByDescending(n => n.CreatedAt)
-                    .ToListAsync();
+                    .AsQueryable();
             }
             catch (Exception ex)
             {

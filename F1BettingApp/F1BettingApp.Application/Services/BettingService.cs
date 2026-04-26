@@ -3,16 +3,15 @@ using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace F1BettingApp.Application.Services
 {
     public class BettingService : IBettingService
     {
-        private readonly IBetRepository _betRepository;
+        private readonly IRepository<Bet> _betRepository;
         private readonly IRepository<User> _userRepository;
 
-        public BettingService(IBetRepository betRepository, IRepository<User> userRepository)
+        public BettingService(IRepository<Bet> betRepository, IRepository<User> userRepository)
         {
             _betRepository = betRepository;
             _userRepository = userRepository;
@@ -52,8 +51,10 @@ namespace F1BettingApp.Application.Services
 
         public async Task<IEnumerable<BetDto>> GetUserBetsAsync(int userId)
         {
-            var bets = _betRepository.GetUserBets(userId, null);
-            return await bets.Select(b => new BetDto
+            var bets = await _betRepository.GetAllAsync();
+            var userBets = bets.Where(b => b.UserId == userId);
+
+            return userBets.Select(b => new BetDto
             {
                 Id = b.Id,
                 UserId = b.UserId,
@@ -62,7 +63,7 @@ namespace F1BettingApp.Application.Services
                 Amount = b.Amount,
                 Status = b.Status,
                 CreatedAt = b.CreatedAt
-            }).ToListAsync();
+            });
         }
     }
 }

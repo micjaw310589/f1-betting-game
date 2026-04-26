@@ -20,9 +20,9 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             return await _dbSet.FindAsync(id);
         }
 
-        public IQueryable<T> GetAll()
+        public async Task<IEnumerable<T>> GetAllAsync()
         {
-            return _dbSet;
+            return await _dbSet.ToListAsync();
         }
 
         public async Task AddAsync(T entity)

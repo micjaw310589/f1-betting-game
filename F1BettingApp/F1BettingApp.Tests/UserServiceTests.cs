@@ -9,12 +9,12 @@ namespace F1BettingApp.Tests
 {
     public class UserServiceTests
     {
-        private readonly Mock<IUserRepository> _userRepositoryMock;
+        private readonly Mock<IRepository<User>> _userRepositoryMock;
         private readonly UserService _userService;
 
         public UserServiceTests()
         {
-            _userRepositoryMock = new Mock<IUserRepository>();
+            _userRepositoryMock = new Mock<IRepository<User>>();
             _userService = new UserService(_userRepositoryMock.Object);
         }
 
@@ -70,7 +70,7 @@ namespace F1BettingApp.Tests
             {
                 new User { Id = 1, Username = "testuser", Email = "test@example.com", Points = 100 }
             };
-            _userRepositoryMock.Setup(r => r.GetAll()).Returns(users.AsQueryable());
+            _userRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(users);
 
             // Act
             var result = await _userService.GetUserByUsernameAsync("testuser");
@@ -89,7 +89,7 @@ namespace F1BettingApp.Tests
             {
                 new User { Id = 1, Username = "testuser", PasswordHash = "password", Points = 100 }
             };
-            _userRepositoryMock.Setup(r => r.GetAll()).Returns(users.AsQueryable());
+            _userRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(users);
 
             // Act
             var result = await _userService.ValidateUserAsync("testuser", "password");
@@ -106,7 +106,7 @@ namespace F1BettingApp.Tests
             {
                 new User { Id = 1, Username = "testuser", PasswordHash = "password", Points = 100 }
             };
-            _userRepositoryMock.Setup(r => r.GetAll()).Returns(users.AsQueryable());
+            _userRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(users);
 
             // Act
             var result = await _userService.ValidateUserAsync("testuser", "wrongpassword");

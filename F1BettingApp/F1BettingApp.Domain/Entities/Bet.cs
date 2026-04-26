@@ -29,7 +29,7 @@ namespace F1BettingApp.Domain.Entities
             {
                 throw new ArgumentException("Bet odds must be positive.", nameof(odds));
             }
-            
+
             // Initialize default potential winnings (assuming 1 bet unit for now, but calculated based on odds later)
             PotentialWinnings = amount * odds;
 

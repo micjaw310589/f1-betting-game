@@ -1,0 +1,59 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Component.puml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Deployment.puml
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/fontawesome.puml
+
+!startuml
+
+title F1 Betting Game - Deployment Diagram
+
+node "Client Tier" {
+  component "Angular SPA" as SPA
+}
+
+node "Application Tier (Web)" {
+  node "ASP.NET Core API Server" {
+    component "BetsController" as BetsController
+    component "RacesController" as RacesController
+    component "AuthController" as AuthController
+    component "Services/Application Layer" as AppService
+  }
+}
+
+node "Business Logic Tier" {
+  component "BettingService" as BS
+  component "RaceService" as RS
+  component "UserService" as US
+  component "LeaderboardService" as LS
+}
+
+node "Data Tier" {
+  database "SQL Server Database" as DB
+}
+
+node "External Services" {
+  component "OpenF1 API" as OpenF1
+}
+
+' Connections
+SPA --> BetsController : HTTP/HTTPS
+OpenF1 --> RaceService : External API Calls
+
+' API calls business services
+BetsController --> AppService : Invokes
+RacesController --> AppService : Invokes
+AuthController --> AppService : Invokes
+
+' Business services interact with data/external services
+AppService --> BS : Uses
+AppService --> RS : Uses
+AppService --> US : Uses
+AppService --> LS : Uses
+
+BS --> DB : Saves/Reads Bet Data
+RS --> DB : Updates Race/Result Data
+US --> DB : Manages User Data
+LS --> DB : Reads/Writes Leaderboard History
+
+@enduml

@@ -1,0 +1,60 @@
+@startuml
+title Bet Placement Workflow Sequence Diagram
+
+actor User
+participant "Angular SPA" as SPA
+participant "BetsController (API)" as API
+participant "BettingService" as BS
+participant "Bet Repository" as BR
+database "Database (Bet Repository)" as DB
+
+User -> SPA : Views betting options for a race
+SPA -> API : GET /api/bets/available/{raceId}
+activate API
+API -> BS : getAvailableBets(raceId)
+activate BS
+
+BS -> BR : getBetOptions(raceId)
+activate BR
+BR --> BS : List of available bets (BetType, Odds, etc.)
+deactivate BR
+
+BS --> API : Bet options list
+deactivate BS
+API --> SPA : 200 OK (Bet Options)
+deactivate API
+
+User -> SPA : Selects bet, inputs stake amount
+SPA -> API : POST /api/bets/place (userId, raceId, betDto)
+activate API
+API -> BS : placeBet(betDto)
+activate BS
+
+BS -> US : checkUserBalance(userId)
+activate US
+US -> DB : checkBalance(userId)
+activate DB
+DB --> US : Current Balance (decimal)
+deactivate DB
+US --> BS : Balance validated
+deactivate US
+
+alt If Bet is valid AND User has sufficient funds
+  BS -> US : checkUserFunds(stake)
+  BS -> DB : Create Bet record (temp)
+  activate DB
+  DB --> BS : Bet ID assigned
+  deactivate DB
+  BS -> BS : Calculate potential winnings and update Bet object
+  BS -> DB : Save Bet record (final)
+  activate DB
+  DB --> BS : Bet confirmed
+  deactivate DB
+  BS --> API : Bet placed successfully (BetId)
+else Otherwise (Insufficient funds, invalid bet type, race closed)
+  BS --> API : Error (Validation failed, funds too low)
+end
+
+API --> SPA : Response (Success/Error)
+deactivate API
+@enduml

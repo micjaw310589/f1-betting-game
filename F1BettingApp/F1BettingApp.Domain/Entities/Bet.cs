@@ -8,7 +8,10 @@ namespace F1BettingApp.Domain.Entities
         public int UserId { get; set; }
         public int RaceId { get; set; }
         public int DriverId { get; set; }
+        public BetType BetType { get; set; }
         public decimal Amount { get; set; }
+        public decimal Odds { get; set; }
+        public decimal PotentialWinnings { get; set; }
         public BetStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
         // New properties

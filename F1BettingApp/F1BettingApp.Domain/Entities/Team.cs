@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace F1BettingApp.Domain.Entities;
 
     public class Team

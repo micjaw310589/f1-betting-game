@@ -10,12 +10,12 @@ namespace F1BettingApp.Tests
 {
     public class RaceServiceTests
     {
-        private readonly Mock<IRepository<Race>> _raceRepositoryMock;
+        private readonly Mock<IRaceRepository> _raceRepositoryMock;
         private readonly RaceService _raceService;
 
         public RaceServiceTests()
         {
-            _raceRepositoryMock = new Mock<IRepository<Race>>();
+            _raceRepositoryMock = new Mock<IRaceRepository>();
             _raceService = new RaceService(_raceRepositoryMock.Object);
         }
 
@@ -44,7 +44,7 @@ namespace F1BettingApp.Tests
                 new Race { Id = 1, Name = "Race1", Date = DateTime.UtcNow, Status = RaceStatus.Scheduled },
                 new Race { Id = 2, Name = "Race2", Date = DateTime.UtcNow, Status = RaceStatus.Finished }
             };
-            _raceRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(races);
+            _raceRepositoryMock.Setup(r => r.GetAll()).Returns(races.AsQueryable());
 
             // Act
             var result = await _raceService.GetAllRacesAsync();
@@ -62,7 +62,7 @@ namespace F1BettingApp.Tests
                 new Race { Id = 1, Name = "Race1", Date = DateTime.UtcNow, Status = RaceStatus.Scheduled },
                 new Race { Id = 2, Name = "Race2", Date = DateTime.UtcNow, Status = RaceStatus.Finished }
             };
-            _raceRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(races);
+            _raceRepositoryMock.Setup(r => r.GetUpcomingRaces()).Returns(races.Where(r => r.Status == RaceStatus.Scheduled).AsQueryable());
 
             // Act
             var result = await _raceService.GetUpcomingRacesAsync();

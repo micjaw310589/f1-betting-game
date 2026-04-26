@@ -10,13 +10,13 @@ namespace F1BettingApp.Tests
 {
     public class BettingServiceTests
     {
-        private readonly Mock<IRepository<Bet>> _betRepositoryMock;
+        private readonly Mock<IBetRepository> _betRepositoryMock;
         private readonly Mock<IRepository<User>> _userRepositoryMock;
         private readonly BettingService _bettingService;
 
         public BettingServiceTests()
         {
-            _betRepositoryMock = new Mock<IRepository<Bet>>();
+            _betRepositoryMock = new Mock<IBetRepository>();
             _userRepositoryMock = new Mock<IRepository<User>>();
             _bettingService = new BettingService(_betRepositoryMock.Object, _userRepositoryMock.Object);
         }
@@ -59,7 +59,7 @@ namespace F1BettingApp.Tests
                 new Bet { Id = 1, UserId = 1, RaceId = 1, DriverId = 1, Amount = 50, Status = BetStatus.Pending, CreatedAt = DateTime.UtcNow },
                 new Bet { Id = 2, UserId = 2, RaceId = 1, DriverId = 2, Amount = 30, Status = BetStatus.Pending, CreatedAt = DateTime.UtcNow }
             };
-            _betRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(bets);
+            _betRepositoryMock.Setup(r => r.GetUserBets(1, null)).Returns(bets.Where(b => b.UserId == 1).AsQueryable());
 
             // Act
             var result = await _bettingService.GetUserBetsAsync(1);

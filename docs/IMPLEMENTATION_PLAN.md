@@ -37,7 +37,7 @@ The project follows a Clean Architecture approach with the following layers:
 - [ ] Include inheritance and composition relationships
 
 **Expected Output:**
-- Updated `docs/class_diagram.puml` with complete domain model
+- Updated `docs/architecture/class_diagram.puml` with complete domain model
 - PlantUML source code with proper styling and organization
 
 #### 3.1.2 Sequence Diagrams
@@ -49,10 +49,10 @@ The project follows a Clean Architecture approach with the following layers:
 - [ ] Create sequence diagram for leaderboard update process
 
 **Expected Output:**
-- `docs/sequence_diagram_user_registration.puml`
-- `docs/sequence_diagram_bet_placement.puml`
-- `docs/sequence_diagram_race_result_processing.puml`
-- `docs/sequence_diagram_leaderboard_update.puml`
+- `docs/sequences/user_registration.puml`
+- `docs/sequences/bet_placement.puml`
+- `docs/sequences/race_result_processing.puml`
+- `docs/sequences/leaderboard_update.puml`
 
 #### 3.1.3 Component and Deployment Diagrams
 
@@ -62,8 +62,8 @@ The project follows a Clean Architecture approach with the following layers:
 - [ ] Document integration points with external services
 
 **Expected Output:**
-- `docs/component_diagram.puml`
-- `docs/deployment_diagram.puml`
+- `docs/architecture/component_diagram.puml`
+- `docs/architecture/deployment_diagram.puml`
 
 ### 3.2 Phase 2: System Model Classes
 

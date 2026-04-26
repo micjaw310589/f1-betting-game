@@ -18,14 +18,14 @@ namespace F1BettingApp.Application.DTOs
         public int UserId { get; set; }
 
         /// <summary>
+        /// Gets or sets the notification title
+        /// </summary>
+        public string Title { get; set; }
+
+        /// <summary>
         /// Gets or sets the notification message
         /// </summary>
         public string Message { get; set; }
-
-        /// <summary>
-        /// Gets or sets the notification type
-        /// </summary>
-        public string Type { get; set; }
 
         /// <summary>
         /// Gets or sets whether the notification has been read
@@ -36,10 +36,5 @@ namespace F1BettingApp.Application.DTOs
         /// Gets or sets the creation date
         /// </summary>
         public DateTime CreatedAt { get; set; }
-
-        /// <summary>
-        /// Gets or sets the date when the notification was read (nullable)
-        /// </summary>
-        public DateTime? ReadAt { get; set; }
     }
 }

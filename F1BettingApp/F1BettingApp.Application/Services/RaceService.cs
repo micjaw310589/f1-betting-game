@@ -3,16 +3,25 @@ using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
+using F1BettingApp.Infrastructure.OpenF1;
+using System.Transactions;
 
 namespace F1BettingApp.Application.Services
 {
     public class RaceService : IRaceService
     {
         private readonly IRepository<Race> _raceRepository;
+        private readonly IRepository<Result> _resultRepository;
+        private readonly IOpenF1ApiClient _openF1ApiClient;
 
-        public RaceService(IRepository<Race> raceRepository)
+        public RaceService(
+            IRepository<Race> raceRepository,
+            IRepository<Result> resultRepository,
+            IOpenF1ApiClient openF1ApiClient)
         {
             _raceRepository = raceRepository;
+            _resultRepository = resultRepository;
+            _openF1ApiClient = openF1ApiClient;
         }
 
         public async Task<RaceDto> GetRaceByIdAsync(int id)
@@ -52,6 +61,105 @@ namespace F1BettingApp.Application.Services
                 RaceDate = r.Date,
                 Status = r.Status
             });
+        }
+
+        public async Task SyncRaceDataFromOpenF1Async()
+        {
+            try
+            {
+                // Get races from OpenF1 API
+                var openF1Races = await _openF1ApiClient.GetRacesAsync();
+
+                using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    try
+                    {
+                        foreach (var openF1Race in openF1Races)
+                        {
+                            var existingRace = (await _raceRepository.GetAllAsync())
+                                .FirstOrDefault(r => r.OpenF1RaceId == openF1Race.Id);
+
+                            if (existingRace == null)
+                            {
+                                // Create new race
+                                var race = new Race(
+                                    openF1Race.Name,
+                                    openF1Race.Date,
+                                    openF1Race.Circuit,
+                                    openF1Race.Country,
+                                    openF1Race.Id,
+                                    openF1Race.Season
+                                );
+
+                                await _raceRepository.AddAsync(race);
+                            }
+                            else
+                            {
+                                // Update existing race
+                                existingRace.Name = openF1Race.Name;
+                                existingRace.Date = openF1Race.Date;
+                                existingRace.Circuit = openF1Race.Circuit;
+                                existingRace.Country = openF1Race.Country;
+                                existingRace.Season = openF1Race.Season;
+
+                                await _raceRepository.UpdateAsync(existingRace);
+                            }
+                        }
+
+                        await _raceRepository.SaveChangesAsync();
+                        transaction.Complete();
+                    }
+                    catch
+                    {
+                        transaction.Dispose();
+                        throw;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to sync race data from OpenF1 API", ex);
+            }
+        }
+
+        public async Task<IEnumerable<RaceDto>> GetUpcomingRacesWithOddsAsync()
+        {
+            var races = await _raceRepository.GetAllAsync();
+            var upcomingRaces = races.Where(r => r.Status == RaceStatus.Scheduled);
+
+            // In a real app, we would calculate odds based on historical data, driver performance, etc.
+            // For this implementation, we'll use placeholder odds
+            var racesWithOdds = upcomingRaces.Select(r => new RaceDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                RaceDate = r.Date,
+                Status = r.Status,
+                // Placeholder odds - would be calculated in real implementation
+                Odds = new Dictionary<int, decimal>
+                {
+                    { 1, 2.5m }, // Driver 1 odds
+                    { 2, 3.0m }, // Driver 2 odds
+                    { 3, 4.5m }  // Driver 3 odds
+                }
+            });
+
+            return racesWithOdds;
+        }
+
+        public async Task UpdateRaceStatusAsync(int raceId, string newStatus)
+        {
+            var race = await _raceRepository.GetByIdAsync(raceId);
+            if (race == null) throw new InvalidOperationException("Race not found");
+
+            if (!Enum.TryParse<RaceStatus>(newStatus, out var status))
+            {
+                throw new ArgumentException("Invalid race status");
+            }
+
+            race.Status = status;
+            await _raceRepository.UpdateAsync(race);
+            await _raceRepository.SaveChangesAsync();
         }
     }
 }

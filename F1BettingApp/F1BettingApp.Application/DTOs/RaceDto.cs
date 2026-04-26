@@ -1,4 +1,5 @@
 using F1BettingApp.Domain.Enums;
+using System.Collections.Generic;
 
 namespace F1BettingApp.Application.DTOs
 {
@@ -10,5 +11,6 @@ namespace F1BettingApp.Application.DTOs
         public DateTime RaceDate { get; set; }
         public string Country { get; set; }
         public RaceStatus Status { get; set; }
+        public Dictionary<int, decimal> Odds { get; set; } = new Dictionary<int, decimal>();
     }
 }

@@ -23,13 +23,34 @@ namespace F1BettingApp.Application.Interfaces
         Task<UserDto> GetUserByUsernameAsync(string username);
 
         /// <summary>
-        /// Registers a new user
+        /// Registers a new user (legacy method - kept for backward compatibility)
         /// </summary>
         /// <param name="username">The username for the new user</param>
         /// <param name="email">The email for the new user</param>
         /// <param name="password">The password for the new user</param>
         /// <returns>Task representing the asynchronous operation</returns>
         Task RegisterUserAsync(string username, string email, string password);
+
+        /// <summary>
+        /// Registers a new user with DTO (recommended method)
+        /// </summary>
+        /// <param name="dto">The registration data including validated fields</param>
+        /// <returns>Authentication response containing tokens and user information</returns>
+        Task<AuthResponseDto> RegisterUserAsync(RegisterDto dto);
+
+        /// <summary>
+        /// Authenticates a user with DTO (recommended method)
+        /// </summary>
+        /// <param name="dto">The login data including username/email and password</param>
+        /// <returns>Authentication response containing tokens and user information</returns>
+        Task<AuthResponseDto> AuthenticateUserAsync(LoginDto dto);
+
+        /// <summary>
+        /// Refreshes an access token using a refresh token (recommended method)
+        /// </summary>
+        /// <param name="dto">The refresh token data</param>
+        /// <returns>Authentication response containing new tokens and user information</returns>
+        Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenDto dto);
 
         /// <summary>
         /// Validates user credentials

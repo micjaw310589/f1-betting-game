@@ -28,10 +28,34 @@ namespace F1BettingApp.Domain.Entities
 
         public Result(int raceId, int driverId, int position, int points, TimeSpan fastestLap, TimeSpan? pitStopTime)
         {
-            // Implement basic validation logic in constructor
-            if (raceId <= 0 || driverId <= 0 || position <= 0 || points < 0)
+            // Validate raceId - must be positive
+            if (raceId <= 0)
             {
-                throw new ArgumentException("Invalid race, driver, position, or points data provided.");
+                throw new ArgumentException("RaceId must be greater than 0.");
+            }
+            
+            // Validate driverId - must be positive
+            if (driverId <= 0)
+            {
+                throw new ArgumentException("DriverId must be greater than 0.");
+            }
+            
+            // If position is 0 (DNF - Did Not Finish), points must also be 0
+            if (position == 0 && points != 0)
+            {
+                throw new ArgumentException("Position 0 (DNF) requires points to be 0.");
+            }
+            
+            // Validate points are non-negative for finishing positions
+            if (points < 0)
+            {
+                throw new ArgumentException("Points cannot be negative.");
+            }
+            
+            // Validate position range (1-20 for finishing positions, 0 for DNF)
+            if ((position != 0 && position < 1) || position > 20)
+            {
+                throw new ArgumentException("Position must be between 0 and 20.");
             }
             
             this.RaceId = raceId;

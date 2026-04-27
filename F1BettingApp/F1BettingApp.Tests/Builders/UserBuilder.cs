@@ -144,7 +144,7 @@ namespace F1BettingApp.Tests.Builders
             var users = new List<User>();
             for (int i = 0; i < count; i++)
             {
-                users.Add(WithId(_id + i).Build());
+                users.Add(WithId(i + 1).Build());
             }
             return users;
         }

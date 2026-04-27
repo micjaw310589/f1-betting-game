@@ -14,6 +14,7 @@ public class Team
         if (string.IsNullOrWhiteSpace(country)) throw new ArgumentException("Team country is required.", nameof(country));
         if (string.IsNullOrWhiteSpace(openF1TeamId)) throw new ArgumentException("OpenF1TeamId is required.", nameof(openF1TeamId));
 
+        Id = Math.Abs(Guid.NewGuid().GetHashCode());
         Name = name;
         Country = country;
         OpenF1TeamId = openF1TeamId;

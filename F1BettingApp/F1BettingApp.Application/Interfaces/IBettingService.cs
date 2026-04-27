@@ -12,9 +12,10 @@ namespace F1BettingApp.Application.Interfaces
         /// <summary>
         /// Places a bet on a specific driver in a race
         /// </summary>
+        /// <param name="userId">The authenticated user ID</param>
         /// <param name="dto">The PlaceBetDto containing all bet information</param>
         /// <returns>The created BetResponseDto with complete bet details</returns>
-        Task<BetResponseDto> PlaceBetAsync(PlaceBetDto dto);
+        Task<BetResponseDto> PlaceBetAsync(string userId, PlaceBetDto dto);
 
         /// <summary>
         /// Cancels an existing bet
@@ -58,9 +59,10 @@ namespace F1BettingApp.Application.Interfaces
         /// <summary>
         /// Validates a bet before placing it (without creating)
         /// </summary>
+        /// <param name="userId">The authenticated user ID</param>
         /// <param name="dto">The PlaceBetDto to validate</param>
         /// <returns>Validation result with any errors found</returns>
-        Task<BetValidationResult> ValidateBetAsync(PlaceBetDto dto);
+        Task<BetValidationResult> ValidateBetAsync(string userId, PlaceBetDto dto);
 
         /// <summary>
         /// Gets available races that can accept bets

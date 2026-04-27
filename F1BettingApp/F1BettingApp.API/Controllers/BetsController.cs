@@ -70,8 +70,13 @@ namespace F1BettingApp.API.Controllers
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                             ?? User.Identity?.Name;
 
-                // Call service to place the bet (userId is extracted internally by the service)
-                var result = await _bettingService.PlaceBetAsync(dto);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
+
+                // Call service to place the bet using the authenticated user ID
+                var result = await _bettingService.PlaceBetAsync(userId, dto);
 
                 _logger.LogInformation("Bet placed successfully");
 
@@ -130,6 +135,11 @@ namespace F1BettingApp.API.Controllers
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                             ?? User.Identity?.Name;
 
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
+
                 var bets = await _bettingService.GetUserBetsAsync(userId);
 
                 return Ok(bets);
@@ -161,6 +171,11 @@ namespace F1BettingApp.API.Controllers
             {
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                             ?? User.Identity?.Name;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
 
                 var bet = await _bettingService.GetBetByIdAsync(id, userId);
 
@@ -199,6 +214,11 @@ namespace F1BettingApp.API.Controllers
             {
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                             ?? User.Identity?.Name;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
 
                 await _bettingService.CancelBetAsync(id, userId);
 

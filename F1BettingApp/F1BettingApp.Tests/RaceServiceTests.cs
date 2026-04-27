@@ -15,14 +15,14 @@ namespace F1BettingApp.Tests
 {
     public class RaceServiceTests
     {
-        private readonly Mock<IRepository<Race>> _raceRepositoryMock;
+        private readonly Mock<IRaceRepositoryExtensions> _raceRepositoryMock;
         private readonly Mock<IRepository<Result>> _resultRepositoryMock;
         private readonly Mock<IOpenF1ApiClient> _openF1ApiClientMock;
         private readonly RaceService _raceService;
 
         public RaceServiceTests()
         {
-            _raceRepositoryMock = new Mock<IRepository<Race>>();
+            _raceRepositoryMock = new Mock<IRaceRepositoryExtensions>();
             _resultRepositoryMock = new Mock<IRepository<Result>>();
             _openF1ApiClientMock = new Mock<IOpenF1ApiClient>();
             _raceService = new RaceService(

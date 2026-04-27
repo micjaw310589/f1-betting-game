@@ -15,18 +15,18 @@ namespace F1BettingApp.Tests
     {
         private readonly Mock<IRepository<User>> _userRepositoryMock;
         private readonly Mock<IRepository<Bet>> _betRepositoryMock;
-        private readonly Mock<IRepository<Result>> _resultRepositoryMock;
+        private readonly Mock<IConfiguration> _configurationMock;
         private readonly UserService _userService;
 
         public UserServiceTests()
         {
             _userRepositoryMock = new Mock<IRepository<User>>();
             _betRepositoryMock = new Mock<IRepository<Bet>>();
-            _resultRepositoryMock = new Mock<IRepository<Result>>();
+            _configurationMock = new Mock<IConfiguration>();
             _userService = new UserService(
                 _userRepositoryMock.Object,
                 _betRepositoryMock.Object,
-                _resultRepositoryMock.Object);
+                _configurationMock.Object);
         }
 
         [Fact]

@@ -24,10 +24,7 @@ namespace F1BettingApp.Tests
             _userRepositoryMock = new Mock<IRepository<User>>();
             _leaderboardHistoryRepositoryMock = new Mock<IRepository<LeaderboardHistory>>();
             _raceRepositoryMock = new Mock<IRepository<Race>>();
-            _leaderboardService = new LeaderboardService(
-                _userRepositoryMock.Object,
-                _leaderboardHistoryRepositoryMock.Object,
-                _raceRepositoryMock.Object);
+            _leaderboardService = new LeaderboardService();
         }
 
         [Fact]

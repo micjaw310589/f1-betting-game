@@ -15,24 +15,30 @@ namespace F1BettingApp.Tests
 {
     public class BettingServiceTests
     {
-        private readonly Mock<IRepository<Bet>> _mockBetRepository;
+        private readonly Mock<IBetRepositoryExtensions> _mockBetRepository;
         private readonly Mock<IRepository<User>> _mockUserRepository;
-        private readonly Mock<IRepository<Race>> _mockRaceRepository;
-        private readonly Mock<IRepository<Result>> _mockResultRepository;
+        private readonly Mock<IRaceRepositoryExtensions> _mockRaceRepository;
+        private readonly Mock<IRepository<Driver>> _mockDriverRepository;
+        private readonly Mock<IUserService> _mockUserService;
+        private readonly Mock<IRaceService> _mockRaceService;
         private readonly BettingService _bettingService;
 
         public BettingServiceTests()
         {
-            _mockBetRepository = new Mock<IRepository<Bet>>();
+            _mockBetRepository = new Mock<IBetRepositoryExtensions>();
             _mockUserRepository = new Mock<IRepository<User>>();
-            _mockRaceRepository = new Mock<IRepository<Race>>();
-            _mockResultRepository = new Mock<IRepository<Result>>();
+            _mockRaceRepository = new Mock<IRaceRepositoryExtensions>();
+            _mockDriverRepository = new Mock<IRepository<Driver>>();
+            _mockUserService = new Mock<IUserService>();
+            _mockRaceService = new Mock<IRaceService>();
 
             _bettingService = new BettingService(
                 _mockBetRepository.Object,
                 _mockUserRepository.Object,
                 _mockRaceRepository.Object,
-                _mockResultRepository.Object);
+                _mockDriverRepository.Object,
+                _mockUserService.Object,
+                _mockRaceService.Object);
         }
 
         [Fact]

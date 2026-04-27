@@ -80,7 +80,7 @@ namespace F1BettingApp.API.Controllers
                 return Ok(new RegisterResponseDto
                 {
                     IsSuccess = true,
-                    User = userDto
+                    User = userDto.User
                 });
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))

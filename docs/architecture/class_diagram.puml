@@ -1,167 +1,198 @@
 @startuml F1BettingGame_DomainModel
 !theme blueprint
 
-' === Entities ===
-entity User {
-  - Id : Guid
-  - Username : string {unique}
-  - Email : string {unique}
-  - PasswordHash : string
-  - ProfileImageUrl : string
-  - LastLogin : DateTime
-  - IsActive : boolean
-  - IsAdmin : boolean
-  --
-  + AddPoints(points: decimal) : void
-  + DeductPoints(points: decimal) : boolean
-  + HasSufficientBalance() : boolean
+' === Value Objects ===
+class Money {
+  - _amount : decimal
+  + Amount : decimal
+  + FromDecimal(amount: decimal) : Money
+  + Zero() : Money
+  + Add(other: Money) : Money
+  + Subtract(other: Money) : Money
+  + Multiply(multiplier: decimal) : Money
+  + Equals(other: Money) : boolean
+  + GetHashCode() : int
 }
 
-entity Race {
-  - Id : Guid
-  - Name : string
-  - Circuit : string
-  - Country : string
-  - OpenF1RaceId : int
-  - Season : int
-  - StartDate : DateTime
-  - Status : RaceStatus
+class Odds {
+  - _value : decimal
+  + Value : decimal
+  + FromDecimal(value: decimal) : Odds
+  + CalculatePayout(betAmount: Money) : Money
+  + Equals(other: Odds) : boolean
+  + GetHashCode() : int
+}
+
+class RaceDate {
+  - _dateTime : DateTime
+  + Value : DateTime
+  + FromDateTime(dateTime: DateTime) : RaceDate
+  + Today() : RaceDate
+  + Equals(other: RaceDate) : boolean
+  + GetHashCode() : int
+}
+
+' === Entities ===
+class User {
+  + Id : int
+  + Username : string
+  + Email : string
+  + PasswordHash : string
+  + Points : int
+  + CreatedAt : DateTime
+  + ProfileImageUrl : string?
+  + LastLogin : DateTime?
+  + IsActive : boolean
+  + IsAdmin : boolean
+  --
+  + AddPoints(points: int) : void
+  + DeductPoints(points: int) : void
+  + HasSufficientBalance(requiredPoints: int) : boolean
+}
+
+class Race {
+  + Id : int
+  + Name : string
+  + Date : DateTime
+  + Status : RaceStatus
+  + Circuit : string
+  + Country : string
+  + OpenF1RaceId : string
+  + Season : int
+  + Bets : ICollection<Bet>
   --
   + CanPlaceBets() : boolean
   + IsRaceFinished() : boolean
 }
 
-entity Driver {
-  - Id : Guid
-  - FirstName : string
-  - LastName : string
-  - Number : int
-  - Country : string
-  - OpenF1DriverId : int
+class Driver {
+  + Id : int
+  + Name : string
+  + Country : string
+  + OpenF1DriverId : string
+  + TeamId : int
+  + Team : Team
+  + Bets : ICollection<Bet>
   --
   + GetFullName() : string
 }
 
-entity Team {
-  - Id : Guid
-  - Name : string
-  - Country : string
-  - OpenF1TeamId : int
-  - Base : string
+class Team {
+  + Id : int
+  + Name : string
+  + Country : string
+  + OpenF1TeamId : string
+  + Drivers : ICollection<Driver>
   --
-  + GetDrivers() : List<Driver>
+  + GetDrivers() : string
 }
 
-entity Bet {
-  - Id : Guid
-  - UserId : Guid
-  - RaceId : Guid
-  - BetType : BetType
-  - Odds : decimal
-  - Stake : decimal
-  - PotentialWinnings : decimal
-  - Status : BetStatus
-  - CreatedAt : DateTime
+class Bet {
+  + Id : int
+  + UserId : int
+  + RaceId : int
+  + DriverId : int
+  + BetType : BetType
+  + Amount : decimal
+  + Odds : decimal
+  + PotentialWinnings : decimal
+  + Status : BetStatus
+  + CreatedAt : DateTime
   --
-  + CalculatePotentialWinnings() : decimal
-  + ValidateBet() : boolean
+  + ValidateBet() : void
 }
 
-entity Result {
-  - Id : Guid
-  - RaceId : Guid
-  - DriverId : Guid
-  - Position : int
-  - Points : decimal
-  - FastestLap : boolean
-  - PitStopTime : decimal
-  - IsPodiumFinish() : boolean
-  - IsPointsFinish() : boolean
+class Result {
+  + Id : int
+  + RaceId : int
+  + Race : Race
+  + DriverId : int
+  + Driver : Driver
+  + UserId : int
+  + User : User
+  + Position : int
+  + Points : int
+  + FastestLap : TimeSpan?
+  + PitStopTime : TimeSpan?
+  --
+  + IsPodiumFinish() : boolean
+  + IsPointsFinish() : boolean
 }
 
-entity LeaderboardHistory {
-  - Id : Guid
-  - UserId : Guid
-  - RaceId : Guid
-  - Season : int
-  - TotalPoints : decimal
-  - Rank : int
-  - CreatedAt : DateTime
+class LeaderboardHistory {
+  + Id : int
+  + UserId : int
+  + User : User
+  + RaceId : int
+  + Race : Race
+  + Season : string
+  + TotalPoints : int
+  + Rank : int
+  + CreatedAt : DateTime
 }
 
-entity Notification {
-  - Id : Guid
-  - UserId : Guid
-  - Title : string
-  - Message : string
-  - IsRead : boolean
-  - CreatedAt : DateTime
+class Notification {
+  + Id : int
+  + UserId : int
+  + User : User
+  + Title : string
+  + Message : string
+  + IsRead : boolean
+  + CreatedAt : DateTime
   --
   + MarkAsRead() : void
 }
 
-' === Enums (Conceptual) ===
+' === Enums ===
 enum BetStatus {
-  PLACED,
-  WON,
-  LOST,
-  VOID
+  Pending
+  Won
+  Lost
+  Canceled
 }
+
 enum BetType {
-  RACE_WINNER
-  PODIUM_FINISH
-  TOP_10_FINISH
-  FASTEST_LAP
-  FASTEST_PIT_STOP
-  DNF_COUNT
-  DRIVER_VS_DRIVER
-  TEAM_VS_TEAM
+  Unknown = 0
+  RaceWinner
+  PodiumFinish
+  Top10Finish
+  FastestLap
+  FastestPitStop
+  DNFCount
+  DriverVsDriver
+  TeamVsTeam
 }
+
 enum RaceStatus {
-  SCHEDULED,
-  LIVE,
-  FINISHED,
-  POSTPONED
+  Scheduled
+  InProgress
+  Finished
+  ResultsProcessed
 }
+
 enum NotificationType {
-  BET_PLACED,
-  BET_WON,
-  BET_LOST,
-  RACE_RESULT_PROCESSED,
-  SYSTEM_MESSAGE
+  BetPlaced
+  BetWon
+  BetLost
+  RaceResultProcessed
+  SystemMessage
 }
 
 ' === Relationships ===
-
-' User to Bet
 User "1" -- "*" Bet : places >
-
-' User to Notification
 User "1" -- "*" Notification : receives >
+User "1" -- "*" LeaderboardHistory : tracked in >
+User "1" -- "*" Result : tied to >
+Race "1" -- "*" Bet : for >
+Race "1" -- "*" Result : has >
+Race "1" -- "*" LeaderboardHistory : records >
+Team "1" -- "*" Driver : has >
+Driver "1" -- "*" Bet : selected in >
+Driver "1" -- "*" Result : achieved by >
 
-' Race structure
-Race "1" o-- "*" Driver : participates <
-Race "1" o-- "*" Team : participates <
-Race "1" *-- "*" Result : contains >
-
-' Bet relationships
-Bet "*" -- "1" Race : for >
-Bet "*" -- "1" User : placed by >
-
-' Result relationships
-Result "*" -- "1" Driver : achieved by >
-
-' LeaderboardHistory relationships
-LeaderboardHistory "*" -- "1" User : records for >
-LeaderboardHistory "*" -- "1" Race : at >
-
-' Notification depends on User
-Notification "1" -- "1" User : for user >
-
-' General Relationship:
 note right of Race
-  Race holds information about
-  a specific event on a given circuit.
+  Race captures a scheduled or completed
+  Formula 1 event and associated betting state.
 end note
 
 @enduml

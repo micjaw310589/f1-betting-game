@@ -3,58 +3,56 @@ title Bet Placement Workflow Sequence Diagram
 
 actor User
 participant "Angular SPA" as SPA
-participant "BetsController (API)" as API
+participant "BetsController" as API
 participant "BettingService" as BS
+participant "User Repository" as UR
+participant "Race Repository" as RR
 participant "Bet Repository" as BR
-database "Database (Bet Repository)" as DB
 
-User -> SPA : Views betting options for a race
-SPA -> API : GET /api/bets/available/{raceId}
+User -> SPA : Submit bet details
+SPA -> API : POST /api/bets
 activate API
-API -> BS : getAvailableBets(raceId)
+API -> BS : PlaceBetAsync(userId, raceId, driverId, amount)
 activate BS
 
-BS -> BR : getBetOptions(raceId)
-activate BR
-BR --> BS : List of available bets (BetType, Odds, etc.)
-deactivate BR
+BS -> UR : GetByIdAsync(userId)
+activate UR
+UR --> BS : User
+deactivate UR
 
-BS --> API : Bet options list
-deactivate BS
-API --> SPA : 200 OK (Bet Options)
-deactivate API
+BS -> RR : GetByIdAsync(raceId)
+activate RR
+RR --> BS : Race
+deactivate RR
 
-User -> SPA : Selects bet, inputs stake amount
-SPA -> API : POST /api/bets/place (userId, raceId, betDto)
-activate API
-API -> BS : placeBet(betDto)
-activate BS
+alt User has balance and race accepts bets
+  BS -> BR : AddAsync(new Bet)
+  activate BR
+  BR --> BS : Bet tracked
+  deactivate BR
 
-BS -> US : checkUserBalance(userId)
-activate US
-US -> DB : checkBalance(userId)
-activate DB
-DB --> US : Current Balance (decimal)
-deactivate DB
-US --> BS : Balance validated
-deactivate US
+  BS -> UR : UpdateAsync(user.Points -= amount)
+  activate UR
+  UR --> BS : User updated
+  deactivate UR
 
-alt If Bet is valid AND User has sufficient funds
-  BS -> US : checkUserFunds(stake)
-  BS -> DB : Create Bet record (temp)
-  activate DB
-  DB --> BS : Bet ID assigned
-  deactivate DB
-  BS -> BS : Calculate potential winnings and update Bet object
-  BS -> DB : Save Bet record (final)
-  activate DB
-  DB --> BS : Bet confirmed
-  deactivate DB
-  BS --> API : Bet placed successfully (BetId)
-else Otherwise (Insufficient funds, invalid bet type, race closed)
-  BS --> API : Error (Validation failed, funds too low)
+  BS -> BR : SaveChangesAsync()
+  activate BR
+  BR --> BS : Changes persisted
+  deactivate BR
+
+  BS -> UR : SaveChangesAsync()
+  activate UR
+  UR --> BS : Changes persisted
+  deactivate UR
+
+  BS --> API : Success
+else Validation failed
+  BS --> API : InvalidOperationException
 end
 
-API --> SPA : Response (Success/Error)
+deactivate BS
+API --> SPA : HTTP response
 deactivate API
+
 @enduml

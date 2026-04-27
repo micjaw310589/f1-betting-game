@@ -1,55 +1,38 @@
 @startuml
 title Race Result Processing Sequence Diagram
 
-participant "OpenF1 API" as OpenF1
 participant "RaceService" as RS
 participant "BettingService" as BS
-participant "LeaderboardService" as LS
-participant "Database" as DB
+participant "Race Repository" as RR
+participant "Bet Repository" as BR
+participant "Result Repository" as ResR
 
-note over OpenF1, RS: Triggered by race completion
-OpenF1 -> RS : POST /api/results/sync(raceId, results)
-activate RS
+RS -> RR : GetByIdAsync(raceId)
+activate RR
+RR --> RS : Race
+deactivate RR
 
-RS -> OpenF1 : Fetch raw race results (Top 10, Fastest Lap, etc.)
-activate OpenF1
-OpenF1 --> RS : Raw result data structure
-deactivate OpenF1
+RS -> RR : UpdateAsync(race.Status = Finished)
+RS -> RR : SaveChangesAsync()
 
-RS -> RS : Update Race Status to FINISHED
-RS -> DB : Save Race Status Update (raceId, status)
-activate DB
-DB --> RS : Success
-deactivate DB
+BS -> RR : GetByIdAsync(raceId)
+activate RR
+RR --> BS : Race
+deactivate RR
 
-RS -> BS : processRaceResults(raceId, results)
-activate BS
+BS -> BR : GetAllAsync()
+activate BR
+BR --> BS : bets
+deactivate BR
 
-par Process Betting Results
-  BS -> BS : Iterate through results
-  BS -> BS : Identify winner, podium finishers, etc.
-  BS -> BS : Map Result to BetType (e.g., winner bets)
-  BS -> DB : Update Bet Status (WON/LOST)
-  activate DB
-  DB --> BS : Bets updated
-  deactivate DB
+BS -> ResR : GetAllAsync()
+activate ResR
+ResR --> BS : results
+deactivate ResR
+
+loop for each pending bet on race
+  BS -> BR : UpdateAsync(bet.Status = Won/Lost)
 end
-
-par Process Leaderboard/Points
-  BS -> LS : calculateAndAwardPoints(raceId, results)
-  activate LS
-  LS -> DB : Update LeaderboardHistory and Points for each user
-  activate DB
-  DB --> LS : History saved
-  deactivate DB
-  LS --> BS : Points awarded successfully
-  deactivate LS
-end
-
-BS --> RS : Results processed and saved
-deactivate BS
-
-RS --> API : Success notification (Race processed)
-deactivate RS
+BS -> BR : SaveChangesAsync()
 
 @enduml

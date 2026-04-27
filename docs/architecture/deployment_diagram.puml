@@ -1,59 +1,27 @@
 @startuml
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Component.puml
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Deployment.puml
-
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/fontawesome.puml
-
-!startuml
-
 title F1 Betting Game - Deployment Diagram
 
-node "Client Tier" {
-  component "Angular SPA" as SPA
+node "Client" as Client {
+  artifact "Angular SPA" as SPA
 }
 
-node "Application Tier (Web)" {
-  node "ASP.NET Core API Server" {
-    component "BetsController" as BetsController
-    component "RacesController" as RacesController
-    component "AuthController" as AuthController
-    component "Services/Application Layer" as AppService
-  }
+node "Application Server" as AppServer {
+  artifact "ASP.NET Core API" as API
+  artifact "Application Services" as AppSvc
+  artifact "Domain Model" as Domain
+  artifact "Infrastructure" as Infra
 }
 
-node "Business Logic Tier" {
-  component "BettingService" as BS
-  component "RaceService" as RS
-  component "UserService" as US
-  component "LeaderboardService" as LS
+database "SQL Server Database" as DB
+node "External Service" as External {
+  artifact "OpenF1 API" as OpenF1
 }
 
-node "Data Tier" {
-  database "SQL Server Database" as DB
-}
-
-node "External Services" {
-  component "OpenF1 API" as OpenF1
-}
-
-' Connections
-SPA --> BetsController : HTTP/HTTPS
-OpenF1 --> RaceService : External API Calls
-
-' API calls business services
-BetsController --> AppService : Invokes
-RacesController --> AppService : Invokes
-AuthController --> AppService : Invokes
-
-' Business services interact with data/external services
-AppService --> BS : Uses
-AppService --> RS : Uses
-AppService --> US : Uses
-AppService --> LS : Uses
-
-BS --> DB : Saves/Reads Bet Data
-RS --> DB : Updates Race/Result Data
-US --> DB : Manages User Data
-LS --> DB : Reads/Writes Leaderboard History
+SPA --> API : HTTPS/JSON
+API --> AppSvc : service calls
+AppSvc --> Domain : domain rules
+AppSvc --> Infra : repositories
+Infra --> DB : EF Core
+AppSvc --> OpenF1 : sync race data
 
 @enduml

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
 using System.Text.Json;
-
+using F1BettingApp.Application.Exceptions;
 namespace F1BettingApp.API.Controllers
 {
     /// <summary>

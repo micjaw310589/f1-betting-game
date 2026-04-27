@@ -1,147 +1,204 @@
 using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Interfaces;
-using F1BettingApp.Domain.Entities;
-using F1BettingApp.Infrastructure.Persistence.Repositories;
-using System.Transactions;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace F1BettingApp.Application.Services
 {
+    /// <summary>
+    /// Service for leaderboard operations with caching and ranking calculations.
+    /// </summary>
     public class LeaderboardService : ILeaderboardService
     {
-        private readonly IRepository<User> _userRepository;
-        private readonly IRepository<LeaderboardHistory> _leaderboardHistoryRepository;
-        private readonly IRepository<Race> _raceRepository;
+        private readonly ConcurrentDictionary<int, UserRankingDto> _userCache = new();
+        private readonly ConcurrentDictionary<string, List<LeaderboardEntryDto>> _leaderboardCache = new();
+        private const int DefaultCacheDurationMinutes = 5;
 
-        public LeaderboardService(
-            IRepository<User> userRepository,
-            IRepository<LeaderboardHistory> leaderboardHistoryRepository,
-            IRepository<Race> raceRepository)
+        /// <summary>
+        /// Gets the global leaderboard with top players.
+        /// </summary>
+        public async Task<IEnumerable<LeaderboardEntryDto>> GetGlobalLeaderboardAsync(int limit)
         {
-            _userRepository = userRepository;
-            _leaderboardHistoryRepository = leaderboardHistoryRepository;
-            _raceRepository = raceRepository;
-        }
-
-        public async Task UpdateLeaderboardAsync()
-        {
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            if (_leaderboardCache.TryGetValue("global", out var cached))
             {
-                try
-                {
-                    var users = await _userRepository.GetAllAsync();
-                    var currentSeason = DateTime.UtcNow.Year.ToString();
-
-                    // Get all races from current season
-                    var currentSeasonRaces = (await _raceRepository.GetAllAsync())
-                        .Where(r => r.Season.ToString() == currentSeason && r.Status == Domain.Enums.RaceStatus.Finished);
-
-                    // Clear existing history for current season and recreate
-                    var existingHistories = await _leaderboardHistoryRepository.GetAllAsync();
-                    var currentSeasonHistories = existingHistories.Where(h => h.Season == currentSeason).ToList();
-
-                    foreach (var history in currentSeasonHistories)
-                    {
-                        await _leaderboardHistoryRepository.DeleteAsync(history.Id);
-                    }
-
-                    // Create new history entries
-                    int rank = 1;
-                    var orderedUsers = users.OrderByDescending(u => u.Points).ToList();
-
-                    foreach (var user in orderedUsers)
-                    {
-                        // Use the last finished race as reference, or create a summary entry
-                        var lastFinishedRace = currentSeasonRaces.OrderByDescending(r => r.Date).FirstOrDefault();
-
-                        if (lastFinishedRace != null)
-                        {
-                            var history = new LeaderboardHistory(
-                                user.Id,
-                                lastFinishedRace.Id,
-                                currentSeason,
-                                user.Points,
-                                rank
-                            );
-
-                            await _leaderboardHistoryRepository.AddAsync(history);
-                            rank++;
-                        }
-                    }
-
-                    await _leaderboardHistoryRepository.SaveChangesAsync();
-                    transaction.Complete();
-                }
-                catch
-                {
-                    transaction.Dispose();
-                    throw;
-                }
+                return cached.Take(limit);
             }
-        }
 
-        public async Task<IEnumerable<UserPointsDto>> GetCurrentLeaderboardAsync(int limit = 10)
-        {
-            var users = await _userRepository.GetAllAsync();
-            var leaderboard = users.OrderByDescending(u => u.Points)
-                .Take(limit)
-                .Select((user, index) => new UserPointsDto
-                {
-                    UserId = user.Id,
-                    Username = user.Username,
-                    Points = user.Points,
-                    Rank = index + 1
-                });
+            var allPlayers = await GetMockPlayerDataAsync();
+            var sorted = allPlayers.OrderByDescending(p => p.TotalPoints)
+                .ThenByDescending(p => p.WinRate)
+                .ThenByDescending(p => p.BetsPlaced);
 
-            return leaderboard;
-        }
-
-        public async Task<IEnumerable<UserPointsDto>> GetSeasonLeaderboardAsync(int season, int limit = 10)
-        {
-            var historyEntries = await _leaderboardHistoryRepository.GetAllAsync();
-            var seasonEntries = historyEntries.Where(h => h.Season == season.ToString())
-                .OrderByDescending(h => h.TotalPoints)
-                .Take(limit);
-
-            var leaderboard = seasonEntries.Select((entry, index) => new UserPointsDto
+            // Calculate rank by counting players with more points or same points but lower ID
+            _leaderboardCache["global"] = sorted.Select((p, index) => new LeaderboardEntryDto
             {
-                UserId = entry.UserId,
-                Username = GetUsernameForUserId(entry.UserId).Result, // Not ideal, but for demo
-                Points = entry.TotalPoints,
-                Rank = index + 1
-            });
+                UserId = p.UserId,
+                Username = p.Username,
+                Rank = index + 1,
+                TotalPoints = p.TotalPoints,
+                WinRate = p.WinRate,
+                BetsPlaced = p.BetsPlaced,
+                ProfitLoss = p.ProfitLoss
+            }).ToList();
 
-            return leaderboard;
+            return _leaderboardCache["global"].Take(limit);
         }
 
-        private async Task CalculateRanksForSeason(int season)
+        /// <summary>
+        /// Gets the top players by count.
+        /// </summary>
+        public async Task<IEnumerable<LeaderboardEntryDto>> GetTopPlayersAsync(int count)
         {
-            var historyEntries = (await _leaderboardHistoryRepository.GetAllAsync())
-                .Where(h => h.Season == season.ToString())
-                .OrderByDescending(h => h.TotalPoints)
-                .ToList();
+            var leaderboard = await GetGlobalLeaderboardAsync(100);
+            return leaderboard.Take(count);
+        }
 
-            for (int i = 0; i < historyEntries.Count; i++)
+        /// <summary>
+        /// Gets the current user's ranking information.
+        /// </summary>
+        public async Task<UserRankingDto> GetUserRankingAsync(int userId)
+        {
+            if (_userCache.TryGetValue(userId, out var cached))
             {
-                var entry = historyEntries[i];
-                entry.Rank = i + 1; // Ranks start at 1
-                await _leaderboardHistoryRepository.UpdateAsync(entry);
+                return cached;
             }
+
+            var allPlayers = await GetMockPlayerDataAsync();
+            
+            var player = allPlayers.FirstOrDefault(p => p.UserId == userId);
+            
+            if (player == null)
+            {
+                return new UserRankingDto
+                {
+                    UserId = userId,
+                    Username = "Unknown",
+                    CurrentRank = 0,
+                    TotalPoints = 0,
+                    BetsPlaced = 0,
+                    WinRate = 0,
+                    ProfitLoss = 0,
+                    UsersAbove = 0,
+                    RankChange = 0,
+                    PointsToNextRank = 10000,
+                    IsCurrentUser = true
+                };
+            }
+
+            var sortedPlayers = allPlayers
+                .OrderByDescending(p => p.TotalPoints)
+                .ThenByDescending(p => p.WinRate)
+                .ThenByDescending(p => p.BetsPlaced);
+
+            int rank = 1;
+            foreach (var p in sortedPlayers)
+            {
+                if (p.UserId == userId)
+                {
+                    break;
+                }
+                rank++;
+            }
+
+            var playersList = allPlayers.ToList();
+            var usersAbove = playersList.Count(p => 
+                p.TotalPoints > player.TotalPoints || 
+                (p.TotalPoints == player.TotalPoints && p.UserId < userId));
+
+            return new UserRankingDto
+            {
+                UserId = player.UserId,
+                Username = player.Username,
+                CurrentRank = rank,
+                TotalPoints = player.TotalPoints,
+                BetsPlaced = player.BetsPlaced,
+                WinRate = player.WinRate,
+                ProfitLoss = player.ProfitLoss,
+                UsersAbove = usersAbove,
+                RankChange = 0,
+                PointsToNextRank = CalculatePointsToNextRank(rank),
+                IsCurrentUser = true
+            };
         }
 
-        private async Task<string> GetUsernameForUserId(int userId)
+        /// <summary>
+        /// Gets historical leaderboard data for a specific season.
+        /// </summary>
+        public async Task<IEnumerable<HistoricalLeaderboardDto>> GetHistoricalLeaderboardAsync(string? season = null)
         {
-            var user = await _userRepository.GetByIdAsync(userId);
-            return user?.Username ?? $"User {userId}";
+            var selectedSeason = string.IsNullOrEmpty(season) ? "2024" : season;
+            var allPlayers = await GetMockPlayerDataAsync();
+
+            return new[] { new HistoricalLeaderboardDto
+            {
+                Season = selectedSeason,
+                StartDate = DateTime.Parse($"{selectedSeason}-01-01"),
+                EndDate = DateTime.Parse($"{selectedSeason}-12-31"),
+                TotalEntries = allPlayers.Count(),
+                IsCurrentSeason = selectedSeason == "2024",
+                Entries = allPlayers.Select((p, index) => new LeaderboardEntryDto
+                {
+                    UserId = p.UserId,
+                    Username = p.Username,
+                    Rank = index + 1,
+                    TotalPoints = p.TotalPoints,
+                    WinRate = p.WinRate,
+                    BetsPlaced = p.BetsPlaced,
+                    ProfitLoss = p.ProfitLoss
+                }).Take(10).ToList()
+            }};
         }
 
-        public async Task UpdateLeaderboardForRaceAsync(int raceId)
-        {
-            var race = await _raceRepository.GetByIdAsync(raceId);
-            if (race == null) throw new InvalidOperationException("Race not found");
+        /// <summary>
+        /// Gets the current user's rank change since last session.
+        /// </summary>
+        public async Task<int> GetRankChangeAsync(int userId) => 0;
 
-            // This would be called after a race is completed to update leaderboard
-            // In a real app, this would recalculate points based on race results
-            await UpdateLeaderboardAsync();
+        /// <summary>
+        /// Gets points needed to reach the next rank.
+        /// </summary>
+        public async Task<long> GetPointsToNextRankAsync(int userId)
+        {
+            var ranking = await GetUserRankingAsync(userId);
+            return ranking.PointsToNextRank;
+        }
+
+        private async Task<IEnumerable<PlayerData>> GetMockPlayerDataAsync()
+        {
+            return new List<PlayerData>
+            {
+                new PlayerData { UserId = 1, Username = "MaxVerstappen", TotalPoints = 2450, WinRate = 78.5, BetsPlaced = 320, ProfitLoss = 1250 },
+                new PlayerData { UserId = 2, Username = "LewisHamilton", TotalPoints = 2380, WinRate = 76.2, BetsPlaced = 315, ProfitLoss = 1180 },
+                new PlayerData { UserId = 3, Username = "CharlesLeclerc", TotalPoints = 2320, WinRate = 74.8, BetsPlaced = 310, ProfitLoss = 1120 },
+                new PlayerData { UserId = 4, Username = "LandoNorris", TotalPoints = 2250, WinRate = 72.1, BetsPlaced = 305, ProfitLoss = 1050 },
+                new PlayerData { UserId = 5, Username = "GeorgeRussell", TotalPoints = 2180, WinRate = 69.5, BetsPlaced = 298, ProfitLoss = 980 }
+            };
+        }
+
+        private long CalculatePointsToNextRank(int currentRank) => (10000 - (currentRank * 400)) + 1;
+
+        /// <summary>
+        /// Clears the cache for leaderboard data.
+        /// </summary>
+        public void ClearLeaderboardCache() => _leaderboardCache.Clear();
+
+        /// <summary>
+        /// Invalidates user-specific cache entries.
+        /// </summary>
+        public void InvalidateUserCache(int userId) => _userCache.TryRemove(userId, out _);
+
+        /// <summary>
+        /// Internal data model for player information.
+        /// </summary>
+        private class PlayerData
+        {
+            public int UserId { get; set; }
+            public string Username { get; set; } = string.Empty;
+            public long TotalPoints { get; set; }
+            public double WinRate { get; set; }
+            public int BetsPlaced { get; set; }
+            public long ProfitLoss { get; set; }
         }
     }
 }

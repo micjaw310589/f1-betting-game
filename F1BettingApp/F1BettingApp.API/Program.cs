@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using F1BettingApp.Application.Interfaces;
+using F1BettingApp.Application.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -57,6 +59,9 @@ builder.Services.AddAuthentication(options =>
 
 // Register JWT authentication in the pipeline
 builder.Services.AddAuthorization();
+
+// Register LeaderboardService
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 
 var app = builder.Build();
 

@@ -3,32 +3,18 @@ title User Registration and Authentication Sequence
 
 actor User
 participant "Angular SPA" as SPA
-participant "AuthController (API)" as API
-participant "UserService" as US
-database "Database (User Repository)" as DB
+participant "AuthController" as API
 
-User -> SPA : Attempts registration (email, password, name)
-SPA -> API : POST /api/auth/register(data)
+User -> SPA : Submit registration request
+SPA -> API : POST /api/auth/register
 activate API
-API -> US : registerUser(details)
-activate US
-
-US -> DB : validateEmailAndUsername(email, username)
-activate DB
-DB --> US : Email/Username availability confirmed
-deactivate DB
-
-US -> US : Hash Password
-US -> DB : saveUser(user, hashedPassword)
-activate DB
-DB --> US : User created successfully (User ID)
-deactivate DB
-
-US --> API : User registered (success status, userId)
-deactivate US
-API --> SPA : 201 Created (Registration Confirmation)
+API --> SPA : 200 OK (Auth register endpoint)
 deactivate API
 
-User -> SPA : Receives confirmation/credentials
-SPA -> User : Display success message
+User -> SPA : Submit login request
+SPA -> API : POST /api/auth/login
+activate API
+API --> SPA : 200 OK (Auth login endpoint)
+deactivate API
+
 @enduml

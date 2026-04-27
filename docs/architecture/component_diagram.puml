@@ -1,35 +1,20 @@
 @startuml
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/stdlib/master/C4_Component.puml
 title F1 Betting Game - Component Diagram
 
-component "Angular SPA (Presentation)" as SPA
-component "ASP.NET Core Web API (Presentation)" as API
-component "Application Layer" as AppLayer
-component "Domain Layer" as Domain
-component "Infrastructure Layer" as Infra
-component "Database (SQL Server)" as DB
-component "OpenF1 Client" as OpenF1
+component "Angular SPA" as SPA
+component "API Controllers\n(Auth, Bets, Races)" as API
+component "Application Services\n(Betting, User, Race,\nNotification, Leaderboard)" as App
+component "Domain Model\n(Entities, Enums,\nValue Objects)" as Domain
+component "Infrastructure\n(Persistence, Repositories,\nUnit of Work)" as Infra
+component "OpenF1 API Client" as OpenF1
+database "SQL Server Database" as DB
 
-' API Gateway / Controllers -> Application Layer
-SPA --> API : HTTP Calls (REST)
-API --> AppLayer : Invokes Service Calls
+SPA --> API : HTTP/JSON
+API --> App : calls
+App --> Domain : uses
+App --> Infra : depends on repositories
+Infra --> DB : EF Core
+Infra --> OpenF1 : sync races
+Infra ..> Domain : implements domain access
 
-' Application Layer contains Use Cases/Business Logic
-AppLayer --> Domain : Uses Domain Entities/Rules
-
-' Domain Layer is the Core (Stable)
-Domain --> Infra : Defines Repository Interfaces
-Domain <.. Entity : Core Entities
-
-' Infrastructure Layer implements persistence and external communication
-Infra --> DB : Implements Repositories (EF Core)
-Infra --> OpenF1 : Integrates via OpenF1Client
-
-' Relationships Flow
-API --> AppLayer : Exposes API Endpoints
-AppLayer --> Infra : Interacts with Infrastructure components (e.g., Data Access)
-Infra --> Domain : Accesses Domain objects
-
-' External Dependency
-OpenF1 ..> Infra : Uses/Integrates with API
 @enduml

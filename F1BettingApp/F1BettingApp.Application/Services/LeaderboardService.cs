@@ -35,11 +35,9 @@ namespace F1BettingApp.Application.Services
                     var currentSeasonRaces = (await _raceRepository.GetAllAsync())
                         .Where(r => r.Season.ToString() == currentSeason && r.Status == Domain.Enums.RaceStatus.Finished);
 
-                    // Clear existing history for current season and recreate
+                    // Clear ALL existing history and recreate
                     var existingHistories = await _leaderboardHistoryRepository.GetAllAsync();
-                    var currentSeasonHistories = existingHistories.Where(h => h.Season == currentSeason).ToList();
-
-                    foreach (var history in currentSeasonHistories)
+                    foreach (var history in existingHistories)
                     {
                         await _leaderboardHistoryRepository.DeleteAsync(history.Id);
                     }

@@ -39,6 +39,8 @@ namespace F1BettingApp.Application.Services
                 Status = race.Status,
                 Country = race.Country,
                 Circuit = race.Circuit,
+                Season = race.Season,
+                Flag = string.Empty, // TODO: Implement flag logic
                 Odds = new Dictionary<int, decimal>()
             };
         }
@@ -54,6 +56,8 @@ namespace F1BettingApp.Application.Services
                 Status = r.Status,
                 Country = r.Country,
                 Circuit = r.Circuit,
+                Season = r.Season,
+                Flag = string.Empty, // TODO: Implement flag logic
                 Odds = new Dictionary<int, decimal>()
             });
         }
@@ -70,6 +74,8 @@ namespace F1BettingApp.Application.Services
                 Status = r.Status,
                 Country = r.Country,
                 Circuit = r.Circuit,
+                Season = r.Season,
+                Flag = string.Empty, // TODO: Implement flag logic
                 Odds = new Dictionary<int, decimal>()
             });
         }
@@ -143,6 +149,8 @@ namespace F1BettingApp.Application.Services
                 Status = r.Status,
                 Country = r.Country,
                 Circuit = r.Circuit,
+                Season = r.Season,
+                Flag = string.Empty, // TODO: Implement flag logic
                 Odds = new Dictionary<int, decimal>()
             });
 

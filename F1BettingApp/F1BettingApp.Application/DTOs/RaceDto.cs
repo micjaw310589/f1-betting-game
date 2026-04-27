@@ -11,6 +11,8 @@ namespace F1BettingApp.Application.DTOs
         public DateTime RaceDate { get; set; }
         public string Country { get; set; }
         public RaceStatus Status { get; set; }
+        public int Season { get; set; }
+        public string Flag { get; set; } = string.Empty;
         public Dictionary<int, decimal> Odds { get; set; } = new Dictionary<int, decimal>();
     }
 }

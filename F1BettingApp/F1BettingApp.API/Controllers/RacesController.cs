@@ -78,7 +78,7 @@ namespace F1BettingApp.API.Controllers
                 var totalItems = filteredRaces.Count();
                 var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
                 var startIndex = (page - 1) * pageSize;
-                var pagedRaces = filteredRaces.Skip(startIndex - 1).Take(pageSize);
+                var pagedRaces = filteredRaces.Skip(startIndex).Take(pageSize);
 
                 var result = new PagedResult<RaceSummaryDto>
                 {
@@ -235,23 +235,17 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
+                var race = await _raceService.GetRaceByIdAsync(raceId);
+
                 // For now, we'll return a default result structure
                 // In a real implementation, this would fetch actual race results
                 var result = new RaceResultDto
                 {
                     RaceId = raceId,
-                    RaceName = await _raceService.GetRaceByIdAsync(raceId)
-                        ?.Then(r => r.Name)
-                        .OrDefault("Race Results"),
-                    Circuit = await _raceService.GetRaceByIdAsync(raceId)
-                        ?.Then(r => r.Circuit)
-                        .OrDefault("Circuit"),
-                    Country = await _raceService.GetRaceByIdAsync(raceId)
-                        ?.Then(r => r.Country)
-                        .OrDefault("Country"),
-                    RaceDate = await _raceService.GetRaceByIdAsync(raceId)
-                        ?.Then(r => r.RaceDate)
-                        .OrDefault(DateTime.UtcNow),
+                    RaceName = race?.Name ?? "Race Results",
+                    Circuit = race?.Circuit ?? "Circuit",
+                    Country = race?.Country ?? "Country",
+                    RaceDate = race?.RaceDate ?? DateTime.UtcNow,
                     WinnerDriverId = 0,
                     WinnerDriverName = "TBD",
                     WinnerTeamId = 0,
@@ -506,8 +500,8 @@ namespace F1BettingApp.API.Controllers
         /// <summary>
         /// Helper method to apply filters to races
         /// </summary>
-        private static IEnumerable<Race> ApplyFilters(
-            IEnumerable<Race> races,
+        private static IEnumerable<RaceDto> ApplyFilters(
+            IEnumerable<RaceDto> races,
             string status,
             int? season,
             string country)

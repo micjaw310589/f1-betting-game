@@ -6,7 +6,7 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
 {
     public interface IRaceRepository : IRepository<Race>
     {
-        Task<IQueryable<Race>> GetUpcomingRacesAsync();
+        Task<IEnumerable<Race>> GetUpcomingRacesAsync();
         Task<Race> GetRaceWithResultsAsync(int raceId);
         Task<IQueryable<Race>> GetCurrentSeasonRacesAsync(int seasonId);
     }

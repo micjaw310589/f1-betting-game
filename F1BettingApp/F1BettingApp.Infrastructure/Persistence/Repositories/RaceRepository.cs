@@ -18,7 +18,7 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             _logger = logger;
         }
 
-        public async Task<IQueryable<Race>> GetUpcomingRacesAsync()
+        public async Task<IEnumerable<Race>> GetUpcomingRacesAsync()
         {
             try
             {
@@ -52,14 +52,14 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
 
         public bool CanPlaceBets(Race race)
         {
-            return race.Status == RaceStatus.Scheduled && !race.Bets.Any(b => b.Status == BetStatus.Completed);
+            return race.Status == RaceStatus.Scheduled && !race.Bets.Any(b => b.Status == BetStatus.Resolved);
         }
 
         public decimal? GetTotalAmountWageredAsync(int raceId)
         {
             try
             {
-                var bets = _dbSet.Where(b => b.RaceId == raceId).ToList();
+                var bets = _context.Bets.Where(b => b.RaceId == raceId).ToList();
                 return bets.Sum(b => b.Amount);
             }
             catch (Exception ex)
@@ -73,7 +73,7 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
         {
             try
             {
-                return _dbSet.Count(b => b.RaceId == raceId);
+                return _context.Bets.Count(b => b.RaceId == raceId);
             }
             catch (Exception ex)
             {

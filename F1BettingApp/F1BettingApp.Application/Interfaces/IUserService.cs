@@ -81,5 +81,29 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="points">The points to add</param>
         /// <returns>Task representing the asynchronous operation</returns>
         Task UpdateUserPointsAsync(int userId, int points);
+
+        /// <summary>
+        /// Gets a user's profile by their ID
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <returns>User profile DTO</returns>
+        Task<UserProfileDto> GetUserProfileAsync(int userId);
+
+        /// <summary>
+        /// Updates a user's profile
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="dto">The updated profile data</param>
+        /// <returns>Updated user profile DTO</returns>
+        Task<UserProfileDto> UpdateUserProfileAsync(int userId, UpdateProfileDto dto);
+
+        /// <summary>
+        /// Gets bet history for a user with pagination
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="page">Page number (default: 1)</param>
+        /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
+        /// <returns>Paginated bet history DTO</returns>
+        Task<BetHistoryResponseDto> GetUserBetHistoryAsync(int userId, int page = 1, int pageSize = 20);
     }
 }

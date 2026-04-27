@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace F1BettingApp.Application.Exceptions
 {
     /// <summary>
@@ -6,6 +8,20 @@ namespace F1BettingApp.Application.Exceptions
     public class UserNotFoundException : Exception
     {
         public UserNotFoundException(string message) : base(message) { }
+    }
+
+    /// <summary>
+    /// Exception thrown when user profile data fails validation
+    /// </summary>
+    public class ValidationException : Exception
+    {
+        public ValidationException(string message, Dictionary<string, string[]> errors = null) 
+            : base(message)
+        {
+            Errors = errors ?? new Dictionary<string, string[]>();
+        }
+
+        public Dictionary<string, string[]> Errors { get; }
     }
 
     /// <summary>

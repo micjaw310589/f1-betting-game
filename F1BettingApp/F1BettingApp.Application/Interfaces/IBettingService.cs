@@ -33,18 +33,17 @@ namespace F1BettingApp.Application.Interfaces
         Task<IEnumerable<BetDto>> GetUserBetsAsync(int userId);
 
         /// <summary>
+        /// Gets a specific bet by ID
+        /// </summary>
+        /// <param name="betId">The ID of the bet</param>
+        /// <returns>The bet DTO or null if not found</returns>
+        Task<BetDto?> GetBetByIdAsync(int betId);
+
+        /// <summary>
         /// Processes race results and updates bet statuses
         /// </summary>
         /// <param name="raceId">The ID of the race to process</param>
         /// <returns>Task representing the asynchronous operation</returns>
         Task ProcessRaceResultsAsync(int raceId);
-
-        /// <summary>
-        /// Calculates winnings for a user based on race results
-        /// </summary>
-        /// <param name="userId">The ID of the user</param>
-        /// <param name="raceId">The ID of the race</param>
-        /// <returns>Task representing the calculated winnings amount</returns>
-        Task<decimal> CalculateWinningsAsync(int userId, int raceId);
     }
 }

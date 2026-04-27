@@ -12,8 +12,10 @@ namespace F1BettingApp.Domain.Entities
         public decimal Amount { get; set; }
         public decimal Odds { get; set; }
         public decimal PotentialWinnings { get; set; }
+        public decimal Winnings { get; set; }
         public BetStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? ResolvedAt { get; set; }
 
         public Bet(int userId, int raceId, int driverId, decimal amount, BetType betType, decimal odds)
         {
@@ -37,6 +39,9 @@ namespace F1BettingApp.Domain.Entities
             Odds = odds;
             Status = BetStatus.Pending;
             CreatedAt = DateTime.Now;
+            PotentialWinnings = 0m;
+            Winnings = 0m;
+            ResolvedAt = null;
         }
 
         public Bet() { }
@@ -53,6 +58,18 @@ namespace F1BettingApp.Domain.Entities
                 throw new InvalidOperationException("Odds must be greater than zero.");
             }
             // Further validation based on race status and bet type would happen in the Service layer
+        }
+
+        /// <summary>
+        /// Called when a bet is resolved to set ResolvedAt timestamp
+        /// </summary>
+        public void ResolveBet()
+        {
+            if (Status == BetStatus.Resolved)
+                return; // Already resolved
+
+            Status = BetStatus.Resolved;
+            ResolvedAt = DateTime.Now;
         }
     }
 }

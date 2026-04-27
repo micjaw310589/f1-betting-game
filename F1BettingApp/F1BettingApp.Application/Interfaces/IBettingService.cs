@@ -1,4 +1,5 @@
 using F1BettingApp.Application.DTOs;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace F1BettingApp.Application.Interfaces
@@ -11,39 +12,87 @@ namespace F1BettingApp.Application.Interfaces
         /// <summary>
         /// Places a bet on a specific driver in a race
         /// </summary>
-        /// <param name="userId">The ID of the user placing the bet</param>
-        /// <param name="raceId">The ID of the race</param>
-        /// <param name="driverId">The ID of the driver being bet on</param>
-        /// <param name="amount">The amount to bet</param>
-        /// <returns>Task representing the asynchronous operation</returns>
-        Task PlaceBetAsync(int userId, int raceId, int driverId, decimal amount);
+        /// <param name="dto">The PlaceBetDto containing all bet information</param>
+        /// <returns>The created BetResponseDto with complete bet details</returns>
+        Task<BetResponseDto> PlaceBetAsync(PlaceBetDto dto);
 
         /// <summary>
         /// Cancels an existing bet
         /// </summary>
         /// <param name="betId">The ID of the bet to cancel</param>
-        /// <returns>Task representing the asynchronous operation</returns>
-        Task CancelBetAsync(int betId);
+        /// <param name="userId">The user attempting to cancel (for authorization)</param>
+        /// <returns>The updated BetResponseDto</returns>
+        Task<BetResponseDto> CancelBetAsync(int betId, string userId);
 
         /// <summary>
         /// Gets all bets for a specific user
         /// </summary>
-        /// <param name="userId">The ID of the user</param>
-        /// <returns>Collection of bet DTOs</returns>
-        Task<IEnumerable<BetDto>> GetUserBetsAsync(int userId);
+        /// <param name="userId">The user ID from JWT token (string format)</param>
+        /// <returns>Collection of BetResponseDto objects</returns>
+        Task<IEnumerable<BetResponseDto>> GetUserBetsAsync(string userId);
 
         /// <summary>
         /// Gets a specific bet by ID
         /// </summary>
         /// <param name="betId">The ID of the bet</param>
-        /// <returns>The bet DTO or null if not found</returns>
-        Task<BetDto?> GetBetByIdAsync(int betId);
+        /// <param name="userId">The user requesting the bet (for authorization)</param>
+        /// <returns>The BetResponseDto or null if not found</returns>
+        Task<BetResponseDto?> GetBetByIdAsync(int betId, string userId);
 
         /// <summary>
         /// Processes race results and updates bet statuses
         /// </summary>
-        /// <param name="raceId">The ID of the race to process</param>
+        /// <param name="raceId">The ID of the completed race to process</param>
         /// <returns>Task representing the asynchronous operation</returns>
         Task ProcessRaceResultsAsync(int raceId);
+
+        /// <summary>
+        /// Gets user's bet history with pagination support
+        /// </summary>
+        /// <param name="userId">The user ID from JWT token</param>
+        /// <param name="page">Page number for pagination</param>
+        /// <param name="pageSize">Number of items per page</param>
+        /// <returns>Paginated bet history with metadata</returns>
+        Task<BetHistoryResponseDto> GetUserBetHistoryAsync(string userId, int page = 1, int pageSize = 20);
+
+        /// <summary>
+        /// Validates a bet before placing it (without creating)
+        /// </summary>
+        /// <param name="dto">The PlaceBetDto to validate</param>
+        /// <returns>Validation result with any errors found</returns>
+        Task<BetValidationResult> ValidateBetAsync(PlaceBetDto dto);
+
+        /// <summary>
+        /// Gets available races that can accept bets
+        /// </summary>
+        /// <param name="userId">The user ID for authorization</param>
+        /// <returns>List of available races with betting information</returns>
+        Task<IEnumerable<RaceDetailDto>> GetAvailableRacesAsync(string userId);
+    }
+
+    /// <summary>
+    /// Result of bet validation
+    /// </summary>
+    public class BetValidationResult
+    {
+        /// <summary>
+        /// Whether the bet is valid
+        /// </summary>
+        public bool IsValid { get; set; }
+
+        /// <summary>
+        /// List of validation errors if invalid
+        /// </summary>
+        public List<string> Errors { get; set; } = new();
+
+        /// <summary>
+        /// Pre-calculated odds for the bet (if valid)
+        /// </summary>
+        public decimal? Odds { get; set; }
+
+        /// <summary>
+        /// Potential winnings (if valid)
+        /// </summary>
+        public decimal? PotentialWinnings { get; set; }
     }
 }

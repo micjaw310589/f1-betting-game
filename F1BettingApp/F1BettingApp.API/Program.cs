@@ -60,6 +60,9 @@ builder.Services.AddAuthentication(options =>
 // Register JWT authentication in the pipeline
 builder.Services.AddAuthorization();
 
+// Register HttpContext access for application services
+builder.Services.AddHttpContextAccessor();
+
 // Register LeaderboardService
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 

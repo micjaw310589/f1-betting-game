@@ -12,6 +12,8 @@ public class Race
     public string Country { get; set; }
     public string OpenF1RaceId { get; set; }
     public int Season { get; set; }
+    public decimal? TotalBets { get; set; } = 0m;
+    public decimal? TotalAmount { get; set; } = 0m;
     public ICollection<Bet> Bets { get; set; }
 
     public Race(string name, DateTime date, string circuit, string country, string openF1RaceId, int season)
@@ -37,8 +39,15 @@ public class Race
         return Status == RaceStatus.Scheduled;
     }
 
-    public bool IsRaceFinished()
+public bool IsRaceFinished()
     {
         return Status == RaceStatus.Finished;
+    }
+
+    public decimal OddsForDriver(int driverId)
+    {
+        // TODO: Implement odds calculation logic based on driver performance/position
+        // This could be based on qualifying times, historical performance, etc.
+        throw new NotImplementedException("Odds calculation not yet implemented");
     }
 }

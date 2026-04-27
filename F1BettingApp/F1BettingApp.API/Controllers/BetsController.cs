@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
 using System.Text.Json;
 using F1BettingApp.Application.Exceptions;
+
 namespace F1BettingApp.API.Controllers
 {
     /// <summary>
@@ -65,12 +66,16 @@ namespace F1BettingApp.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-                // Call service to place the bet
-                await _bettingService.PlaceBetAsync(dto.UserId, dto.RaceId, dto.DriverId, dto.Amount);
+                // Get current user ID from authentication context
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                            ?? User.Identity?.Name;
 
-                _logger.LogInformation("Bet placed successfully. BetId: {BetId}", dto.UserId);
+                // Call service to place the bet (userId is extracted internally by the service)
+                var result = await _bettingService.PlaceBetAsync(dto);
 
-                return Ok(new { message = "Bet placed successfully", userId = dto.UserId });
+                _logger.LogInformation("Bet placed successfully");
+
+                return Ok(new { message = "Bet placed successfully", userId = userId });
             }
             catch (UserNotFoundException)
             {
@@ -122,7 +127,10 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-                var bets = await _bettingService.GetUserBetsAsync(1); // Get bets for current user
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                            ?? User.Identity?.Name;
+
+                var bets = await _bettingService.GetUserBetsAsync(userId);
 
                 return Ok(bets);
             }
@@ -151,7 +159,10 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-                var bet = await _bettingService.GetBetByIdAsync(id);
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                            ?? User.Identity?.Name;
+
+                var bet = await _bettingService.GetBetByIdAsync(id, userId);
 
                 if (bet == null)
                 {
@@ -186,9 +197,12 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-                await _bettingService.CancelBetAsync(id);
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                            ?? User.Identity?.Name;
 
-                _logger.LogInformation("Bet cancelled successfully. BetId: {BetId}", id);
+                await _bettingService.CancelBetAsync(id, userId);
+
+                _logger.LogInformation("Bet cancelled successfully. BetId: {BetId}, UserId: {UserId}", id, userId);
 
                 return Ok(new { message = "Bet cancelled successfully", betId = id });
             }

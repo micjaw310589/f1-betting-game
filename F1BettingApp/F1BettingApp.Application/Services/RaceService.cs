@@ -5,17 +5,19 @@ using F1BettingApp.Domain.Enums;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
 using F1BettingApp.Infrastructure.OpenF1;
 using System.Transactions;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace F1BettingApp.Application.Services
 {
     public class RaceService : IRaceService
     {
-        private readonly IRepository<Race> _raceRepository;
+        private readonly IRaceRepositoryExtensions _raceRepository;
         private readonly IRepository<Result> _resultRepository;
         private readonly IOpenF1ApiClient _openF1ApiClient;
 
         public RaceService(
-            IRepository<Race> raceRepository,
+            IRaceRepositoryExtensions raceRepository,
             IRepository<Result> resultRepository,
             IOpenF1ApiClient openF1ApiClient)
         {
@@ -34,7 +36,10 @@ namespace F1BettingApp.Application.Services
                 Id = race.Id,
                 Name = race.Name,
                 RaceDate = race.Date,
-                Status = race.Status
+                Status = race.Status,
+                Country = race.Country,
+                Circuit = race.Circuit,
+                Odds = new Dictionary<int, decimal>()
             };
         }
 
@@ -46,7 +51,10 @@ namespace F1BettingApp.Application.Services
                 Id = r.Id,
                 Name = r.Name,
                 RaceDate = r.Date,
-                Status = r.Status
+                Status = r.Status,
+                Country = r.Country,
+                Circuit = r.Circuit,
+                Odds = new Dictionary<int, decimal>()
             });
         }
 
@@ -59,7 +67,10 @@ namespace F1BettingApp.Application.Services
                 Id = r.Id,
                 Name = r.Name,
                 RaceDate = r.Date,
-                Status = r.Status
+                Status = r.Status,
+                Country = r.Country,
+                Circuit = r.Circuit,
+                Odds = new Dictionary<int, decimal>()
             });
         }
 
@@ -67,7 +78,6 @@ namespace F1BettingApp.Application.Services
         {
             try
             {
-                // Get races from OpenF1 API
                 var openF1Races = await _openF1ApiClient.GetRacesAsync();
 
                 using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -81,7 +91,6 @@ namespace F1BettingApp.Application.Services
 
                             if (existingRace == null)
                             {
-                                // Create new race
                                 var race = new Race(
                                     openF1Race.Name,
                                     openF1Race.Date,
@@ -95,7 +104,6 @@ namespace F1BettingApp.Application.Services
                             }
                             else
                             {
-                                // Update existing race
                                 existingRace.Name = openF1Race.Name;
                                 existingRace.Date = openF1Race.Date;
                                 existingRace.Circuit = openF1Race.Circuit;
@@ -127,21 +135,15 @@ namespace F1BettingApp.Application.Services
             var races = await _raceRepository.GetAllAsync();
             var upcomingRaces = races.Where(r => r.Status == RaceStatus.Scheduled);
 
-            // In a real app, we would calculate odds based on historical data, driver performance, etc.
-            // For this implementation, we'll use placeholder odds
             var racesWithOdds = upcomingRaces.Select(r => new RaceDto
             {
                 Id = r.Id,
                 Name = r.Name,
                 RaceDate = r.Date,
                 Status = r.Status,
-                // Placeholder odds - would be calculated in real implementation
-                Odds = new Dictionary<int, decimal>
-                {
-                    { 1, 2.5m }, // Driver 1 odds
-                    { 2, 3.0m }, // Driver 2 odds
-                    { 3, 4.5m }  // Driver 3 odds
-                }
+                Country = r.Country,
+                Circuit = r.Circuit,
+                Odds = new Dictionary<int, decimal>()
             });
 
             return racesWithOdds;
@@ -160,6 +162,29 @@ namespace F1BettingApp.Application.Services
             race.Status = status;
             await _raceRepository.UpdateAsync(race);
             await _raceRepository.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<RaceDto>> GetRacesByIdsAsync(IEnumerable<int> ids)
+        {
+            if (ids == null || !ids.Any()) return Enumerable.Empty<RaceDto>();
+
+            var races = await _raceRepository.GetByIdsAsync(ids.ToList());
+            return races.Select(r => new RaceDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Circuit = r.Circuit,
+                RaceDate = r.Date,
+                Status = r.Status,
+                Country = r.Country,
+                Odds = new Dictionary<int, decimal>()
+            });
+        }
+
+        public async Task<IEnumerable<Result>> GetResultsAsync(int raceId)
+        {
+            var results = await _resultRepository.GetAllAsync();
+            return results.Where(r => r.RaceId == raceId).ToList();
         }
     }
 }

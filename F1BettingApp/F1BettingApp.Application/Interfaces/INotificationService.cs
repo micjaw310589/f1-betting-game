@@ -12,10 +12,10 @@ namespace F1BettingApp.Application.Interfaces
         /// Creates a new notification for a user
         /// </summary>
         /// <param name="userId">The ID of the user to notify</param>
+        /// <param name="title">The notification title</param>
         /// <param name="message">The notification message</param>
-        /// <param name="type">The type of notification</param>
         /// <returns>Task representing the asynchronous operation</returns>
-        Task CreateNotificationAsync(int userId, string message, string type);
+        Task CreateNotificationAsync(int userId, string title, string message);
 
         /// <summary>
         /// Marks a notification as read

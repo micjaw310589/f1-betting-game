@@ -16,17 +16,55 @@ export class RaceService {
 
   constructor(private http: HttpClient) {}
 
-getRaceSummaries(page: number = 1, pageSize: number = 10, filterType: string = 'all'): Observable<PagedResult<RaceSummaryDto>> {
-    return this.http.get<PagedResult<RaceSummaryDto>>(`${this.API_URL}?page=${page}&pageSize=${pageSize}`);
+  getRaceSummaries(page: number = 1, pageSize: number = 10, filterType: string = 'all'): Observable<PagedResult<RaceSummaryDto>> {
+    // Map frontend filterType to backend status parameter
+    const statusMap: Record<string, string> = {
+      'all': '',
+      'upcoming': 'Scheduled',
+      'past': 'Finished'
+    };
+
+    const status = statusMap[filterType] || '';
+    const params: any = { page, pageSize };
+
+    if (status) {
+      params.status = status;
+    }
+
+    return this.http.get<PagedResult<RaceSummaryDto>>(this.API_URL, { params }).pipe(
+      catchError(this.handleError)
+    );
   }
 
   getRaceDetails(raceId: number): Observable<RaceDetailDto> {
-    return this.http.get<RaceDetailDto>(`${this.API_URL}/${raceId}`);
+    return this.http.get<RaceDetailDto>(`${this.API_URL}/${raceId}`).pipe(
+      catchError(this.handleError)
+    );
   }
 
   getRaceOdds(raceId: number): Observable<RaceDto> {
     return this.http.get<RaceDto[]>(`${this.API_URL}/upcoming/odds`).pipe(
-      map(races => races.find(r => r.id === raceId)!) // Szukamy kursów dla konkretnego wyścigu w tablicy
+      map(races => {
+        const race = races.find(r => r.id === raceId);
+        if (!race) {
+          throw new Error(`Race with ID ${raceId} not found in odds data`);
+        }
+        return race;
+      }),
+      catchError(this.handleError)
     );
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'Unknown error occurred';
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Error: ${error.error.message}`;
+    } else {
+      // Server-side error
+      errorMessage = `Server error: ${error.status}\nMessage: ${error.message}`;
+    }
+    console.error(errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
 }

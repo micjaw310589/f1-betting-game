@@ -471,7 +471,7 @@ namespace F1BettingApp.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> UpdateRaceStatus(
             [FromRoute] int raceId,
-            [FromBody] string status)
+            [FromBody] RaceStatus status)
         {
             _logger.LogInformation("Updating race status: RaceId={RaceId}, Status={Status}",
                 raceId, status);

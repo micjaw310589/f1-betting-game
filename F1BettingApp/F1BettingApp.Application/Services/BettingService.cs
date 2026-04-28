@@ -321,6 +321,58 @@ namespace F1BettingApp.Application.Services
         }
 
         /// <summary>
+        /// Calculates winnings for a bet based on race results
+        /// </summary>
+        /// <param name="bet">The bet to calculate winnings for</param>
+        /// <param name="result">The race result containing outcome information</param>
+        /// <returns>The calculated winnings amount</returns>
+        public async Task<decimal> CalculateWinningsAsync(Bet bet, Result result)
+        {
+            if (bet == null)
+                throw new ArgumentNullException(nameof(bet));
+
+            if (result == null)
+                throw new ArgumentNullException(nameof(result));
+
+            // Calculate winnings based on bet type and result
+            if (bet.BetType == BetType.RaceWinner)
+            {
+                // Winner bet - only wins if first place
+                if (result.Position == 1)
+                {
+                    return bet.Amount * bet.Odds;
+                }
+            }
+            else if (bet.BetType == BetType.PodiumFinish)
+            {
+                // Podium finish bet - wins if position is 1, 2, or 3
+                if (result.Position <= 3)
+                {
+                    return bet.Amount * bet.Odds;
+                }
+            }
+            else if (bet.BetType == BetType.Top10Finish)
+            {
+                // Top 10 bet - wins if position is 1-10
+                if (result.Position <= 10)
+                {
+                    return bet.Amount * bet.Odds;
+                }
+            }
+            else if (bet.BetType == BetType.FastestLap)
+            {
+                // Fastest lap bet - wins if position is 0 (fastest)
+                if (result.Position == 0)
+                {
+                    return bet.Amount * bet.Odds;
+                }
+            }
+
+            // Default: no winnings for other cases
+            return 0m;
+        }
+
+        /// <summary>
         /// Gets user's bet history with pagination support
         /// </summary>
         public async Task<BetHistoryResponseDto> GetUserBetHistoryAsync(int userId, int page = 1, int pageSize = 20)

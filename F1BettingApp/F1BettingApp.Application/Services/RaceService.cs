@@ -157,17 +157,12 @@ namespace F1BettingApp.Application.Services
             return racesWithOdds;
         }
 
-        public async Task UpdateRaceStatusAsync(int raceId, string newStatus)
+        public async Task UpdateRaceStatusAsync(int raceId, RaceStatus newStatus)
         {
             var race = await _raceRepository.GetByIdAsync(raceId);
             if (race == null) throw new InvalidOperationException("Race not found");
 
-            if (!Enum.TryParse<RaceStatus>(newStatus, out var status))
-            {
-                throw new ArgumentException("Invalid race status");
-            }
-
-            race.Status = status;
+            race.Status = newStatus;
             await _raceRepository.UpdateAsync(race);
             await _raceRepository.SaveChangesAsync();
         }

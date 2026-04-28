@@ -49,5 +49,27 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="userId">The unique identifier for the user.</param>
         /// <returns>The points needed for next rank.</returns>
         Task<long> GetPointsToNextRankAsync(int userId);
+
+        /// <summary>
+        /// Updates the leaderboard after a race is completed
+        /// </summary>
+        /// <param name="raceId">The ID of the completed race</param>
+        /// <returns>Task representing the asynchronous operation</returns>
+        Task UpdateLeaderboardAsync(int raceId);
+
+        /// <summary>
+        /// Gets the current leaderboard with top players
+        /// </summary>
+        /// <param name="limit">Maximum number of entries to return</param>
+        /// <returns>Collection of leaderboard entries</returns>
+        Task<IEnumerable<LeaderboardEntryDto>> GetCurrentLeaderboardAsync(int limit);
+
+        /// <summary>
+        /// Gets the leaderboard for a specific season
+        /// </summary>
+        /// <param name="season">The season identifier</param>
+        /// <param name="limit">Maximum number of entries to return</param>
+        /// <returns>Collection of leaderboard entries for the season</returns>
+        Task<IEnumerable<LeaderboardEntryDto>> GetSeasonLeaderboardAsync(int season, int limit);
     }
 }

@@ -1,4 +1,5 @@
 using F1BettingApp.Application.DTOs;
+using F1BettingApp.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -46,6 +47,14 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="raceId">The ID of the completed race to process</param>
         /// <returns>Task representing the asynchronous operation</returns>
         Task ProcessRaceResultsAsync(int raceId);
+
+        /// <summary>
+        /// Calculates winnings for a bet based on race results
+        /// </summary>
+        /// <param name="bet">The bet to calculate winnings for</param>
+        /// <param name="result">The race result containing outcome information</param>
+        /// <returns>The calculated winnings amount</returns>
+        Task<decimal> CalculateWinningsAsync(Bet bet, Result result);
 
         /// <summary>
         /// Gets user's bet history with pagination support

@@ -20,24 +20,15 @@ namespace F1BettingApp.Application.Services
             _userRepository = userRepository;
         }
 
-        public async Task CreateNotificationAsync(int userId, string message, string type)
+        public async Task CreateNotificationAsync(int userId, string title, string message)
         {
             // Validate input
+            if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title cannot be empty");
             if (string.IsNullOrWhiteSpace(message)) throw new ArgumentException("Message cannot be empty");
-            if (string.IsNullOrWhiteSpace(type)) throw new ArgumentException("Type cannot be empty");
 
             // Validate user exists
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) throw new InvalidOperationException("User not found");
-
-            // Validate notification type
-            if (!Enum.TryParse<NotificationType>(type, out var notificationType))
-            {
-                throw new ArgumentException("Invalid notification type");
-            }
-
-            // Map notification type to title
-            string title = MapNotificationTypeToTitle(notificationType);
 
             var notification = new Notification(userId, title, message);
 
@@ -80,16 +71,17 @@ namespace F1BettingApp.Application.Services
 
         public async Task SendBetResultNotificationAsync(int userId, int betId, bool isWin)
         {
-            var notificationType = isWin ? NotificationType.BetWon.ToString() : NotificationType.BetLost.ToString();
+            var title = isWin ? "Bet Won!" : "Bet Result";
             var message = isWin ? "Congratulations! Your bet has won!" : "Your bet did not win this time.";
 
-            await CreateNotificationAsync(userId, message, notificationType);
+            await CreateNotificationAsync(userId, title, message);
         }
 
         public async Task SendRaceStatusUpdateNotificationAsync(int userId, int raceId, string newStatus)
         {
+            var title = "Race Update";
             var message = $"Race {raceId} status updated to: {newStatus}";
-            await CreateNotificationAsync(userId, message, NotificationType.RaceResultProcessed.ToString());
+            await CreateNotificationAsync(userId, title, message);
         }
 
         private string MapNotificationTypeToTitle(NotificationType type)

@@ -189,6 +189,67 @@ namespace F1BettingApp.Application.Services
         public void InvalidateUserCache(int userId) => _userCache.TryRemove(userId, out _);
 
         /// <summary>
+        /// Updates the leaderboard after a race is completed
+        /// </summary>
+        /// <param name="raceId">The ID of the completed race</param>
+        /// <returns>Task representing the asynchronous operation</returns>
+        public async Task UpdateLeaderboardAsync(int raceId)
+        {
+            // Invalidate cache to force refresh on next request
+            _leaderboardCache.TryRemove("global", out _);
+            _leaderboardCache.TryRemove($"season_{DateTime.Now.Year}", out _);
+
+            // Clear all user cache entries since their rankings may have changed
+            _userCache.Clear();
+        }
+
+        /// <summary>
+        /// Gets the current leaderboard with top players
+        /// </summary>
+        /// <param name="limit">Maximum number of entries to return</param>
+        /// <returns>Collection of leaderboard entries</returns>
+        public async Task<IEnumerable<LeaderboardEntryDto>> GetCurrentLeaderboardAsync(int limit)
+        {
+            return await GetGlobalLeaderboardAsync(limit);
+        }
+
+        /// <summary>
+        /// Gets the leaderboard for a specific season
+        /// </summary>
+        /// <param name="season">The season identifier</param>
+        /// <param name="limit">Maximum number of entries to return</param>
+        /// <returns>Collection of leaderboard entries for the season</returns>
+        public async Task<IEnumerable<LeaderboardEntryDto>> GetSeasonLeaderboardAsync(int season, int limit)
+        {
+            string cacheKey = $"season_{season}";
+
+            if (_leaderboardCache.TryGetValue(cacheKey, out var cached))
+            {
+                return cached.Take(limit);
+            }
+
+            var allPlayers = await GetMockPlayerDataAsync();
+            var seasonPlayers = allPlayers.Where(p => p.UserId % 1000 == season % 1000); // Simple mock filtering
+
+            var sorted = seasonPlayers.OrderByDescending(p => p.TotalPoints)
+                .ThenByDescending(p => p.WinRate)
+                .ThenByDescending(p => p.BetsPlaced);
+
+            _leaderboardCache[cacheKey] = sorted.Select((p, index) => new LeaderboardEntryDto
+            {
+                UserId = p.UserId,
+                Username = p.Username,
+                Rank = index + 1,
+                TotalPoints = p.TotalPoints,
+                WinRate = p.WinRate,
+                BetsPlaced = p.BetsPlaced,
+                ProfitLoss = p.ProfitLoss
+            }).ToList();
+
+            return _leaderboardCache[cacheKey].Take(limit);
+        }
+
+        /// <summary>
         /// Internal data model for player information.
         /// </summary>
         private class PlayerData

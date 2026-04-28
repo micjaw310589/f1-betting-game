@@ -1,5 +1,6 @@
 using F1BettingApp.Application.DTOs;
 using F1BettingApp.Domain.Entities;
+using F1BettingApp.Domain.Enums;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -47,7 +48,7 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="raceId">The ID of the race to update</param>
         /// <param name="newStatus">The new status of the race</param>
         /// <returns>Task representing the asynchronous operation</returns>
-        Task UpdateRaceStatusAsync(int raceId, string newStatus);
+        Task UpdateRaceStatusAsync(int raceId, RaceStatus newStatus);
 
         /// <summary>
         /// Gets multiple races by their IDs efficiently (batch operation)

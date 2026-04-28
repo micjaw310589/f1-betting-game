@@ -1,41 +1,30 @@
 @startuml
 title Leaderboard Update Sequence Diagram
 
-participant "Race Result Processor" as Trigger
 participant "LeaderboardService" as LS
-participant "User Service" as US
-participant "Betting Service" as BS
-participant "Database" as DB
+participant "User Repository" as UR
+participant "Race Repository" as RR
+participant "Leaderboard History Repository" as LHR
 
-note over Trigger, LS: Triggered after race result processing or point award
-Trigger -> LS : requestLeaderboardUpdate(raceId)
-activate LS
+LS -> UR : GetAllAsync()
+activate UR
+UR --> LS : users
+deactivate UR
 
-LS -> LS : Fetch all participants in the race
-note right of LS: Use ResultService to get all finish data
-LS -> DB : Get all Results for raceId
-activate DB
-DB --> LS : List of Result records
-deactivate DB
+LS -> RR : GetAllAsync()
+activate RR
+RR --> LS : races
+deactivate RR
 
-LS -> LS : Group results by User ID
-LS -> LS : Calculate total points gained/lost for the current race
-note right of LS: Points calculation logic
-LS -> DB : Read historical user points for base calculation
-activate DB
-DB --> LS : Current point totals for all users
-deactivate DB
+LS -> LHR : GetAllAsync()
+activate LHR
+LHR --> LS : history entries
+deactivate LHR
 
-alt All participants processed
-  LS -> LS : Calculate global rank based on accumulated points (TotalPoints)
-  LS -> DB : Batch Update LeaderboardHistory (raceId, userId, totalPoints, rank)
-  activate DB
-  DB --> LS : History saved successfully
-  deactivate DB
-  LS --> Trigger : Leaderboard updated successfully
-else Error processing point data
-  LS --> Trigger : Failure (Missing data, race incomplete)
+LS -> LHR : DeleteAsync(currentSeason entries)
+loop for each user ranked by points
+  LS -> LHR : AddAsync(new LeaderboardHistory)
 end
+LS -> LHR : SaveChangesAsync()
 
-deactivate LS
 @enduml

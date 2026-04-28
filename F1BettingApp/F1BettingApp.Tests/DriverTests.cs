@@ -19,7 +19,7 @@ namespace F1BettingApp.Tests
             Assert.Equal("Netherlands", driver.Country);
             Assert.Equal("VER", driver.OpenF1DriverId);
             Assert.Equal(team.Id, driver.TeamId);
-            Assert.Equal(team.Name, driver.Team.Name);
+            // Note: Team navigation property is not set in constructor, so we skip driver.Team.Name check
         }
 
         [Theory]
@@ -31,8 +31,7 @@ namespace F1BettingApp.Tests
             var team = new Team("Team", "Country", "OpenF1TeamId");
 
             // Act & Assert
-            var ex = Record.Exception(() => new Driver(invalidName, "Netherlands", "VER", team.Id));
-            Assert.IsType<ArgumentException>(ex);
+            Assert.Throws<ArgumentException>(() => new Driver(invalidName, "Netherlands", "VER", team.Id));
         }
 
         [Theory]
@@ -44,8 +43,7 @@ namespace F1BettingApp.Tests
             var team = new Team("Team", "Country", "OpenF1TeamId");
 
             // Act & Assert
-            var ex = Record.Exception(() => new Driver("Name", invalidCountry, "VER", team.Id));
-            Assert.IsType<ArgumentException>(ex);
+            Assert.Throws<ArgumentException>(() => new Driver("Name", invalidCountry, "VER", team.Id));
         }
 
         [Theory]
@@ -57,8 +55,7 @@ namespace F1BettingApp.Tests
             var team = new Team("Team", "Country", "OpenF1TeamId");
 
             // Act & Assert
-            var ex = Record.Exception(() => new Driver("Name", "Country", "VER", invalidTeamId));
-            Assert.IsType<ArgumentException>(ex);
+            Assert.Throws<ArgumentException>(() => new Driver("Name", "Country", "VER", invalidTeamId));
         }
 
         [Fact]

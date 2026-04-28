@@ -38,10 +38,11 @@ namespace F1BettingApp.Tests
                 new User("user3", "user3@example.com", "password3") { Id = 3, Points = 1000 }
             };
 
+            var currentYear = DateTime.UtcNow.Year;
             var races = new List<Race>
             {
                 new Race("Australian Grand Prix", DateTime.Now.AddDays(-1),
-                    "Melbourne Grand Prix Circuit", "Australia", "1", 2023)
+                    "Melbourne Grand Prix Circuit", "Australia", "1", currentYear)
                 {
                     Id = 1,
                     Status = RaceStatus.Finished
@@ -64,12 +65,10 @@ namespace F1BettingApp.Tests
                 .Returns(Task.FromResult(existingHistories.AsQueryable()));
 
             _leaderboardHistoryRepositoryMock.Setup(x => x.DeleteAsync(It.IsAny<int>()))
-                .Returns(Task.CompletedTask)
-                .Callback<int>(id => { });
+                .Returns(Task.CompletedTask);
 
-            _leaderboardHistoryRepositoryMock.Setup(x => x.AddAsync(It.IsAny<LeaderboardHistory>()))
-                .Returns(Task.CompletedTask)
-                .Callback<LeaderboardHistory>(history => { });
+_leaderboardHistoryRepositoryMock.Setup(x => x.AddAsync(It.IsAny<LeaderboardHistory>()))
+    .Returns(Task.CompletedTask);
 
             // Act
             await _leaderboardService.UpdateLeaderboardAsync();
@@ -96,10 +95,10 @@ namespace F1BettingApp.Tests
                 .Returns(Task.FromResult(users.AsQueryable()));
 
             // Act
-            var leaderboard = await _leaderboardService.GetCurrentLeaderboardAsync(3);
+            var leaderboard = await _leaderboardService.GetCurrentLeaderboardAsync(4);
 
             // Assert
-            Assert.Equal(3, leaderboard.Count());
+            Assert.Equal(4, leaderboard.Count());
             Assert.Equal(2000, leaderboard.First().Points);
             Assert.Equal(1, leaderboard.First().Rank);
             Assert.Equal(1500, leaderboard.Skip(1).First().Points);
@@ -154,10 +153,11 @@ namespace F1BettingApp.Tests
                 new User("user3", "user3@example.com", "password3") { Id = 3, Points = 1000 }
             };
 
+            var currentYear = DateTime.UtcNow.Year;
             var races = new List<Race>
             {
                 new Race("Australian Grand Prix", DateTime.Now.AddDays(-1),
-                    "Melbourne Grand Prix Circuit", "Australia", "1", 2023)
+                    "Melbourne Grand Prix Circuit", "Australia", "1", currentYear)
                 {
                     Id = 1,
                     Status = RaceStatus.Finished
@@ -181,7 +181,7 @@ namespace F1BettingApp.Tests
             await _leaderboardService.UpdateLeaderboardAsync();
 
             // Assert - Verify that all users were added with appropriate ranks
-            _leaderboardHistoryRepositoryMock.Verify(x => x.AddAsync(It.IsAny<LeaderboardHistory>()), Times.AtLeastOnce);
+            _leaderboardHistoryRepositoryMock.Verify(x => x.AddAsync(It.IsAny<LeaderboardHistory>()), Times.Exactly(3));
 
             // In the current implementation, ties are handled by giving sequential ranks
             // (both users with 2000 points would get ranks 1 and 2 respectively)

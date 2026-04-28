@@ -1,4 +1,6 @@
 using F1BettingApp.Application.DTOs;
+using F1BettingApp.Domain.Entities;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace F1BettingApp.Application.Interfaces
@@ -46,5 +48,19 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="newStatus">The new status of the race</param>
         /// <returns>Task representing the asynchronous operation</returns>
         Task UpdateRaceStatusAsync(int raceId, string newStatus);
+
+        /// <summary>
+        /// Gets multiple races by their IDs efficiently (batch operation)
+        /// </summary>
+        /// <param name="ids">Collection of race IDs to retrieve</param>
+        /// <returns>Collection of race DTOs matching the provided IDs</returns>
+        Task<IEnumerable<RaceDto>> GetRacesByIdsAsync(IEnumerable<int> ids);
+
+        /// <summary>
+        /// Gets race results for a completed race
+        /// </summary>
+        /// <param name="raceId">The ID of the race</param>
+        /// <returns>Collection of results for the race</returns>
+        Task<IEnumerable<Result>> GetResultsAsync(int raceId);
     }
 }

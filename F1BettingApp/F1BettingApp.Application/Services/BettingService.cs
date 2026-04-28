@@ -1,196 +1,484 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using F1BettingApp.Application.DTOs;
+using F1BettingApp.Application.Exceptions;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
-using System.Transactions;
-
 namespace F1BettingApp.Application.Services
 {
+    /// <summary>
+    /// Service for handling all betting-related operations
+    /// </summary>
     public class BettingService : IBettingService
     {
-        private readonly IRepository<Bet> _betRepository;
+        private readonly IBetRepositoryExtensions _betRepository;
         private readonly IRepository<User> _userRepository;
         private readonly IRepository<Race> _raceRepository;
-        private readonly IRepository<Result> _resultRepository;
+        private readonly IRepository<Driver> _driverRepository;
+        private readonly IUserService _userService;
+        private readonly IRaceService _raceService;
 
+        /// <summary>
+        /// Constructor for BettingService
+        /// </summary>
         public BettingService(
-            IRepository<Bet> betRepository,
+            IBetRepositoryExtensions betRepository,
             IRepository<User> userRepository,
-            IRepository<Race> raceRepository,
-            IRepository<Result> resultRepository)
+            IRaceRepositoryExtensions raceRepository,
+            IRepository<Driver> driverRepository,
+            IUserService userService,
+            IRaceService raceService)
         {
             _betRepository = betRepository;
             _userRepository = userRepository;
             _raceRepository = raceRepository;
-            _resultRepository = resultRepository;
+            _driverRepository = driverRepository;
+            _userService = userService;
+            _raceService = raceService;
         }
 
-        public async Task PlaceBetAsync(int userId, int raceId, int driverId, decimal amount)
+        /// <summary>
+        /// Places a bet on a specific driver in a race using the current authenticated user
+        /// </summary>
+        /// <param name="dto">Bet details with validation</param>
+        /// <returns>The created bet as DTO</returns>
+        public async Task<BetResponseDto> PlaceBetAsync(PlaceBetDto dto)
         {
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null || user.Points < amount) throw new InvalidOperationException("Insufficient balance");
-
-            var race = await _raceRepository.GetByIdAsync(raceId);
-            if (race == null || !race.CanPlaceBets()) throw new InvalidOperationException("Race not available for betting");
-
-            // Calculate odds based on bet type (simplified for example)
-            decimal odds = CalculateOdds(BetType.RaceWinner); // Default to race winner
-
-            var bet = new Bet(userId, raceId, driverId, amount, BetType.RaceWinner, odds);
-
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            {
-                try
-                {
-                    await _betRepository.AddAsync(bet);
-
-                    // Deduct balance
-                    user.Points -= (int)amount;
-                    await _userRepository.UpdateAsync(user);
-
-                    await _betRepository.SaveChangesAsync();
-                    await _userRepository.SaveChangesAsync();
-
-                    transaction.Complete();
-                }
-                catch
-                {
-                    transaction.Dispose();
-                    throw;
-                }
-            }
+            throw new NotSupportedException("Use PlaceBetAsync(userId, dto) instead.");
         }
 
-        public async Task CancelBetAsync(int betId)
+        /// <summary>
+        /// Places a bet on a specific driver in a race
+        /// </summary>
+        /// <param name="userId">User ID (passed from controller)</param>
+        /// <param name="dto">Bet details with validation</param>
+        /// <returns>The created bet as DTO</returns>
+        public async Task<BetResponseDto> PlaceBetAsync(int userId, PlaceBetDto dto)
+        {
+            if (dto.Amount <= 0)
+            {
+                throw new ArgumentException("Bet amount must be greater than zero.");
+            }
+    
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new UserNotFoundException("User not found");
+            }
+
+            if ((decimal)user.Points < dto.Amount)
+            {
+                throw new InsufficientFundsException(dto.Amount, (decimal)user.Points);
+            }
+
+            var race = await _raceRepository.GetByIdAsync(dto.RaceId);
+            if (race == null)
+            {
+                throw new RaceNotFoundException(dto.RaceId);
+            }
+
+            if (race.Status != RaceStatus.Scheduled && race.Status != RaceStatus.InProgress)
+            {
+                throw new RaceNotUpcomingException();
+            }
+
+            if (race.Status == RaceStatus.Finished)
+            {
+                throw new RaceCompletedException();
+            }
+
+            var driver = await _driverRepository.GetByIdAsync(dto.DriverId);
+            if (driver == null)
+            {
+                throw new DriverNotFoundException(dto.DriverId);
+            }
+
+            decimal odds;
+            try
+            {
+                odds = race.OddsForDriver(driver.Id);
+            }
+            catch (NotImplementedException)
+            {
+                odds = 1m;
+            }
+
+            var bet = new Bet(user.Id, dto.RaceId, dto.DriverId, dto.Amount, dto.BetType, odds);
+            await _betRepository.AddAsync(bet);
+
+            user.Points = (int)((decimal)user.Points - dto.Amount);
+            await _userRepository.UpdateAsync(user);
+
+            race.TotalBets = (race.TotalBets ?? 0m) + 1m;
+            race.TotalAmount = (race.TotalAmount ?? 0m) + dto.Amount;
+            await _raceRepository.UpdateAsync(race);
+
+            return MapBetToDto(bet);
+        }
+
+        /// <summary>
+        /// Cancels an existing bet
+        /// </summary>
+        /// <param name="betId">Bet identifier</param>
+        /// <param name="userId">User identifier for authorization (extracted from auth context)</param>
+        /// <returns>The updated bet as DTO</returns>
+        public async Task<BetResponseDto> CancelBetAsync(int betId, int userId)
+        {
+            // Parse userId if it's a string format
+
+
+            // Find the bet
+            var bet = await _betRepository.GetByIdAsync(betId);
+            if (bet == null)
+            {
+                throw new BetNotFoundException(betId);
+            }
+
+            // Verify bet belongs to the current user
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null || bet.UserId != userId)
+            {
+                throw new UnauthorizedAccessException("You can only cancel your own bets");
+            }
+
+            // Verify race hasn't started yet
+            var race = await _raceService.GetRaceByIdAsync(bet.RaceId);
+            if (race == null)
+            {
+                throw new RaceNotFoundException(bet.RaceId);
+            }
+
+            if (race.Status == RaceStatus.InProgress || race.Status == RaceStatus.Finished)
+            {
+                throw new RaceAlreadyStartedException();
+            }
+
+            // Update bet status
+            bet.Status = BetStatus.Canceled;
+            await _betRepository.UpdateAsync(bet);
+
+            // Refund the bet amount to user
+            user.Points = (int)((decimal)user.Points + bet.Amount);
+            await _userRepository.UpdateAsync(user);
+
+            return MapBetToDto(bet);
+        }
+
+        /// <summary>
+        /// Gets all bets for a specific user
+        /// </summary>
+        /// <param name="userId">User identifier (extracted from auth context)</param>
+        /// <returns>Collection of bet response DTOs</returns>
+        public async Task<IEnumerable<BetResponseDto>> GetUserBetsAsync(int userId)
+        {
+
+
+            var bets = await _betRepository.GetByUserIdAsync(userId);
+            return bets.Select(MapBetToDto).ToList();
+        }
+
+        /// <summary>
+        /// Gets a specific bet by ID with authorization check
+        /// </summary>
+        /// <param name="betId">Bet identifier</param>
+        /// <param name="userId">User identifier for authorization (extracted from auth context)</param>
+        /// <returns>The bet details or null if not found</returns>
+        public async Task<BetResponseDto?> GetBetByIdAsync(int betId, int userId)
         {
             var bet = await _betRepository.GetByIdAsync(betId);
-            if (bet == null || bet.Status != BetStatus.Pending) throw new InvalidOperationException("Cannot cancel bet");
-
-            var user = await _userRepository.GetByIdAsync(bet.UserId);
-            if (user == null) throw new InvalidOperationException("User not found");
-
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            if (bet == null)
             {
-                try
-                {
-                    bet.Status = BetStatus.Canceled;
-
-                    // Refund the bet amount
-                    user.Points += (int)bet.Amount;
-
-                    await _betRepository.UpdateAsync(bet);
-                    await _userRepository.UpdateAsync(user);
-
-                    await _betRepository.SaveChangesAsync();
-                    await _userRepository.SaveChangesAsync();
-
-                    transaction.Complete();
-                }
-                catch
-                {
-                    transaction.Dispose();
-                    throw;
-                }
+                return null;
             }
-        }
 
-        public async Task<IEnumerable<BetDto>> GetUserBetsAsync(int userId)
-        {
-            var bets = await _betRepository.GetAllAsync();
-            var userBets = bets.Where(b => b.UserId == userId);
 
-            return userBets.Select(b => new BetDto
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null || bet.UserId != user.Id)
             {
-                Id = b.Id,
-                UserId = b.UserId,
-                RaceId = b.RaceId,
-                DriverId = b.DriverId,
-                Amount = b.Amount,
-                Status = b.Status,
-                CreatedAt = b.CreatedAt
-            });
+                throw new UnauthorizedAccessException("You can only view your own bets");
+            }
+
+            return MapBetToDto(bet);
         }
 
+        /// <summary>
+        /// Processes race results and updates bet statuses
+        /// </summary>
+        /// <param name="raceId">Race identifier</param>
         public async Task ProcessRaceResultsAsync(int raceId)
         {
-            var race = await _raceRepository.GetByIdAsync(raceId);
-            if (race == null || !race.IsRaceFinished()) throw new InvalidOperationException("Race not finished or not found");
-
-            var bets = (await _betRepository.GetAllAsync()).Where(b => b.RaceId == raceId && b.Status == BetStatus.Pending);
-            var results = (await _resultRepository.GetAllAsync()).Where(r => r.RaceId == raceId);
-
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            // Get the race using RaceService for comprehensive validation
+            var race = await _raceService.GetRaceByIdAsync(raceId);
+            if (race == null)
             {
-                try
-                {
-                    foreach (var bet in bets)
-                    {
-                        var result = results.FirstOrDefault(r => r.DriverId == bet.DriverId);
-                        bool betWon = IsBetWinning(bet, result);
-
-                        bet.Status = betWon ? BetStatus.Won : BetStatus.Lost;
-                        await _betRepository.UpdateAsync(bet);
-                    }
-
-                    await _betRepository.SaveChangesAsync();
-                    transaction.Complete();
-                }
-                catch
-                {
-                    transaction.Dispose();
-                    throw;
-                }
+                throw new RaceNotFoundException(raceId);
             }
-        }
 
-        public async Task<decimal> CalculateWinningsAsync(int userId, int raceId)
-        {
-            var bets = (await _betRepository.GetAllAsync())
-                .Where(b => b.UserId == userId && b.RaceId == raceId && b.Status == BetStatus.Won);
+            // Verify race is finished
+            if (race.Status != RaceStatus.Finished)
+            {
+                throw new InvalidOperationException("Race must be completed before processing results");
+            }
 
-            decimal totalWinnings = 0;
+            // Get all bets for this race
+            var bets = await _betRepository.GetByRaceIdAsync(raceId);
 
+            // Get race results - assuming this returns a list of (DriverId, Position) pairs
+            var results = await _raceService.GetResultsAsync(raceId);
+
+            // Update each bet
             foreach (var bet in bets)
             {
-                totalWinnings += bet.PotentialWinnings;
-            }
+                // Find the bet's position in race results
+                var position = results.FirstOrDefault(r => r.DriverId == bet.DriverId)?.Position;
 
-            return totalWinnings;
+                if (position != null)
+                {
+                    // Calculate winnings
+                    decimal winnings = 0;
+                    BetStatus newStatus;
+
+                    if (bet.BetType == BetType.RaceWinner)
+                    {
+                        // Winner bet - only wins if first place
+                        if (position == 1)
+                        {
+                            winnings = bet.Amount * bet.Odds;
+                            newStatus = BetStatus.Won;
+                        }
+                        else
+                        {
+                            newStatus = BetStatus.Lost;
+                        }
+                    }
+                    else if (bet.BetType == BetType.PodiumFinish)
+                    {
+                        // Podium finish bet - wins if position is 1, 2, or 3
+                        if (position <= 3)
+                        {
+                            winnings = bet.Amount * bet.Odds;
+                            newStatus = BetStatus.Won;
+                        }
+                        else
+                        {
+                            newStatus = BetStatus.Lost;
+                        }
+                    }
+                    else if (bet.BetType == BetType.Top10Finish)
+                    {
+                        // Top 10 bet - wins if position is 1-10
+                        if (position <= 10)
+                        {
+                            winnings = bet.Amount * bet.Odds;
+                            newStatus = BetStatus.Won;
+                        }
+                        else
+                        {
+                            newStatus = BetStatus.Lost;
+                        }
+                    }
+                    else if (bet.BetType == BetType.FastestLap)
+                    {
+                        // Fastest lap bet - wins if position is 0 (fastest)
+                        if (position == 0)
+                        {
+                            winnings = bet.Amount * bet.Odds;
+                            newStatus = BetStatus.Won;
+                        }
+                        else
+                        {
+                            newStatus = BetStatus.Lost;
+                        }
+                    }
+                    else
+                    {
+                        // Default: treat as lost for other bet types
+                        newStatus = BetStatus.Lost;
+                    }
+
+                    // Update bet
+                    bet.Status = newStatus;
+                    bet.PotentialWinnings = winnings;
+                    bet.Winnings = winnings;
+                    await _betRepository.UpdateAsync(bet);
+
+                    // Add winnings to user balance
+                    var user = await _userRepository.GetByIdAsync(bet.UserId);
+                    if (user != null)
+                    {
+                        user.Points = (int)((decimal)user.Points + winnings);
+                        await _userRepository.UpdateAsync(user);
+                    }
+                }
+            }
         }
 
-        private decimal CalculateOdds(BetType betType)
+        /// <summary>
+        /// Gets user's bet history with pagination support
+        /// </summary>
+        public async Task<BetHistoryResponseDto> GetUserBetHistoryAsync(int userId, int page = 1, int pageSize = 20)
         {
-            // Simplified odds calculation - in real app, this would be more sophisticated
-            switch (betType)
+
+
+            var allBets = await _betRepository.GetByUserIdAsync(userId);
+            var races = await _raceService.GetRacesByIdsAsync(allBets.Select(b => b.RaceId).Distinct().ToList());
+
+            var paginatedBets = allBets
+                .OrderBy(b => b.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new BetHistoryResponseDto
             {
-                case BetType.RaceWinner: return 2.5m;
-                case BetType.PodiumFinish: return 1.8m;
-                case BetType.Top10Finish: return 1.2m;
-                case BetType.FastestLap: return 3.0m;
-                case BetType.FastestPitStop: return 2.8m;
-                case BetType.DNFCount: return 4.0m;
-                case BetType.DriverVsDriver: return 2.0m;
-                case BetType.TeamVsTeam: return 1.9m;
-                default: return 1.0m;
-            }
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalCount = allBets.Count(),
+                Bets = paginatedBets.Select(b => MapBetHistoryDto(b, races)).ToList()
+            };
         }
 
-        private bool IsBetWinning(Bet bet, Result result)
+        /// <summary>
+        /// Validates a bet before placing it (without creating)
+        /// </summary>
+        public async Task<BetValidationResult> ValidateBetAsync(int userId, PlaceBetDto dto)
         {
-            if (result == null) return false;
+            var result = new BetValidationResult();
 
-            switch (bet.BetType)
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
             {
-                case BetType.RaceWinner: return result.Position == 1;
-                case BetType.PodiumFinish: return result.Position <= 3;
-                case BetType.Top10Finish: return result.Position <= 10;
-                case BetType.FastestLap: return result.FastestLap.HasValue; // Simplified
-                case BetType.FastestPitStop: return result.PitStopTime.HasValue; // Simplified
-                case BetType.DNFCount: return result.Position == 0; // Assuming 0 means DNF
-                // DriverVsDriver and TeamVsTeam would need more complex logic
-                default: return false;
+                result.IsValid = false;
+                result.Errors.Add("User not found");
+                return result;
             }
+
+            if ((decimal)user.Points < dto.Amount)
+            {
+                result.IsValid = false;
+                result.Errors.Add($"Insufficient funds. Current points: {(decimal)user.Points}, Required: {dto.Amount}");
+                return result;
+            }
+
+            var race = await _raceService.GetRaceByIdAsync(dto.RaceId);
+            if (race == null)
+            {
+                result.IsValid = false;
+                result.Errors.Add($"Race not found. Race ID: {dto.RaceId}");
+                return result;
+            }
+
+            if (race.Status != RaceStatus.Scheduled && race.Status != RaceStatus.InProgress)
+            {
+                result.IsValid = false;
+                result.Errors.Add("Race is not upcoming or has already started");
+                return result;
+            }
+
+            var driver = await _driverRepository.GetByIdAsync(dto.DriverId);
+            if (driver == null)
+            {
+                result.IsValid = false;
+                result.Errors.Add($"Driver not found. Driver ID: {dto.DriverId}");
+                return result;
+            }
+
+            var odds = GetOddsForDriver(race, driver.Id);
+            result.IsValid = true;
+            result.Odds = odds;
+            result.PotentialWinnings = dto.Amount * odds;
+            return result;
+        }
+
+        /// <summary>
+        /// Gets available races that can accept bets
+        /// </summary>
+        public async Task<IEnumerable<RaceDetailDto>> GetAvailableRacesAsync(int userId)
+        {
+ 
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new UserNotFoundException("User not found");
+            }
+
+            var races = await _raceService.GetUpcomingRacesAsync();
+            return races.Select(r => new RaceDetailDto
+            {
+                Id = r.Id,
+                Name = r.Name ?? string.Empty,
+                Circuit = r.Circuit ?? string.Empty,
+                Country = r.Country ?? string.Empty,
+                RaceDate = r.RaceDate,
+                Status = r.Status,
+                OpenF1RaceId = string.Empty,
+                Season = 0,
+                Weather = string.Empty,
+                TrackCondition = string.Empty,
+                Flag = string.Empty,
+                Paddock = string.Empty,
+                CircuitLayout = string.Empty,
+                SprintRace = string.Empty,
+                SprintDate = string.Empty
+            }).ToList();
+        }
+
+
+        private static BetResponseDto MapBetToDto(Bet bet)
+        {
+            return new BetResponseDto
+            {
+                Id = bet.Id,
+                UserId = bet.UserId,
+                RaceId = bet.RaceId,
+                DriverId = bet.DriverId,
+                DriverName = $"Driver {bet.DriverId}",
+                Amount = bet.Amount,
+                BetType = bet.BetType,
+                Status = bet.Status,
+                Winnings = bet.Winnings,
+                CreatedAt = bet.CreatedAt,
+                ResolvedAt = bet.ResolvedAt
+            };
+        }
+
+        private static BetHistoryDto MapBetHistoryDto(Bet bet, IEnumerable<RaceDto> races)
+        {
+            var race = races.FirstOrDefault(r => r.Id == bet.RaceId);
+            return new BetHistoryDto
+            {
+                Id = bet.Id,
+                UserId = bet.UserId.ToString(),
+                RaceId = bet.RaceId,
+                DriverId = bet.DriverId,
+                DriverName = $"Driver {bet.DriverId}",
+                BetType = bet.BetType,
+                Amount = bet.Amount,
+                Winnings = bet.Winnings,
+                Status = bet.Status,
+                CreatedAt = bet.CreatedAt,
+                ResolvedAt = bet.ResolvedAt,
+                RaceName = race?.Name,
+                RaceDate = race?.RaceDate
+            };
+        }
+
+        private static decimal GetOddsForDriver(RaceDto race, int driverId)
+        {
+            if (race.Odds != null && race.Odds.TryGetValue(driverId, out var odds))
+            {
+                return odds;
+            }
+
+            return 1m;
         }
     }
 }

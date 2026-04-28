@@ -8,13 +8,13 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'race', // Redirect to race module if needed, or handle main dashboard
+        redirectTo: 'races', // Redirect to race module if needed, or handle main dashboard
         pathMatch: 'full'
       }
     ]
   },
   {
-    path: 'race',
+    path: 'races',
     loadChildren: () => import('./race/race.routes').then(m => m.RaceRoutes)
   }
 ];

@@ -1,0 +1,89 @@
+<div class="race-detail-container">
+    @if (raceDetails$ | async; as data) {
+        
+        <h1 class="page-header">{{ data.details.name }} Details</h1>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <strong>Status:</strong> 
+                <span [ngClass]="'status-badge status-' + getStatusClass(data.details.status)">
+                    {{ getStatusText(data.details.status) }}
+                </span>
+            </div>
+            <div class="status-item">
+                <strong>Season:</strong> {{ data.details.season }}
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <section class="detail-panel primary-info">
+                <h2>General Information</h2>
+                <div class="info-group">
+                    <p><strong>Circuit:</strong> {{ data.details.circuit }} ({{ data.details.country }})</p>
+                    <p><strong>Date:</strong> {{ data.details.raceDate | date: 'fullDate' }}</p>
+                    <p><strong>OpenF1 ID:</strong> <span class="api-id">{{ data.details.openF1RaceId }}</span></p>
+                </div>
+                
+                <h3 class="section-subtitle">Race Conditions</h3>
+                <div class="info-group">
+                    <p><strong>Weather:</strong> {{ data.details.weather }}</p>
+                    <p><strong>Track Condition:</strong> {{ data.details.trackCondition }}</p>
+                    <p><strong>Paddock Status:</strong> {{ data.details.paddock }}</p>
+                </div>
+            </section>
+
+            <section class="detail-panel odds-info">
+                <h2>Betting Odds</h2>
+                
+                @if (data.odds) {
+                    <p class="odds-description">Available odds for Race Winner:</p>
+                    <div class="odds-list-container">
+                        @for (driverId of getDriverIds(data.odds); track driverId) {
+                            <div class="odds-item">
+                                <div class="driver-info">
+                                    <span class="driver-label">Driver </span>
+                                    <span class="driver-number">{{ driverId }}</span> <br>
+                                </div>
+                                <div class="bet-action">
+                                    <span class="odds-value">{{ data.odds[driverId] | number:'1.2-2' }}</span>
+                                    <button style="margin-left: 10px;"class="bet-button" title="Place bet on driver {{ driverId }}">Bet</button>
+                                </div>
+                            </div>
+                        } @empty {
+                            <div class="no-data-msg">No odds available for this race.</div>
+                        }
+                    </div>
+                } @else {
+                    <div class="loader-inline">Loading odds...</div>
+                }
+            </section>
+            
+            <section class="detail-panel secondary-info">
+                <h2>Race Details & Schedule</h2>
+                <div class="metric-block">
+                    <p><strong>Circuit Layout:</strong> {{ data.details.circuitLayout }}</p>
+                    <p><strong>Sprint Race:</strong> {{ data.details.sprintRace || 'No' }}</p>
+                    <p><strong>Sprint Date:</strong> {{ data.details.sprintDate || 'N/A' }}</p>
+                </div>
+
+                <h3 class="section-subtitle">Status Summary</h3>
+                <ul class="summary-list">
+                    <li>🏆 Winner: <span class="tbd">TBD</span></li>
+                    <li>⏱️ Fastest Lap: <span class="tbd">TBD</span></li>
+                    <li>🏳️ Race Flag: <span class="flag-text">{{ data.details.flag || 'Standard' }}</span></li>
+                </ul>
+            </section>
+        </div>
+
+    } @else {
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <h2>Loading race details...</h2>
+        </div>
+    }
+
+    <div class="betting-callout">
+        <h3>🏎️ Ready to place your bets?</h3>
+        <p>The betting system is currently in preview mode. Full integration with user wallets is coming soon.</p>
+    </div>
+</div>

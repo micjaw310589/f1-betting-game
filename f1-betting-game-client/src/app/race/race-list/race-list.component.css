@@ -1,0 +1,90 @@
+/* Basic styles for the Race List Component */
+
+.race-list-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.filter-buttons {
+    margin-bottom: 30px;
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.filter-buttons button {
+    padding: 8px 15px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.filter-buttons button.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.race-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.race-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.race-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.race-card h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.race-status-badge {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 0.85em;
+    display: inline-block;
+}
+
+.status-scheduled {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.status-in-progress {
+    background-color: #007bff;
+    color: white;
+}
+
+.status-finished {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-results-processed {
+    background-color: #6c757d;
+    color: white;
+}
+
+.pagination-controls {
+    margin-top: 40px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+}

@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\F1BettingApp.API\F1BettingApp.API.csproj" />
     <ProjectReference Include="..\F1BettingApp.Application\F1BettingApp.Application.csproj" />
     <ProjectReference Include="..\F1BettingApp.Domain\F1BettingApp.Domain.csproj" />
     <ProjectReference Include="..\F1BettingApp.Infrastructure\F1BettingApp.Infrastructure.csproj" />

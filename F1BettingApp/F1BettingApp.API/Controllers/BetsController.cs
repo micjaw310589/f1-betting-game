@@ -19,6 +19,7 @@ namespace F1BettingApp.API.Controllers
     {
         private readonly IBettingService _bettingService;
         private readonly ILogger<BetsController> _logger;
+        private int userId;
 
         /// <summary>
         /// Constructor for BetsController
@@ -29,6 +30,19 @@ namespace F1BettingApp.API.Controllers
         {
             _bettingService = bettingService;
             _logger = logger;
+
+            // Extract userId from authenticated token
+            var claimValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(claimValue))
+            {
+                throw new UnauthorizedAccessException("User is not authenticated");
+            }
+
+            if (!int.TryParse(claimValue, out userId))
+            {
+                _logger.LogWarning("Invalid user identifier in token: {ClaimValue}", claimValue);
+                throw new UnauthorizedAccessException("Invalid user identifier in authentication token");
+            }
         }
 
         /// <summary>
@@ -66,21 +80,13 @@ namespace F1BettingApp.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-                // Get current user ID from authentication context
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
-                            ?? User.Identity?.Name;
-
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized();
-                }
 
                 // Call service to place the bet using the authenticated user ID
                 var result = await _bettingService.PlaceBetAsync(userId, dto);
 
-                _logger.LogInformation("Bet placed successfully");
+                 _logger.LogInformation("Bet placed successfully");
 
-                return Ok(new { message = "Bet placed successfully", userId = userId });
+                return Ok(new { message = "Bet placed successfully", userId });
             }
             catch (UserNotFoundException)
             {
@@ -132,16 +138,9 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
-                            ?? User.Identity?.Name;
 
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized();
-                }
 
                 var bets = await _bettingService.GetUserBetsAsync(userId);
-
                 return Ok(bets);
             }
             catch (Exception ex)
@@ -169,13 +168,7 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
-                            ?? User.Identity?.Name;
 
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized();
-                }
 
                 var bet = await _bettingService.GetBetByIdAsync(id, userId);
 
@@ -212,13 +205,7 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
-                            ?? User.Identity?.Name;
 
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized();
-                }
 
                 await _bettingService.CancelBetAsync(id, userId);
 

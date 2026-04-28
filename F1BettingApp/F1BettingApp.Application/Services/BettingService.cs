@@ -437,7 +437,7 @@ namespace F1BettingApp.Application.Services
             return new BetResponseDto
             {
                 Id = bet.Id,
-                UserId = bet.UserId.ToString(),
+                UserId = bet.UserId,
                 RaceId = bet.RaceId,
                 DriverId = bet.DriverId,
                 DriverName = $"Driver {bet.DriverId}",

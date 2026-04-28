@@ -16,7 +16,7 @@ namespace F1BettingApp.Application.DTOs
         /// <summary>
         /// User who placed the bet
         /// </summary>
-        public string UserId { get; set; } = string.Empty;
+        public int UserId { get; set; }
 
         /// <summary>
         /// Race the bet is for

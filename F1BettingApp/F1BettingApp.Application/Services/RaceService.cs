@@ -35,10 +35,10 @@ namespace F1BettingApp.Application.Services
             {
                 Id = race.Id,
                 Name = race.Name,
+                Circuit = race.Circuit,
+                Country = race.Country,
                 RaceDate = race.Date,
                 Status = race.Status,
-                Country = race.Country,
-                Circuit = race.Circuit,
                 Season = race.Season,
                 Flag = string.Empty, // TODO: Implement flag logic
                 Odds = new Dictionary<int, decimal>()

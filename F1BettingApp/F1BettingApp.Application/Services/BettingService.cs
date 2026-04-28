@@ -58,19 +58,15 @@ namespace F1BettingApp.Application.Services
         /// <param name="userId">User ID (passed from controller)</param>
         /// <param name="dto">Bet details with validation</param>
         /// <returns>The created bet as DTO</returns>
-        public async Task<BetResponseDto> PlaceBetAsync(string userId, PlaceBetDto dto)
+        public async Task<BetResponseDto> PlaceBetAsync(int userId, PlaceBetDto dto)
         {
-            if (string.IsNullOrEmpty(userId))
+            if (dto.Amount <= 0)
             {
-                throw new UnauthorizedAccessException("User not authenticated");
+                throw new ArgumentException("Bet amount must be greater than zero.");
             }
+    
 
-            if (!int.TryParse(userId, out var userIdInt))
-            {
-                throw new UnauthorizedAccessException("Invalid user ID format");
-            }
-
-            var user = await _userRepository.GetByIdAsync(userIdInt);
+            var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 throw new UserNotFoundException("User not found");
@@ -132,10 +128,10 @@ namespace F1BettingApp.Application.Services
         /// <param name="betId">Bet identifier</param>
         /// <param name="userId">User identifier for authorization (extracted from auth context)</param>
         /// <returns>The updated bet as DTO</returns>
-        public async Task<BetResponseDto> CancelBetAsync(int betId, string userId)
+        public async Task<BetResponseDto> CancelBetAsync(int betId, int userId)
         {
             // Parse userId if it's a string format
-            int userIdInt = int.Parse(userId);
+
 
             // Find the bet
             var bet = await _betRepository.GetByIdAsync(betId);
@@ -145,8 +141,8 @@ namespace F1BettingApp.Application.Services
             }
 
             // Verify bet belongs to the current user
-            var user = await _userRepository.GetByIdAsync(userIdInt);
-            if (user == null || bet.UserId != userIdInt)
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null || bet.UserId != userId)
             {
                 throw new UnauthorizedAccessException("You can only cancel your own bets");
             }
@@ -179,14 +175,11 @@ namespace F1BettingApp.Application.Services
         /// </summary>
         /// <param name="userId">User identifier (extracted from auth context)</param>
         /// <returns>Collection of bet response DTOs</returns>
-        public async Task<IEnumerable<BetResponseDto>> GetUserBetsAsync(string userId)
+        public async Task<IEnumerable<BetResponseDto>> GetUserBetsAsync(int userId)
         {
-            if (!int.TryParse(userId, out var userIdInt))
-            {
-                throw new UnauthorizedAccessException("Invalid user ID format");
-            }
 
-            var bets = await _betRepository.GetByUserIdAsync(userIdInt);
+
+            var bets = await _betRepository.GetByUserIdAsync(userId);
             return bets.Select(MapBetToDto).ToList();
         }
 
@@ -196,7 +189,7 @@ namespace F1BettingApp.Application.Services
         /// <param name="betId">Bet identifier</param>
         /// <param name="userId">User identifier for authorization (extracted from auth context)</param>
         /// <returns>The bet details or null if not found</returns>
-        public async Task<BetResponseDto?> GetBetByIdAsync(int betId, string userId)
+        public async Task<BetResponseDto?> GetBetByIdAsync(int betId, int userId)
         {
             var bet = await _betRepository.GetByIdAsync(betId);
             if (bet == null)
@@ -204,12 +197,9 @@ namespace F1BettingApp.Application.Services
                 return null;
             }
 
-            if (!int.TryParse(userId, out var userIdInt))
-            {
-                throw new UnauthorizedAccessException("Invalid user ID format");
-            }
 
-            var user = await _userRepository.GetByIdAsync(userIdInt);
+
+            var user = await _userRepository.GetByIdAsync(userId);
             if (user == null || bet.UserId != user.Id)
             {
                 throw new UnauthorizedAccessException("You can only view your own bets");
@@ -333,14 +323,11 @@ namespace F1BettingApp.Application.Services
         /// <summary>
         /// Gets user's bet history with pagination support
         /// </summary>
-        public async Task<BetHistoryResponseDto> GetUserBetHistoryAsync(string userId, int page = 1, int pageSize = 20)
+        public async Task<BetHistoryResponseDto> GetUserBetHistoryAsync(int userId, int page = 1, int pageSize = 20)
         {
-            if (!int.TryParse(userId, out var userIdInt))
-            {
-                throw new UnauthorizedAccessException("Invalid user ID format");
-            }
 
-            var allBets = await _betRepository.GetByUserIdAsync(userIdInt);
+
+            var allBets = await _betRepository.GetByUserIdAsync(userId);
             var races = await _raceService.GetRacesByIdsAsync(allBets.Select(b => b.RaceId).Distinct().ToList());
 
             var paginatedBets = allBets
@@ -361,17 +348,11 @@ namespace F1BettingApp.Application.Services
         /// <summary>
         /// Validates a bet before placing it (without creating)
         /// </summary>
-        public async Task<BetValidationResult> ValidateBetAsync(string userId, PlaceBetDto dto)
+        public async Task<BetValidationResult> ValidateBetAsync(int userId, PlaceBetDto dto)
         {
             var result = new BetValidationResult();
-            if (!int.TryParse(userId, out var userIdInt))
-            {
-                result.IsValid = false;
-                result.Errors.Add("Invalid user ID format");
-                return result;
-            }
 
-            var user = await _userRepository.GetByIdAsync(userIdInt);
+            var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 result.IsValid = false;
@@ -419,14 +400,11 @@ namespace F1BettingApp.Application.Services
         /// <summary>
         /// Gets available races that can accept bets
         /// </summary>
-        public async Task<IEnumerable<RaceDetailDto>> GetAvailableRacesAsync(string userId)
+        public async Task<IEnumerable<RaceDetailDto>> GetAvailableRacesAsync(int userId)
         {
-            if (!int.TryParse(userId, out var userIdInt))
-            {
-                throw new UnauthorizedAccessException("Invalid user ID format");
-            }
+ 
 
-            var user = await _userRepository.GetByIdAsync(userIdInt);
+            var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 throw new UserNotFoundException("User not found");

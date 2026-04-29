@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, catchError, tap, map } from 'rxjs';
@@ -12,7 +13,7 @@ import {
   providedIn: 'root',
 })
 export class RaceService {
-  private readonly API_URL = '/api/races';
+  private readonly API_URL = `${environment.apiUrl}/races`;
 
   constructor(private http: HttpClient) {}
 

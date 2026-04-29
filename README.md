@@ -22,5 +22,3 @@ Użytkownik może obstawiać zawody w różnych kategoriach - najważniejsze z n
 i inne (jest to pole do rozwoju aplikacji po wdrożeniu).
 
 Ponadto system przechowuje historię zakładów i udostępnia użytkownikom ich personalne statystyki związane z grą, jak i również prezentuje rankingi graczy (ogólne i okresowe, np. z 1 miesiąca).
-
-## Instrukcja obsługi

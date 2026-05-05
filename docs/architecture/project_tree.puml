@@ -1,0 +1,179 @@
+@startuml project_tree
+' Project Folder & File Tree Diagram
+' Generated for F1 Betting Game
+
+left to right direction
+
+skinparam packageStyle node
+skinparam Cloud {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+
+skinparam Rectangle {
+    BackgroundColor White
+    BorderColor Gray
+    ArrowColor Black
+}
+
+package "Root" as root {
+    
+    package "Configuration Files" {
+        [".gitignore"] as gitignore
+        "Dockerfile" as dockerfile
+        "f1-betting-game.sln" as solution
+        "plantuml.jar" as plantuml
+        "README.md" as readme
+    }
+    
+    package "docs/" {
+        
+        package "docs/SPECIFICATION.md" as spec
+        
+        package "docs/architecture/" {
+            "component_diagram.puml" as comp_diag
+            "deployment_diagram.puml" as deploy_diag
+            "class_diagram.puml" as class_diag
+            "F1BettingGame_DomainModel.png" as domain_model
+        }
+        
+        package "docs/sequences/" {
+            "bet_placement.puml" as bet_seq
+            "leaderboard_update.puml" as lb_seq
+            "race_result_processing.puml" as result_seq
+            "user_registration.puml" as reg_seq
+        }
+        
+        "docs/tasks/" as tasks_dir
+    }
+    
+    package "f1-betting-game-client/" as client {
+        
+        package "Client Config" {
+            ".editorconfig" as editorconfig
+            ".gitignore" as client_gitignore
+            ".prettierrc" as prettierrc
+            "angular.json" as angular_json
+            "proxy.conf.json" as proxy_conf
+            "tsconfig.json" as tsconfig_json
+            "tsconfig.app.json" as tsconfig_app
+            "tsconfig.spec.json" as tsconfig_spec
+            "vercel.json" as vercel_json
+        }
+        
+        package "f1-betting-game-client/package.json" as package_json
+        package "f1-betting-game-client/package-lock.json" as package_lock
+        
+        package "f1-betting-game-client/public/" {
+            "favicon.ico" as favicon
+        }
+        
+        package "f1-betting-game-client/src/" as src {
+            
+            package "Index & Entry" {
+                "index.html" as index_html
+                "main.ts" as main_ts
+                "styles.css" as styles_css
+            }
+            
+            package "app/" {
+                "app.config.ts" as app_config
+                "app.css" as app_css
+                "app.html" as app_html
+                "app.routes.ts" as app_routes
+                "app.spec.ts" as app_spec
+                "app.ts" as app_ts
+                
+                package "app/race/" as race_dir
+            }
+            
+            package "environments/" {
+                "environment.development.ts" as env_dev
+                "environment.ts" as env_prod
+            }
+        }
+    }
+    
+    package "F1BettingApp/" as backend {
+        
+        package "F1BettingApp.API/" as api {
+            "appsettings.json" as appsettings
+            "F1BettingApp.API.csproj" as api_proj
+            "Program.cs" as program_cs
+            
+            package "Controllers/" {
+                "AuthController.cs" as auth_ctrl
+                "BetsController.cs" as bets_ctrl
+                "LeaderboardController.cs" as lb_ctrl
+                "RacesController.cs" as races_ctrl
+                "UsersController.cs" as users_ctrl
+            }
+        }
+        
+        package "F1BettingApp.Application/" as app {
+            "F1BettingApp.Application.csproj" as app_proj
+            
+            package "DTOs/" {
+                "AuthDto.cs" as auth_dto
+                "BetDto.cs" as bet_dto
+                "BetHistoryDto.cs" as bet_hist_dto
+                "BetHistoryResponseDto.cs" as bet_hist_resp_dto
+                "BetResponseDto.cs" as bet_resp_dto
+                "HistoricalLeaderboardDto.cs" as hist_lb_dto
+                "LeaderboardEntryDto.cs" as lb_entry_dto
+                "NotificationDto.cs" as notif_dto
+                "PlaceBetDto.cs" as place_bet_dto
+                "RaceDetailDto.cs" as race_detail_dto
+                "RaceDto.cs" as race_dto
+                "RaceResultDto.cs" as race_result_dto
+                "RaceSummaryDto.cs" as race_summary_dto
+                "UserDto.cs" as user_dto
+                "UserPointsDto.cs" as user_points_dto
+                "UserProfileDto.cs" as user_profile_dto
+                "UserRankingDto.cs" as user_ranking_dto
+                "UserStatisticsDto.cs" as user_stats_dto
+            }
+            
+            package "Exceptions/" {
+                "BettingExceptions.cs" as betting_exc
+            }
+            
+            package "Interfaces/" {
+                "IBettingService.cs" as ibetting
+                "ILeaderboardService.cs" as ilb
+                "INotificationService.cs" as inotif
+                "IRaceService.cs" as irace
+                "IUserService.cs" as iuser
+            }
+            
+            package "Services/" {
+                "BettingService.cs" as betting_svc
+                "LeaderboardService.cs" as lb_svc
+                "NotificationService.cs" as notif_svc
+                "RaceService.cs" as race_svc
+                "UserService.cs" as user_svc
+            }
+        }
+        
+        package "F1BettingApp.Domain/" as domain
+        package "F1BettingApp.Infrastructure/" as infra
+        package "F1BettingApp.Tests/" as tests
+    }
+}
+
+legend right
+    #bolding== F1 Betting Game - Project Structure ==#
+    
+    This PlantUML diagram represents the complete
+    folder and file tree of the F1 Betting Game
+    project.
+    
+    **Main Components:**
+    - docs/          - Documentation and diagrams
+    - f1-betting-game-client/ - Angular frontend
+    - F1BettingApp/  - ASP.NET Core backend
+    
+endlegend
+
+@enduml

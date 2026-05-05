@@ -31,27 +31,62 @@ builder.Services.AddCors(options =>
 });
 
 // Register DbContext with PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Host=localhost;Database=F1BettingApp;Username=postgres;Password=";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-if (!string.IsNullOrEmpty(databaseUrl))
+if (!string.IsNullOrWhiteSpace(databaseUrl))
 {
-    // Parse the Render URL into a standard Npgsql connection string
-    var databaseUri = new Uri(databaseUrl);
-    var userInfo = databaseUri.UserInfo.Split(':');
-
-    var npgsqlBuilder = new NpgsqlConnectionStringBuilder
+    try
     {
-        Host = databaseUri.Host,
-        Port = databaseUri.Port,
-        Username = userInfo[0],
-        Password = userInfo[1],
-        Database = databaseUri.LocalPath.TrimStart('/'),
-        SslMode = SslMode.Require,
-        TrustServerCertificate = true // Required for Render's SSL setup
-    };
-    connectionString = npgsqlBuilder.ToString();
+        // Parse the Render URL into a standard Npgsql connection string
+        // Supports formats: postgres://user:pass@host:port/db or postgresql://user:pass@host:port/db
+        var databaseUri = new Uri(databaseUrl);
+        var userInfo = databaseUri.UserInfo;
+
+        // Split userinfo - password may contain ':' so split only on first ':'
+        var firstColonIndex = userInfo.IndexOf(':');
+        if (firstColonIndex == -1)
+        {
+            throw new InvalidOperationException($"Invalid DATABASE_URL format: missing password separator. Expected format: postgres://username:password@host:port/database");
+        }
+
+        var username = userInfo.Substring(0, firstColonIndex);
+        var password = userInfo.Substring(firstColonIndex + 1);
+
+        // URL-decode username and password (passwords may contain encoded characters like %40 for @)
+        username = Uri.UnescapeDataString(username);
+        password = Uri.UnescapeDataString(password);
+
+        var databaseName = databaseUri.LocalPath.TrimStart('/');
+
+        var npgsqlBuilder = new NpgsqlConnectionStringBuilder
+        {
+            Host = databaseUri.Host,
+            Port = databaseUri.Port,
+            Username = username,
+            Password = password,
+            Database = databaseName,
+            SslMode = SslMode.Require,
+            TrustServerCertificate = true,
+            // Prevent connection string from including the original URL (which could leak credentials)
+            Pooling = true
+        };
+        connectionString = npgsqlBuilder.ToString();
+    }
+    catch (Exception ex)
+    {
+        // Log the error but provide a readable connection string for debugging
+        Console.Error.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
+        Console.Error.WriteLine($"DATABASE_URL pattern: {databaseUrl.Substring(0, Math.Min(20, databaseUrl.Length))}...{databaseUrl.Substring(Math.Max(0, databaseUrl.Length - 10))}");
+        throw;
+    }
+}
+
+// Use fallback only if no connection string was configured
+if (string.IsNullOrEmpty(connectionString))
+{
+    connectionString = "Host=localhost;Database=F1BettingApp;Username=postgres;Password=";
+    Console.WriteLine("WARNING: Using default local connection string. No DefaultConnection or DATABASE_URL found.");
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>

@@ -46,6 +46,16 @@ namespace F1BettingApp.Infrastructure.Persistence
         public IRepository<LeaderboardHistory> LeaderboardHistoryRepository { get; }
 
         /// <summary>
+        /// Gets the driver repository
+        /// </summary>
+        public IDriverRepository DriverRepository { get; }
+
+        /// <summary>
+        /// Gets the team repository
+        /// </summary>
+        public ITeamRepository TeamRepository { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="UnitOfWork"/> class
         /// </summary>
         /// <param name="context">The database context</param>
@@ -62,7 +72,9 @@ namespace F1BettingApp.Infrastructure.Persistence
             IRepository<Race> raceRepository,
             IRepository<Result> resultRepository,
             IRepository<Notification> notificationRepository,
-            IRepository<LeaderboardHistory> leaderboardHistoryRepository)
+            IRepository<LeaderboardHistory> leaderboardHistoryRepository,
+            IDriverRepository driverRepository,
+            ITeamRepository teamRepository)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             BetRepository = betRepository ?? throw new ArgumentNullException(nameof(betRepository));
@@ -71,6 +83,8 @@ namespace F1BettingApp.Infrastructure.Persistence
             ResultRepository = resultRepository ?? throw new ArgumentNullException(nameof(resultRepository));
             NotificationRepository = notificationRepository ?? throw new ArgumentNullException(nameof(notificationRepository));
             LeaderboardHistoryRepository = leaderboardHistoryRepository ?? throw new ArgumentNullException(nameof(leaderboardHistoryRepository));
+            DriverRepository = driverRepository ?? throw new ArgumentNullException(nameof(driverRepository));
+            TeamRepository = teamRepository ?? throw new ArgumentNullException(nameof(teamRepository));
         }
 
         /// <summary>
@@ -124,7 +138,7 @@ namespace F1BettingApp.Infrastructure.Persistence
                 throw new InvalidOperationException("A transaction is already in progress.");
             }
 
-            _currentTransaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            _currentTransaction = await _context.Database.BeginTransactionAsync();
         }
 
         /// <summary>

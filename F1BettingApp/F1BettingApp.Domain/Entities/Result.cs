@@ -26,6 +26,9 @@ namespace F1BettingApp.Domain.Entities
         public TimeSpan? FastestLap { get; set; } 
         public TimeSpan? PitStopTime { get; set; }
 
+        // Parameterless constructor required by EF Core
+        public Result() { }
+
         public Result(int raceId, int driverId, int position, int points, TimeSpan fastestLap, TimeSpan? pitStopTime)
         {
             // Validate raceId - must be positive

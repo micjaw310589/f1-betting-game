@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using F1BettingApp.Domain.Entities;
+using F1BettingApp.Domain.Enums;
 
 namespace F1BettingApp.Infrastructure.Persistence
 {
@@ -15,6 +16,8 @@ namespace F1BettingApp.Infrastructure.Persistence
         public DbSet<Result> Results { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<LeaderboardHistory> LeaderboardHistories { get; set; }
+        public DbSet<Driver> Drivers { get; set; }
+        public DbSet<Team> Teams { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,6 +30,8 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.HasIndex(u => u.Username).IsUnique();
                 entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
                 entity.Property(u => u.Username).IsRequired().HasMaxLength(50);
+                entity.Property(u => u.PasswordHash).IsRequired();
+                entity.Property(u => u.Points).HasDefaultValue(10000);
             });
 
             // Configure Bet entity
@@ -45,6 +50,18 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(b => b.Amount).HasColumnType("decimal(18,2)");
                 entity.Property(b => b.Odds).HasColumnType("decimal(18,2)");
                 entity.Property(b => b.PotentialWinnings).HasColumnType("decimal(18,2)");
+                entity.Property(b => b.Winnings).HasColumnType("decimal(18,2)");
+
+                // Map enums to strings for readability
+                entity.Property(b => b.BetType)
+                      .HasConversion(
+                          v => v.ToString(),
+                          v => (BetType)Enum.Parse(typeof(BetType), v));
+
+                entity.Property(b => b.Status)
+                      .HasConversion(
+                          v => v.ToString(),
+                          v => (BetStatus)Enum.Parse(typeof(BetStatus), v));
             });
 
             // Configure Race entity
@@ -54,6 +71,12 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(r => r.Name).IsRequired().HasMaxLength(100);
                 entity.Property(r => r.Circuit).IsRequired().HasMaxLength(100);
                 entity.Property(r => r.Country).IsRequired().HasMaxLength(50);
+
+                // Map race status enum to string
+                entity.Property(r => r.Status)
+                      .HasConversion(
+                          v => v.ToString(),
+                          v => (RaceStatus)Enum.Parse(typeof(RaceStatus), v));
             });
 
             // Configure Result entity
@@ -75,6 +98,8 @@ namespace F1BettingApp.Infrastructure.Persistence
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(r => new { r.RaceId, r.DriverId }).IsUnique();
+                entity.Property(r => r.Position).IsRequired();
+                entity.Property(r => r.Points).HasDefaultValue(0);
             });
 
             // Configure Notification entity
@@ -104,6 +129,29 @@ namespace F1BettingApp.Infrastructure.Persistence
 
                 entity.HasIndex(l => new { l.UserId, l.RaceId }).IsUnique();
                 entity.Property(l => l.Season).IsRequired().HasMaxLength(50);
+            });
+
+            // Configure Driver entity
+            modelBuilder.Entity<Driver>(entity =>
+            {
+                entity.HasIndex(d => d.OpenF1DriverId).IsUnique();
+                entity.Property(d => d.Name).IsRequired().HasMaxLength(100);
+                entity.Property(d => d.Country).IsRequired().HasMaxLength(50);
+                entity.Property(d => d.OpenF1DriverId).IsRequired().HasMaxLength(50);
+
+                entity.HasOne(d => d.Team)
+                      .WithMany(t => t.Drivers)
+                      .HasForeignKey(d => d.TeamId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure Team entity
+            modelBuilder.Entity<Team>(entity =>
+            {
+                entity.HasIndex(t => t.OpenF1TeamId).IsUnique();
+                entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
+                entity.Property(t => t.Country).IsRequired().HasMaxLength(50);
+                entity.Property(t => t.OpenF1TeamId).IsRequired().HasMaxLength(50);
             });
         }
     }

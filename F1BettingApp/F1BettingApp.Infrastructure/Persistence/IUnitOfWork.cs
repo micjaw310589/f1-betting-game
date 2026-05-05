@@ -40,6 +40,16 @@ namespace F1BettingApp.Infrastructure.Persistence
         IRepository<LeaderboardHistory> LeaderboardHistoryRepository { get; }
 
         /// <summary>
+        /// Gets the driver repository
+        /// </summary>
+        IDriverRepository DriverRepository { get; }
+
+        /// <summary>
+        /// Gets the team repository
+        /// </summary>
+        ITeamRepository TeamRepository { get; }
+
+        /// <summary>
         /// Commits all changes made in this unit of work
         /// </summary>
         /// <returns>Task representing the asynchronous operation</returns>

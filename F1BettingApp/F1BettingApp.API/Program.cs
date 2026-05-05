@@ -62,7 +62,7 @@ if (!string.IsNullOrWhiteSpace(databaseUrl))
         var npgsqlBuilder = new NpgsqlConnectionStringBuilder
         {
             Host = databaseUri.Host,
-            Port = databaseUri.Port,
+            Port = databaseUri.Port == -1 ? 5432 : databaseUri.Port,
             Username = username,
             Password = password,
             Database = databaseName,

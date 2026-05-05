@@ -1,7 +1,5 @@
 # f1-betting-game
 
-`https://f1-betting-game-qy5l.vercel.app/`
-
 ## Opis skrócony projektu
 Aplikacja internetowa/bazodanowa pełniąca rolę gry w obstawianie wyścigów F1 na punkty.
 
@@ -22,3 +20,5 @@ Użytkownik może obstawiać zawody w różnych kategoriach - najważniejsze z n
 i inne (jest to pole do rozwoju aplikacji po wdrożeniu).
 
 Ponadto system przechowuje historię zakładów i udostępnia użytkownikom ich personalne statystyki związane z grą, jak i również prezentuje rankingi graczy (ogólne i okresowe, np. z 1 miesiąca).
+
+## Instrukcja obsługi

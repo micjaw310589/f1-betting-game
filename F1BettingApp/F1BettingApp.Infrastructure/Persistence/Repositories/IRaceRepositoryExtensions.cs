@@ -28,12 +28,12 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
         /// <summary>
         /// Gets the total amount wagered on a race (nullable).
         /// </summary>
-        decimal? GetTotalAmountWageredAsync(int raceId);
+        Task<decimal?> GetTotalAmountWageredAsync(int raceId);
 
         /// <summary>
         /// Gets the total number of bets placed on a race (nullable).
         /// </summary>
-        int? GetTotalBetsCountAsync(int raceId);
+        Task<int?> GetTotalBetsCountAsync(int raceId);
 
         /// <summary>
         /// Gets races by their IDs.

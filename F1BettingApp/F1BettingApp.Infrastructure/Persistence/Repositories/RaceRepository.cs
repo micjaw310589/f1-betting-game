@@ -55,12 +55,12 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             return race.Status == RaceStatus.Scheduled && !race.Bets.Any(b => b.Status == BetStatus.Resolved);
         }
 
-        public decimal? GetTotalAmountWageredAsync(int raceId)
+        public async Task<decimal?> GetTotalAmountWageredAsync(int raceId)
         {
             try
             {
-                var bets = _context.Bets.Where(b => b.RaceId == raceId).ToList();
-                return bets.Sum(b => b.Amount);
+                var bets = await _context.Bets.Where(b => b.RaceId == raceId).ToListAsync();
+                return bets.Any() ? bets.Sum(b => b.Amount) : (decimal?)null;
             }
             catch (Exception ex)
             {
@@ -69,11 +69,11 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             }
         }
 
-        public int? GetTotalBetsCountAsync(int raceId)
+        public async Task<int?> GetTotalBetsCountAsync(int raceId)
         {
             try
             {
-                return _context.Bets.Count(b => b.RaceId == raceId);
+                return await _context.Bets.CountAsync(b => b.RaceId == raceId);
             }
             catch (Exception ex)
             {

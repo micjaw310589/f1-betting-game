@@ -3,9 +3,9 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Application.Services;
+using F1BettingApp.Infrastructure.OpenF1;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
-using F1BettingApp.Infrastructure.OpenF1;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -67,7 +67,6 @@ if (!string.IsNullOrWhiteSpace(databaseUrl))
             Password = password,
             Database = databaseName,
             SslMode = SslMode.Require,
-            TrustServerCertificate = true,
             // Prevent connection string from including the original URL (which could leak credentials)
             Pooling = true
         };
@@ -96,9 +95,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IDriverRepository, DriverRepository>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<IBetRepository, BetRepository>();
+builder.Services.AddScoped<IRaceRepository, RaceRepository>();
+builder.Services.AddScoped<IResultRepository, ResultRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Register OpenF1 settings and HttpClient
-builder.Services.Configure<OpenF1Settings>(builder.Configuration.GetSection("OpenF1"));
+builder.Services.Configure<OpenF1Client.OpenF1Settings>(builder.Configuration.GetSection("OpenF1"));
 builder.Services.AddHttpClient("OpenF1", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("OpenF1:BaseUrl") ?? "https://api.openf1.org");
@@ -107,6 +111,11 @@ builder.Services.AddHttpClient("OpenF1", client =>
 
 // Register application services
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+builder.Services.AddScoped<IBettingService, BettingService>();
+builder.Services.AddScoped<IRaceService, RaceService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
 
 // JWT Authentication Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

@@ -81,15 +81,15 @@ if (!string.IsNullOrWhiteSpace(databaseUrl))
     }
 }
 
-// Use fallback only if no connection string was configured
-if (string.IsNullOrEmpty(connectionString))
-{
-    connectionString = "Host=localhost;Database=F1BettingApp;Username=postgres;Password=";
-    Console.WriteLine("WARNING: Using default local connection string. No DefaultConnection or DATABASE_URL found.");
-}
+// // Use fallback only if no connection string was configured
+// if (string.IsNullOrEmpty(connectionString))
+// {
+//     connectionString = "Host=localhost;Database=F1BettingApp;Username=postgres;Password=";
+//     Console.WriteLine("WARNING: Using default local connection string. No DefaultConnection or DATABASE_URL found.");
+// }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, b => b.MigrationsAssembly("F1BettingApp.Infrastructure")));
 
 // Register repositories and Unit of Work
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -100,6 +100,7 @@ builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IResultRepository, ResultRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped(typeof(F1BettingApp.Infrastructure.Persistence.Repositories.IRepository<>), typeof(F1BettingApp.Infrastructure.Persistence.Repositories.Repository<>));
 
 // Register OpenF1 settings and HttpClient
 builder.Services.Configure<OpenF1Client.OpenF1Settings>(builder.Configuration.GetSection("OpenF1"));

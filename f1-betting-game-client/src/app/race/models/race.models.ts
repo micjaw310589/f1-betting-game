@@ -37,7 +37,13 @@ export interface RaceDto {
 
 /**
  * Corresponds to F1BettingApp.Application.DTOs.RaceDetailDto
- * Detailed race information.
+ * 
+ * IMPORTANT: The backend RacesController.GetRaceById returns a PARTIALLY populated RaceDetailDto
+ * with only these fields: Id, Name, Circuit, Country, RaceDate, Status, Season
+ * 
+ * The full RaceDetailDto definition includes: OpenF1RaceId, Weather, TrackCondition, Flag,
+ * Paddock, CircuitLayout, SprintRace, SprintDate - but these are NOT populated by the current
+ * backend implementation.
  */
 export interface RaceDetailDto {
     id: number;
@@ -45,16 +51,17 @@ export interface RaceDetailDto {
     circuit: string;
     country: string;
     raceDate: Date;
-    status: 'Scheduled' | 'InProgress'| 'Finished' | 'ResultsProcessed';
-    openF1RaceId: string;
-    season: number;
-    weather: string;
-    trackCondition: string;
-    flag: string;
-    paddock: string;
-    circuitLayout: string;
-    sprintRace: string;
-    sprintDate: string;
+    status: 'Scheduled' | 'InProgress' | 'Finished' | 'ResultsProcessed';
+    // NOTE: The current backend does NOT populate these fields:
+    openF1RaceId?: string;
+    season?: number;
+    weather?: string;
+    trackCondition?: string;
+    flag?: string;
+    paddock?: string;
+    circuitLayout?: string;
+    sprintRace?: string;
+    sprintDate?: string;
 }
 
 /**

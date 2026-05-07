@@ -1,20 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RaceService } from '../services/race.service';
-import { Observable } from 'rxjs';
+import { Observable, Subscription, catchError, of, tap, shareReplay, finalize } from 'rxjs';
 import { PagedResult, RaceSummaryDto } from '../models/race.models';
 import { CommonModule } from '@angular/common'; // Dla async, ngIf, date
 import { RouterModule } from '@angular/router'; // DLA [routerLink]
 
 @Component({
   selector: 'app-race-list',
+  standalone: true,
   templateUrl: './race-list.component.html',
   imports: [CommonModule, RouterModule],
   styleUrls: ['./race-list.component.css'],
 })
-export class RaceListComponent implements OnInit {
+export class RaceListComponent implements OnInit, OnDestroy {
   isLoading = true;
   hasError = false;
   raceSummaries$!: Observable<PagedResult<RaceSummaryDto>>;
+  private raceSubscription?: Subscription;
   
   // Pagination controls
   page = 1;
@@ -29,12 +31,34 @@ export class RaceListComponent implements OnInit {
 
   /**
    * Loads race summaries based on current pagination and filter criteria.
+   * Uses shareReplay(1) so both the manual subscription (for loading state)
+   * and the async pipe in the template share the same HTTP request.
    */
   loadRaceSummaries(): void {
     this.isLoading = true;
-    this.raceSummaries$ = this.raceService.getRaceSummaries(this.page, this.pageSize, this.filterType);
+    this.hasError = false;
     
-    // For a real application, the async pipe in the template handles subscription and unsubscription.
+    // Cancel any previous subscription
+    this.raceSubscription?.unsubscribe();
+    
+    this.raceSummaries$ = this.raceService.getRaceSummaries(this.page, this.pageSize, this.filterType).pipe(
+      tap(() => {
+        this.isLoading = false;
+      }),
+      catchError((error: any) => {
+        console.error('Error loading races:', error);
+        this.hasError = true;
+        this.isLoading = false;
+        return of({ items: [], page: this.page, pageSize: this.pageSize, totalItems: 0, totalPages: 0 });
+      }),
+      // Share the result so both the manual subscription and async pipe
+      // use the same HTTP request instead of triggering two separate ones.
+      shareReplay(1)
+    );
+    
+    // Subscribe to trigger the request eagerly (the async pipe in the template
+    // will receive the replayed result via shareReplay).
+    this.raceSubscription = this.raceSummaries$.subscribe();
   }
 
   /**
@@ -54,6 +78,13 @@ export class RaceListComponent implements OnInit {
     this.filterType = filterType;
     this.page = 1; // Reset to the first page upon filtering
     this.loadRaceSummaries();
+  }
+
+  /**
+   * Cleanup on component destroy.
+   */
+  ngOnDestroy(): void {
+    this.raceSubscription?.unsubscribe();
   }
 
   /**

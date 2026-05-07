@@ -13,7 +13,7 @@ import {
   providedIn: 'root',
 })
 export class RaceService {
-  private readonly API_URL = `${environment.apiUrl}/races`;
+  private readonly API_URL = `${environment.apiUrl}/Races`;
 
   constructor(private http: HttpClient) {}
 

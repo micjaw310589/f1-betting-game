@@ -1,22 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { RaceService } from '../services/race.service';
-import { Observable, combineLatest, of } from 'rxjs';
-import { switchMap, catchError, map, tap } from 'rxjs/operators';
-import { RaceDetailDto, RaceDto } from '../models/race.models';
+import { Observable, of, forkJoin } from 'rxjs';
+import { switchMap, map, catchError, shareReplay } from 'rxjs/operators';
+import { RaceDetailDto } from '../models/race.models';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
-import { CommonModule } from '@angular/common'; // Importuje async, ngIf, ngFor, date, number, ngClass
-import { RouterModule } from '@angular/router'; // Jeśli używasz routerLink w tym komponencie
+interface RaceDetailData {
+  details: RaceDetailDto;
+  odds: Record<number, number>;
+}
 
 @Component({
   selector: 'app-race-detail',
+  standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './race-detail.component.html',
   styleUrls: ['./race-detail.component.css'],
 })
 export class RaceDetailComponent implements OnInit {
-  raceDetails$!: Observable<{ details: RaceDetailDto; odds: any }>;
-  raceOdds$!: Observable<RaceDto>;
+  raceDetailData$!: Observable<RaceDetailData>;
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -24,29 +28,50 @@ export class RaceDetailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Get the race ID from the route parameters
-    this.raceDetails$ = this.activatedRoute.paramMap.pipe(
+    this.raceDetailData$ = this.activatedRoute.paramMap.pipe(
       map(params => params.get('id')!),
-      // Use switchMap to switch to the detail observable when raceId is available
-      switchMap(raceId => this.raceService.getRaceDetails(Number(raceId)).pipe(
-        // After getting details, immediately fetch the odds for that race
-        switchMap(details => this.raceService.getRaceOdds(details.id).pipe(
-          map(odds => ({ details, odds }))
-        ))
-      ))
+      switchMap((raceId: string) => {
+        const id = Number(raceId);
+        return forkJoin({
+          details: this.raceService.getRaceDetails(id),
+          odds: this.raceService.getRaceOdds(id).pipe(
+            catchError(() => of({} as Record<number, number>))
+          )
+        });
+      }),
+      catchError(error => {
+        console.error('Error loading race details:', error);
+        // Return a minimal object so the template doesn't break
+        return of({
+          details: {} as RaceDetailDto,
+          odds: {} as Record<number, number>
+        });
+      }),
+      shareReplay(1)
     );
   }
 
-  // Wewnątrz klasy RaceDetailComponent
-getStatusClass(status: string | undefined): string {
-  return status ? status.toLowerCase() : 'unknown';
-}
+  getStatusClass(status: string | undefined): string {
+    if (!status) return 'unknown';
+    return status.toLowerCase().replace(' ', '-');
+  }
 
-getStatusText(status: string | undefined): string {
-  return status || 'Unknown';
-}
+  getStatusText(status: string | undefined): string {
+    if (!status) return 'Unknown';
+    return status.replace(/([A-Z])/g, ' $1').trim();
+  }
 
-getDriverIds(odds: any): string[] {
-  return odds ? Object.keys(odds) : [];
-}
+  getDriverIds(odds: Record<number, number>): string[] {
+    if (!odds) return [];
+    return Object.keys(odds);
+  }
+
+  getOddsValue(odds: Record<number, number>, driverId: string): number | undefined {
+    if (!odds) return undefined;
+    return odds[parseInt(driverId, 10)];
+  }
+
+  formatOdds(odds: number): string {
+    return odds.toFixed(2);
+  }
 }

@@ -14,7 +14,12 @@ using Npgsql;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Serialize enums as strings for frontend compatibility
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -101,6 +106,8 @@ builder.Services.AddScoped<IResultRepository, ResultRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped(typeof(F1BettingApp.Infrastructure.Persistence.Repositories.IRepository<>), typeof(F1BettingApp.Infrastructure.Persistence.Repositories.Repository<>));
+builder.Services.AddScoped<IBetRepositoryExtensions, BetRepositoryExtensions>();
+builder.Services.AddScoped<IRaceRepositoryExtensions, RaceRepositoryExtensions>();
 
 // Register OpenF1 settings and HttpClient
 builder.Services.Configure<OpenF1Client.OpenF1Settings>(builder.Configuration.GetSection("OpenF1"));
@@ -179,8 +186,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+// if (app.Environment.IsDevelopment())
+// {
     app.UseSwagger();
     app.UseSwaggerUI();
 
@@ -202,7 +209,7 @@ if (app.Environment.IsDevelopment())
             logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
         }
     }
-}
+// }
 
 app.UseHttpsRedirection();
 app.UseCors("AngularApp");

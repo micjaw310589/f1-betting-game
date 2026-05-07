@@ -1,4 +1,4 @@
 export const environment = {
-  production: false,
+  production: true,
   apiUrl: 'https://f1-betting-game-api.onrender.com/api' 
 };

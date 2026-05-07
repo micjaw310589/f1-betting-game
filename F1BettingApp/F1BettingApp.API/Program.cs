@@ -186,8 +186,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
-// {
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger();
     app.UseSwaggerUI();
 
@@ -209,7 +209,7 @@ using (var scope = app.Services.CreateScope())
             logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
         }
     }
-// }
+}
 
 app.UseHttpsRedirection();
 app.UseCors("AngularApp");

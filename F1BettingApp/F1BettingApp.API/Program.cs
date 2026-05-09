@@ -28,7 +28,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app/")
+        policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app/"
+        ,"http://localhost:4200" //TODO: DELETE THIS LATER PRBLY
+        )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

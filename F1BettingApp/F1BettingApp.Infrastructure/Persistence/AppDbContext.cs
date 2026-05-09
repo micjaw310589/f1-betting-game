@@ -27,9 +27,9 @@ namespace F1BettingApp.Infrastructure.Persistence
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(u => u.Email).IsUnique();
-                entity.HasIndex(u => u.Username).IsUnique();
+                entity.HasIndex(u => u.UserName).IsUnique();
                 entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
-                entity.Property(u => u.Username).IsRequired().HasMaxLength(50);
+                entity.Property(u => u.UserName).IsRequired().HasMaxLength(50);
                 entity.Property(u => u.PasswordHash).IsRequired();
                 entity.Property(u => u.Points).HasDefaultValue(10000);
             });

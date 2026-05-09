@@ -36,7 +36,7 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             try
             {
                 _logger.LogInformation($"Getting user by username: {username}");
-                return await _dbSet.FirstOrDefaultAsync(u => u.Username == username);
+                return await _dbSet.FirstOrDefaultAsync(u => u.UserName == username);
             }
             catch (Exception ex)
             {

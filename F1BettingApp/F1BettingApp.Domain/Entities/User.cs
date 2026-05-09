@@ -1,11 +1,9 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace F1BettingApp.Domain.Entities
 {
-    public class User
+    public class User : Microsoft.AspNetCore.Identity.IdentityUser<int>
     {
-        public int Id { get; set; }
-        public string Username { get; set; }
-        public string Email { get; set; }
-        public string PasswordHash { get; set; }
         public int Points { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? ProfileImageUrl { get; set; }
@@ -13,16 +11,16 @@ namespace F1BettingApp.Domain.Entities
         public bool IsActive { get; set; }
         public bool IsAdmin { get; set; }
 
-        public User(string username, string email, string passwordHash) : this(username, email, passwordHash, true, false)
+        public User(string userName, string email, string passwordHash) : this(userName, email, passwordHash, true, false)
         {
             // Additional validation can be added here or in dedicated validation methods
         }
 
-        public User(string username, string email, string passwordHash, bool isActive, bool isAdmin)
+        public User(string userName, string email, string passwordHash, bool isActive, bool isAdmin)
         {
-            if (string.IsNullOrWhiteSpace(username))
+            if (string.IsNullOrWhiteSpace(userName))
             {
-                throw new ArgumentException("Username cannot be empty.", nameof(username));
+                throw new ArgumentException("Username cannot be empty.", nameof(userName));
             }
             if (string.IsNullOrWhiteSpace(email) || !email.Contains("@") || !email.Contains("."))
             {
@@ -32,11 +30,8 @@ namespace F1BettingApp.Domain.Entities
             {
                 throw new ArgumentException("Password hash is required.", nameof(passwordHash));
             }
-            if (Points < 0)
-            {
-                throw new InvalidOperationException("Points cannot be negative.");
-            }
-            Username = username;
+
+            UserName = userName;
             Email = email;
             PasswordHash = passwordHash;
             Points = 10000; // Start with 0 points or initial points if provided

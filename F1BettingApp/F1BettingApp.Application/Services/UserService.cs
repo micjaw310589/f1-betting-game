@@ -79,10 +79,16 @@ namespace F1BettingApp.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Password)) throw new ArgumentException("Password is required");
             if (dto.Password.Length < 8) throw new ArgumentException("Password must be at least 8 characters");
 
-            // Check if user already exists
-            var existingUsers = await _userRepository.GetAllAsync();
-            if (existingUsers.Any(u => u.Username == dto.Username)) throw new InvalidOperationException("Username already exists");
-            if (existingUsers.Any(u => u.Email == dto.Email)) throw new InvalidOperationException("Email already exists");
+            // Znacznie lepsze podejście - pytamy bazę tylko o to, co nas interesuje
+            var users = await _userRepository.GetAllAsync(); 
+
+            // Zamiast pobierać wszystko, lepiej byłoby mieć metodę w repozytorium typu .AnyAsync()
+            // Ale skoro używamy generycznego IRepository, zróbmy to chociaż tak:
+            if (users.Any(u => u.Username == dto.Username)) 
+                throw new InvalidOperationException("Username already exists");
+
+            if (users.Any(u => u.Email == dto.Email)) 
+                throw new InvalidOperationException("Email already exists");
 
             // Hash password before storing
             var hashedPassword = BCryptNet.HashPassword(dto.Password);

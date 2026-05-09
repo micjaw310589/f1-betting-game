@@ -29,7 +29,7 @@ export class RegisterComponent implements OnInit {
     this.registerForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       username: ['', [Validators.required, Validators.minLength(3)]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(8)]]
     });
   }
 
@@ -39,34 +39,37 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.registerForm.invalid) {
-      return;
-    }
+  if (this.registerForm.invalid) {
+    return;
+  }
 
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
+  this.isLoading = true;
+  this.errorMessage = null; // Czyścimy stare błędy przed nową próbą
+  this.successMessage = null;
 
-    const { email, username, password } = this.registerForm.value;
+  const { email, username, password } = this.registerForm.value;
 
-    this.authService.register(email, username, password).subscribe({
-      next: (response) => {
-        if (response.isSuccess) {
-          this.successMessage = 'Registration successful! You can now login.';
-          this.isLoading = false;
-          // Auto-redirect to login after 2 seconds
-          setTimeout(() => {
-            this.router.navigate(['/auth/login']);
-          }, 2000);
-        } else {
-          this.errorMessage = response.errorMessage || 'Registration failed';
-          this.isLoading = false;
-        }
-      },
-      error: (error) => {
-        this.errorMessage = error.message || 'Registration failed';
+  this.authService.register(email, username, password).subscribe({
+    next: (response) => {
+      // Jeśli backend zwrócił 200 OK, ale z flagą isSuccess: false
+      if (response.isSuccess) {
+        this.successMessage = 'Registration successful! Redirecting to login...';
+        this.isLoading = false;
+        setTimeout(() => {
+          this.router.navigate(['/auth/login']);
+        }, 2000);
+      } else {
+        this.errorMessage = response.errorMessage || 'Registration failed';
         this.isLoading = false;
       }
-    });
-  }
+    },
+    error: (err) => {
+      // Obsługa błędów HTTP (np. 409 Conflict, 400 Bad Request)
+      // Sprawdzamy czy backend przysłał nam obiekt z polem errorMessage
+      this.errorMessage = err.error?.errorMessage || err.message || 'An unexpected error occurred';
+      this.isLoading = false;
+      console.error('Registration error details:', err);
+    }
+  });
+}
 }

@@ -28,7 +28,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app/")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -186,8 +186,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment()) TODO: UNDO IT
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
 
@@ -209,7 +209,7 @@ if (app.Environment.IsDevelopment())
             logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
         }
     }
-}
+//}
 
 app.UseHttpsRedirection();
 app.UseRouting();

@@ -25,7 +25,7 @@ const routes: Routes = [
     RouterModule.forChild(routes)
   ],
   providers: [
-    AuthService,
+    //AuthService,
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,

@@ -3,88 +3,99 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f8f9fa; /* Jaśniejszy szary, pasujący do Race List */
 }
 
 .login-card {
   background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  border-radius: 12px; /* Lekko większe zaokrąglenie */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Miękki cień jak w Race List */
   width: 100%;
   max-width: 400px;
 }
 
 .login-card h2 {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   color: #333;
+  font-weight: bold;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #555;
+  color: #444;
 }
 
 .form-group input {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: all 0.3s;
 }
 
+/* Niebieski focus pasujący do przycisków filtrów */
 .form-group input:focus {
-  border-color: #4CAF50;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
   outline: none;
 }
 
+/* Czerwone błędy walidacji pod polami */
 .error-message {
-  color: #f44336;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
+  color: #dc3545; /* Czerwień typu Bootstrap */
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+  font-weight: 500;
 }
 
+/* Główny przycisk - Niebieski (Primary) */
 button {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #4CAF50;
+  padding: 0.85rem;
+  background-color: #007bff;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s, transform 0.1s;
+  margin-top: 1rem;
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: #0069d9;
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background-color: #b3d7ff;
   cursor: not-allowed;
 }
 
 .register-link {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #666;
 }
 
 .register-link a {
-  color: #4CAF50;
+  color: #007bff;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: bold;
 }
 
 .register-link a:hover {

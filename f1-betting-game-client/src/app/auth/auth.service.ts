@@ -44,12 +44,17 @@ export class AuthService {
       );
   }
 
-  register(email: string, username: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, { email, username, password })
-      .pipe(
-        catchError(error => throwError(() => new Error(error.error?.errorMessage || 'Registration failed')))
-      );
-  }
+register(email: string, username: string, password: string): Observable<AuthResponse> {
+  return this.http.post<AuthResponse>(`${this.apiUrl}/register`, { email, username, password })
+    .pipe(
+      catchError(error => {
+        // Wyciągamy czysty tekst błędu z backendu
+        const errorMessage = error.error?.errorMessage || error.message || 'Registration failed';
+        // Rzucamy go dalej jako prosty błąd
+        return throwError(() => errorMessage); 
+      })
+    );
+}
 
   refreshToken(): Observable<AuthResponse> {
     const currentUser = this.currentUserValue;

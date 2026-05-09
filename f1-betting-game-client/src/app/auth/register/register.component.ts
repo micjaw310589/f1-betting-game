@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
@@ -24,6 +24,7 @@ export class RegisterComponent implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
+    private cdr: ChangeDetectorRef,
     private router: Router
   ) {
     this.registerForm = this.formBuilder.group({
@@ -39,36 +40,30 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit(): void {
-  if (this.registerForm.invalid) {
-    return;
-  }
+  if (this.registerForm.invalid) return;
 
   this.isLoading = true;
-  this.errorMessage = null; // Czyścimy stare błędy przed nową próbą
-  this.successMessage = null;
+  this.errorMessage = null;
 
   const { email, username, password } = this.registerForm.value;
 
   this.authService.register(email, username, password).subscribe({
     next: (response) => {
-      // Jeśli backend zwrócił 200 OK, ale z flagą isSuccess: false
+      this.isLoading = false;
       if (response.isSuccess) {
-        this.successMessage = 'Registration successful! Redirecting to login...';
-        this.isLoading = false;
-        setTimeout(() => {
-          this.router.navigate(['/auth/login']);
-        }, 2000);
-      } else {
-        this.errorMessage = response.errorMessage || 'Registration failed';
-        this.isLoading = false;
+        this.successMessage = 'Success!';
+        this.cdr.detectChanges(); // Wymuś odświeżenie sukcesu
+        setTimeout(() => this.router.navigate(['/auth/login']), 2000);
       }
     },
-    error: (err) => {
-      // Obsługa błędów HTTP (np. 409 Conflict, 400 Bad Request)
-      // Sprawdzamy czy backend przysłał nam obiekt z polem errorMessage
-      this.errorMessage = err.error?.errorMessage || err.message || 'An unexpected error occurred';
-      this.isLoading = false;
-      console.error('Registration error details:', err);
+    error: (errMessage) => {
+      console.log('Komponent odebrał błąd:', errMessage);
+      
+      // TO KLUCZOWE:
+      this.isLoading = false;      // Odblokuj przycisk
+      this.errorMessage = errMessage; // Przypisz tekst błędu
+      
+      this.cdr.detectChanges();    // WYMUŚ ODŚWIEŻENIE WIDOKU TERAZ
     }
   });
 }

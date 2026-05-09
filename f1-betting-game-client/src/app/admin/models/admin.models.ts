@@ -58,3 +58,95 @@ export interface PagedResult<T> {
     totalItems: number;
     totalPages: number;
 }
+
+// ========================
+// System Management Models
+// ========================
+
+/**
+ * Result of a sync operation.
+ * Corresponds to F1BettingApp.Application.DTOs.SyncResultDto
+ */
+export interface SyncResultDto {
+    success: boolean;
+    racesProcessed: number;
+    racesCreated: number;
+    racesUpdated: number;
+    errorMessage: string | null;
+    syncedAt: Date;
+}
+
+/**
+ * DTO for overriding race results (admin).
+ * Corresponds to F1BettingApp.Application.DTOs.OverrideRaceResultDto
+ */
+export interface OverrideRaceResultDto {
+    positions: PositionEntryDto[];
+    fastestLapDriverId: number | null;
+}
+
+/**
+ * A finishing position with its driver ID.
+ * Corresponds to F1BettingApp.Application.DTOs.PositionEntryDto
+ */
+export interface PositionEntryDto {
+    position: number;
+    driverId: number;
+}
+
+/**
+ * Race result DTO with driver details (admin view).
+ * Corresponds to F1BettingApp.Application.DTOs.RaceResultDto
+ */
+export interface AdminRaceResultDto {
+    raceId: number;
+    raceName: string;
+    circuit: string;
+    country: string;
+    raceDate: Date;
+    winnerDriverId: number;
+    winnerDriverName: string;
+    winnerTeamId: number;
+    winnerTeamName: string;
+    winningMargin: number;
+    fastestLapDriverId: number;
+    fastestLapDriverName: string;
+    polePositionDriverId: number;
+    polePositionDriverName: string;
+    safetyCar: number;
+    virtualSafetyCar: number;
+    redFlag: number;
+    yellowFlag: number;
+    blackFlag: number;
+    blueFlag: number;
+    blackAndWhiteFlag: number;
+    chequeredFlag: number;
+    raceDistance: number;
+    raceDistanceUnit: number;
+    laps: number;
+    lapsCompleted: number;
+    lapsToFinish: number;
+    raceControlMessage: number;
+    raceControlMessageText: string;
+    timeAttack: string;
+    timeAttackResult: string;
+    timeAttackComment: string;
+    timeAttackStatus: string;
+    timeAttackLaps: string;
+}
+
+/**
+ * Race DTO with override status (admin view).
+ */
+export interface AdminRaceDto {
+    id: number;
+    name: string;
+    circuit: string;
+    raceDate: Date;
+    country: string;
+    status: string;
+    season: number;
+    flag: string;
+    odds: Record<number, number>;
+    isManuallyOverridden: boolean;
+}

@@ -34,7 +34,7 @@ namespace F1BettingApp.Application.Interfaces
         /// Synchronizes race data from OpenF1 API
         /// </summary>
         /// <returns>Task representing the asynchronous operation</returns>
-        Task SyncRaceDataFromOpenF1Async();
+        Task<SyncResultDto> SyncRaceDataFromOpenF1Async();
 
         /// <summary>
         /// Gets upcoming races with odds information
@@ -63,5 +63,21 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="raceId">The ID of the race</param>
         /// <returns>Collection of results for the race</returns>
         Task<IEnumerable<Result>> GetResultsAsync(int raceId);
+
+        /// <summary>
+        /// Manually overrides race results (admin only).
+        /// Sets IsManuallyOverridden to prevent future auto-sync from reverting.
+        /// </summary>
+        /// <param name="raceId">The ID of the race to override.</param>
+        /// <param name="dto">The override data with positions.</param>
+        /// <returns>Task representing the asynchronous operation.</returns>
+        Task OverrideRaceResultAsync(int raceId, OverrideRaceResultDto dto);
+
+        /// <summary>
+        /// Gets race results with driver details for display (admin).
+        /// </summary>
+        /// <param name="raceId">The ID of the race.</param>
+        /// <returns>Race result DTO with filled-in data.</returns>
+        Task<RaceResultDto> GetRaceResultDtoAsync(int raceId);
     }
 }

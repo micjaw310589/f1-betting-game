@@ -130,7 +130,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
 
 // JWT Authentication Configuration
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.Configure<JwtSettings>(jwtSettings);
 
 // Register JWT authentication handler
@@ -189,7 +189,19 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        await context.Database.MigrateAsync();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+
+        try
+        {
+            await context.Database.MigrateAsync();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("PendingModelChangesWarning"))
+        {
+            logger.LogWarning(ex, "Pending model changes detected - applying missing migration manually");
+            // Apply the IsManuallyOverridden column if it doesn't exist
+            await context.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE \"Races\" ADD COLUMN IF NOT EXISTS \"IsManuallyOverridden\" boolean NOT NULL DEFAULT false");
+        }
 
         // Seed initial data (admin user, teams, etc.)
         await SeedData.Initialize(context);

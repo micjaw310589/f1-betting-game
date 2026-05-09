@@ -79,5 +79,14 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="raceId">The ID of the race.</param>
         /// <returns>Race result DTO with filled-in data.</returns>
         Task<RaceResultDto> GetRaceResultDtoAsync(int raceId);
+
+        /// <summary>
+        /// Updates race metadata (name, date, status, circuit, country) - admin only.
+        /// Sets IsManuallyOverridden to prevent future auto-sync from reverting.
+        /// </summary>
+        /// <param name="raceId">The ID of the race to update.</param>
+        /// <param name="dto">The metadata to update.</param>
+        /// <returns>Task representing the asynchronous operation.</returns>
+        Task UpdateRaceMetadataAsync(int raceId, UpdateRaceMetadataDto dto);
     }
 }

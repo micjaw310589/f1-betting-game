@@ -238,5 +238,72 @@ namespace F1BettingApp.API.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Updates race metadata (name, date, status, circuit, country) - admin only.
+        /// Sets IsManuallyOverridden to prevent future auto-sync from reverting.
+        /// </summary>
+        /// <param name="raceId">The ID of the race to update.</param>
+        /// <param name="dto">The metadata to update.</param>
+        /// <returns>Confirmation of the update</returns>
+        [HttpPut("races/{raceId}/metadata")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult> UpdateRaceMetadata(
+            [FromRoute] int raceId,
+            [FromBody] UpdateRaceMetadataDto dto)
+        {
+            _logger.LogInformation(
+                "Admin updating race metadata: RaceId={RaceId}, Name={Name}, Status={Status}",
+                raceId, dto.Name, dto.Status);
+
+            try
+            {
+                await _raceService.UpdateRaceMetadataAsync(raceId, dto);
+
+                _logger.LogInformation(
+                    "Race metadata updated successfully: RaceId={RaceId}", raceId);
+
+                return Ok(new
+                {
+                    message = "Race metadata updated successfully",
+                    raceId = raceId,
+                    isManuallyOverridden = true
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Admin race metadata update failed: Race not found, RaceId={RaceId}", raceId);
+                return NotFound(new ErrorResponse
+                {
+                    Error = "RACE_NOT_FOUND",
+                    Message = $"Race with ID {raceId} not found",
+                    Details = ex.Message
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Admin race metadata update failed: Invalid input, RaceId={RaceId}", raceId);
+                return BadRequest(new ErrorResponse
+                {
+                    Error = "INVALID_INPUT",
+                    Message = "Invalid metadata data provided",
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating race metadata: RaceId={RaceId}", raceId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "METADATA_UPDATE_FAILED",
+                    Message = "Failed to update race metadata",
+                    Details = ex.Message
+                });
+            }
+        }
     }
 }

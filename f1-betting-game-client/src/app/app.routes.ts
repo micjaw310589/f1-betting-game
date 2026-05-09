@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { AuthRoutes } from './auth/auth.routes';
 import { RaceRoutes } from './race/race.routes';
 import { AdminRoutes } from './admin/admin.routes';
 
@@ -9,9 +10,23 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'races', // Redirect to race module if needed, or handle main dashboard
+        redirectTo: 'races',
         pathMatch: 'full'
-      }
+      },
+      {
+        path: 'auth',
+        loadChildren: () => import('./auth/auth.routes').then(m => m.AuthRoutes)
+      },
+      {
+        path: 'login',
+        redirectTo: 'auth/login',
+        pathMatch: 'full'
+      },
+      {
+        path: 'register',
+        redirectTo: 'auth/register',
+        pathMatch: 'full'
+      },
     ]
   },
   {
@@ -21,5 +36,9 @@ export const routes: Routes = [
   {
     path: 'admin',
     loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes)
+  },
+  {
+    path: '**',
+    redirectTo: 'races'
   }
 ];

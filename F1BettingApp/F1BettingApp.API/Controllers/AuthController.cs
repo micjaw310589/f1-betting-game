@@ -30,7 +30,7 @@ namespace F1BettingApp.API.Controllers
         {
             _userService = userService;
             _configuration = configuration;
-            var jwtSettings = configuration.GetSection("JwtSettings");
+            var jwtSettings = configuration.GetSection("Jwt");
             _secretKey = jwtSettings["SecretKey"] ?? "fallback-secret-key";
             _issuer = jwtSettings["Issuer"] ?? "F1BettingApp";
             _audience = jwtSettings["Audience"] ?? "F1BettingApp";

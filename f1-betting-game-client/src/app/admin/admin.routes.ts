@@ -16,7 +16,17 @@ export const AdminRoutes: Routes = [
             {
                 path: 'system',
                 component: AdminSystemManagementComponent,
-                data: { description: 'Manage system sync and race results' },
+                data: { description: 'Manage system sync, race results and metadata' },
+            },
+            {
+                path: 'system/results',
+                component: AdminSystemManagementComponent,
+                data: { description: 'Override race results' },
+            },
+            {
+                path: 'system/metadata',
+                component: AdminSystemManagementComponent,
+                data: { description: 'Update race metadata' },
             },
             {
                 path: '',

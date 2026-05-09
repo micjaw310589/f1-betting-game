@@ -9,7 +9,8 @@ import { AuthService } from '../../auth/services/auth.service';
 
 /**
  * Route guard that protects admin routes.
- * Redirects non-admin users to the home page.
+ * - Redirects unauthenticated users to /login
+ * - Redirects non-admin users to /races
  */
 export const adminGuard: CanActivateFn = (
     route: ActivatedRouteSnapshot,
@@ -18,11 +19,17 @@ export const adminGuard: CanActivateFn = (
     const authService = inject(AuthService);
     const router = inject(Router);
 
-    if (authService.isAdmin()) {
-        return true;
+    // Check if user is authenticated
+    if (!authService.isLoggedIn()) {
+        router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
+        return false;
     }
 
-    // Redirect non-admin users to home
-    router.navigate(['/']);
-    return false;
+    // Check if user is admin
+    if (!authService.isAdmin()) {
+        router.navigate(['/races']);
+        return false;
+    }
+
+    return true;
 };

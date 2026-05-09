@@ -150,3 +150,31 @@ export interface AdminRaceDto {
     odds: Record<number, number>;
     isManuallyOverridden: boolean;
 }
+
+// ========================
+// Race Metadata Override Models
+// ========================
+
+/**
+ * DTO for updating race metadata (name, date, status, circuit, country).
+ * Corresponds to F1BettingApp.Application.DTOs.UpdateRaceMetadataDto
+ */
+export interface UpdateRaceMetadataDto {
+    name?: string;
+    date?: string | null;
+    circuit?: string;
+    country?: string;
+    status?: string;
+}
+
+/**
+ * Available race statuses for admin override.
+ */
+export const RACE_STATUSES = [
+    { value: 'Scheduled', label: 'Scheduled' },
+    { value: 'InProgress', label: 'In Progress' },
+    { value: 'Finished', label: 'Finished' },
+    { value: 'ResultsProcessed', label: 'Results Processed' },
+    { value: 'Cancelled', label: 'Cancelled' },
+    { value: 'Postponed', label: 'Postponed' },
+] as const;

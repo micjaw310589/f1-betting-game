@@ -14,8 +14,9 @@ namespace F1BettingApp.Domain.Entities
         public Race Race { get; set; }
         public int DriverId { get; set; }
         public Driver Driver { get; set; }
-        public int UserId { get; set; }
-        public User User { get; set; } // Assuming we track which user's result this is tied to, or if it's just a record of the race. Based on the properties, I'll keep it focused on the race outcome.
+        // UserId is optional - race results are not tied to a specific user
+        public int? UserId { get; set; }
+        public User? User { get; set; }
 
         [Required]
         public int Position { get; set; }
@@ -30,6 +31,11 @@ namespace F1BettingApp.Domain.Entities
         public Result() { }
 
         public Result(int raceId, int driverId, int position, int points, TimeSpan fastestLap, TimeSpan? pitStopTime)
+            : this(raceId, driverId, position, points, fastestLap, pitStopTime, null)
+        {
+        }
+
+        public Result(int raceId, int driverId, int position, int points, TimeSpan fastestLap, TimeSpan? pitStopTime, int? userId)
         {
             // Validate raceId - must be positive
             if (raceId <= 0)
@@ -67,6 +73,7 @@ namespace F1BettingApp.Domain.Entities
             this.Points = points;
             this.FastestLap = fastestLap;
             this.PitStopTime = pitStopTime;
+            this.UserId = userId;
         }
 
         /// <summary>

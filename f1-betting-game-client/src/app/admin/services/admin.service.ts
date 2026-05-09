@@ -12,6 +12,7 @@ import {
     OverrideRaceResultDto,
     AdminRaceResultDto,
     AdminRaceDto,
+    UpdateRaceMetadataDto,
 } from '../models/admin.models';
 
 @Injectable({
@@ -124,6 +125,22 @@ export class AdminService {
                 positionsCount: number;
                 isManuallyOverridden: boolean;
             }>(`${this.ADMIN_API_URL}/races/${raceId}/results`, dto)
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Updates race metadata (name, date, status, circuit, country) (admin only).
+     */
+    updateRaceMetadata(
+        raceId: number,
+        dto: UpdateRaceMetadataDto
+    ): Observable<{ message: string; raceId: number; isManuallyOverridden: boolean }> {
+        return this.http
+            .put<{
+                message: string;
+                raceId: number;
+                isManuallyOverridden: boolean;
+            }>(`${this.ADMIN_API_URL}/races/${raceId}/metadata`, dto)
             .pipe(catchError(this.handleError));
     }
 

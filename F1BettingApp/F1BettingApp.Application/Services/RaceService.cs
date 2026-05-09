@@ -254,16 +254,19 @@ namespace F1BettingApp.Application.Services
                     positionEntry.Position,
                     points,
                     TimeSpan.Zero,
-                    TimeSpan.Zero
+                    TimeSpan.Zero,
+                    null // UserId is optional for race results
                 );
 
                 await _resultRepository.AddAsync(result);
             }
 
-            // Set fastest lap if provided
+            // Set fastest lap if provided - update the newly created result
             if (dto.FastestLapDriverId.HasValue)
             {
-                var fastestLapResult = raceResults.FirstOrDefault(r => r.DriverId == dto.FastestLapDriverId.Value);
+                var allResults = await _resultRepository.GetAllAsync();
+                var fastestLapResult = allResults.FirstOrDefault(r =>
+                    r.RaceId == raceId && r.DriverId == dto.FastestLapDriverId.Value);
                 if (fastestLapResult != null)
                 {
                     fastestLapResult.FastestLap = TimeSpan.Zero;
@@ -372,6 +375,45 @@ namespace F1BettingApp.Application.Services
                 10 => 1,
                 _ => 0
             };
+        }
+
+        public async Task UpdateRaceMetadataAsync(int raceId, UpdateRaceMetadataDto dto)
+        {
+            var race = await _raceRepository.GetByIdAsync(raceId);
+            if (race == null)
+            {
+                throw new KeyNotFoundException($"Race with ID {raceId} not found.");
+            }
+
+            // Apply updates
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+                race.Name = dto.Name;
+            if (dto.Date.HasValue)
+            {
+                // Convert to UTC for PostgreSQL timestamp with time zone compatibility
+                var dt = dto.Date.Value;
+                if (dt.Kind == DateTimeKind.Unspecified)
+                {
+                    dt = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                }
+                else if (dt.Kind == DateTimeKind.Local)
+                {
+                    dt = dt.ToUniversalTime();
+                }
+                race.Date = dt;
+            }
+            if (!string.IsNullOrWhiteSpace(dto.Circuit))
+                race.Circuit = dto.Circuit;
+            if (!string.IsNullOrWhiteSpace(dto.Country))
+                race.Country = dto.Country;
+            if (dto.Status.HasValue)
+                race.Status = dto.Status.Value;
+
+            // Mark as manually overridden to prevent future sync from reverting
+            race.IsManuallyOverridden = true;
+
+            await _raceRepository.UpdateAsync(race);
+            await _raceRepository.SaveChangesAsync();
         }
     }
 }

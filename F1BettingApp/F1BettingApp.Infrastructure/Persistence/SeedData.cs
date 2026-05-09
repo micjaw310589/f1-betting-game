@@ -1,3 +1,4 @@
+using BCrypt.Net;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,22 @@ public static class SeedData
 {
     public static async Task Initialize(AppDbContext context)
     {
+        // Seed admin user (ensure id=1 is available)
+        var existingUserWithId1 = context.Users.FirstOrDefault(u => u.Id == 1);
+        if (existingUserWithId1 != null)
+        {
+            context.Users.Remove(existingUserWithId1);
+            await context.SaveChangesAsync();
+        }
+        var adminPassword = BCrypt.Net.BCrypt.HashPassword("Admin@123456");
+        var adminUser = new User("admin", "admin@f1bet.com", adminPassword, isActive: true, isAdmin: true)
+        {
+            Id = 1,
+            Points = 10000
+        };
+        await context.Users.AddAsync(adminUser);
+        await context.SaveChangesAsync();
+
         // Seed teams if not already seeded
         if (!context.Teams.Any())
         {

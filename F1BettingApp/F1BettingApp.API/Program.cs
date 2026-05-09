@@ -28,7 +28,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularApp", policy =>
     {
-        policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app")
+        // Allow local development + production frontend
+        policy.WithOrigins(
+                "http://localhost:4200",
+                "https://f1-betting-game-qy5l.vercel.app"
+            )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -178,11 +182,23 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
-// Apply migrations automatically at startup
+// Apply migrations and seed data at startup (always)
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.Migrate();
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        await context.Database.MigrateAsync();
+
+        // Seed initial data (admin user, teams, etc.)
+        await SeedData.Initialize(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -190,25 +206,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    // Apply migrations and seed data in development
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        try
-        {
-            var context = services.GetRequiredService<AppDbContext>();
-            await context.Database.MigrateAsync();
-
-            // Seed initial data
-            await SeedData.Initialize(context);
-        }
-        catch (Exception ex)
-        {
-            var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
-        }
-    }
 }
 
 app.UseHttpsRedirection();

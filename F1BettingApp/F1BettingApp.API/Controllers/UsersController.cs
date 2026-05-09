@@ -210,5 +210,147 @@ namespace F1BettingApp.API.Controllers
             ex is UnauthorizedAccessException || 
             ex.Message.Contains("unauthorized") ||
             ex.Message.Contains("forbidden");
+
+        // ========================================
+        // Admin Endpoints
+        // ========================================
+
+        /// <summary>
+        /// Lists all users with optional filtering and pagination (admin only).
+        /// </summary>
+        /// <param name="page">Page number (default: 1)</param>
+        /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
+        /// <param name="filterIsActive">Optional filter by active status.</param>
+        /// <param name="searchTerm">Optional search by username or email.</param>
+        /// <response code="200">Returns paginated list of users.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        /// <response code="403">Returns forbidden if user is not an admin.</response>
+        [HttpGet("admin/users")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<PagedResult<AdminUserDto>>> GetAllUsers(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] bool? filterIsActive = null,
+            [FromQuery] string? searchTerm = null)
+        {
+            // Validate pagination parameters
+            if (page < 1)
+            {
+                return BadRequest("Page number must be at least 1");
+            }
+            if (pageSize < 1 || pageSize > 100)
+            {
+                return BadRequest("Page size must be between 1 and 100");
+            }
+
+            try
+            {
+                var result = await _userService.GetAllUsersAsync(page, pageSize, filterIsActive, searchTerm);
+                return Ok(result);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving users");
+            }
+        }
+
+        /// <summary>
+        /// Adjusts a user's point balance (admin only).
+        /// </summary>
+        /// <param name="userId">The ID of the user to adjust.</param>
+        /// <param name="dto">The adjustment details including delta and reason.</param>
+        /// <response code="200">Returns the adjustment result.</response>
+        /// <response code="400">Returns bad request if validation fails or balance would go negative.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        /// <response code="403">Returns forbidden if user is not an admin.</response>
+        /// <response code="404">Returns not found if user does not exist.</response>
+        [HttpPatch("admin/users/{userId}/points")]
+        [Authorize(Roles = "Admin")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<AdjustPointsResultDto>> AdjustUserPoints(
+            int userId,
+            [FromBody] AdjustUserPointsDto dto)
+        {
+            // Validate the adjustment amount
+            if (dto.Points == 0)
+            {
+                return BadRequest("Points adjustment must be non-zero.");
+            }
+
+            // Get admin user ID from claims
+            var adminUserIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(adminUserIdClaim) || !int.TryParse(adminUserIdClaim, out var adminUserId))
+            {
+                return Unauthorized("Unable to identify admin user.");
+            }
+
+            try
+            {
+                var result = await _userService.AdjustUserPointsAsync(userId, dto.Points, dto.Reason, adminUserId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"User with ID {userId} not found.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while adjusting points");
+            }
+        }
+
+        /// <summary>
+        /// Changes a user's account status (suspend/reactivate) (admin only).
+        /// </summary>
+        /// <param name="userId">The ID of the user to modify.</param>
+        /// <param name="dto">The status change details.</param>
+        /// <response code="200">Returns the updated user.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        /// <response code="403">Returns forbidden if user is not an admin.</response>
+        /// <response code="404">Returns not found if user does not exist.</response>
+        [HttpPatch("admin/users/{userId}/status")]
+        [Authorize(Roles = "Admin")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<AdminUserDto>> ChangeUserStatus(
+            int userId,
+            [FromBody] ChangeUserStatusDto dto)
+        {
+            // Get admin user ID from claims
+            var adminUserIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(adminUserIdClaim) || !int.TryParse(adminUserIdClaim, out var adminUserId))
+            {
+                return Unauthorized("Unable to identify admin user.");
+            }
+
+            try
+            {
+                var result = await _userService.ChangeUserStatusAsync(userId, dto.IsActive, dto.Reason, adminUserId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"User with ID {userId} not found.");
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while changing user status");
+            }
+        }
     }
 }

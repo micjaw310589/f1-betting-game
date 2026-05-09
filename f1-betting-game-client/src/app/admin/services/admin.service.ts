@@ -9,8 +9,6 @@ import {
     ChangeUserStatusDto,
     PagedResult,
     SyncResultDto,
-    OverrideRaceResultDto,
-    AdminRaceResultDto,
     AdminRaceDto,
     UpdateRaceMetadataDto,
 } from '../models/admin.models';
@@ -103,32 +101,6 @@ export class AdminService {
     }
 
     /**
-     * Gets race results for a specific race (admin view).
-     */
-    getRaceResults(raceId: number): Observable<AdminRaceResultDto> {
-        return this.http
-            .get<AdminRaceResultDto>(`${this.ADMIN_API_URL}/races/${raceId}/results`)
-            .pipe(catchError(this.handleError));
-    }
-
-    /**
-     * Overrides race results manually (admin only).
-     */
-    overrideRaceResults(
-        raceId: number,
-        dto: OverrideRaceResultDto
-    ): Observable<{ message: string; raceId: number; positionsCount: number; isManuallyOverridden: boolean }> {
-        return this.http
-            .put<{
-                message: string;
-                raceId: number;
-                positionsCount: number;
-                isManuallyOverridden: boolean;
-            }>(`${this.ADMIN_API_URL}/races/${raceId}/results`, dto)
-            .pipe(catchError(this.handleError));
-    }
-
-    /**
      * Updates race metadata (name, date, status, circuit, country) (admin only).
      */
     updateRaceMetadata(
@@ -146,12 +118,14 @@ export class AdminService {
 
     private handleError(error: any) {
         let errorMessage = 'Unknown error occurred';
-        if (error.error instanceof ErrorEvent) {
-            errorMessage = `Error: ${error.error.message}`;
+        if (error.error && error.error.message) {
+            errorMessage = error.error.message;
+        } else if (error.message) {
+            errorMessage = error.message;
         } else {
-            errorMessage = `Server error: ${error.status}\nMessage: ${error.message}`;
+            errorMessage = `Server error: ${error.status}`;
         }
-        console.error(errorMessage);
+        console.error('AdminService error:', errorMessage);
         return throwError(() => new Error(errorMessage));
     }
 }

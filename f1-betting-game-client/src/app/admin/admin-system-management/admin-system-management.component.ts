@@ -5,9 +5,6 @@ import { AdminService } from '../services/admin.service';
 import {
     SyncResultDto,
     AdminRaceDto,
-    AdminRaceResultDto,
-    PositionEntryDto,
-    OverrideRaceResultDto,
     UpdateRaceMetadataDto,
     RACE_STATUSES,
 } from '../models/admin.models';
@@ -21,7 +18,7 @@ import {
 })
 export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // --- Tab Navigation ---
-    activeTab: 'sync' | 'results' | 'metadata' = 'results';
+    activeTab: 'sync' | 'metadata' = 'sync';
 
     // --- Sync Section ---
     isSyncing = false;
@@ -33,16 +30,6 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     isLoadingRaces = true;
     selectedRaceId: number | null = null;
     selectedRace: AdminRaceDto | null = null;
-    currentResults: AdminRaceResultDto | null = null;
-
-    // --- Race Results Override ---
-    isSavingResults = false;
-    resultsSaveSuccess = false;
-    resultsSaveError = '';
-    overridePositions: PositionEntryDto[] = [];
-    fastestLapDriverId: number | null = null;
-    showResultsConfirmModal = false;
-    availableDrivers: { id: number; name: string }[] = [];
 
     // --- Race Metadata Override ---
     isSavingMetadata = false;
@@ -51,20 +38,12 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     showMetadataConfirmModal = false;
     metadataForm: UpdateRaceMetadataDto = {};
 
-    // --- Driver options for the override form ---
-    driverOptions: { id: number; name: string }[] = [];
-
-    // Modal state for results
-    showOverrideConfirm = false;
-
     private syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor(private adminService: AdminService) {}
 
     ngOnInit(): void {
         this.loadRaces();
-        // Load driver options for forms
-        this.loadDriverOptions();
     }
 
     ngOnDestroy(): void {
@@ -77,25 +56,8 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // Tab Navigation
     // ========================
 
-    switchTab(tab: 'sync' | 'results' | 'metadata'): void {
+    switchTab(tab: 'sync' | 'metadata'): void {
         this.activeTab = tab;
-    }
-
-    // ========================
-    // Driver Options
-    // ========================
-
-    loadDriverOptions(): void {
-        // Pre-populate driver options (1-20) for the override forms
-        this.driverOptions = Array.from({ length: 20 }, (_, i) => ({
-            id: i + 1,
-            name: `Driver ${i + 1}`,
-        }));
-    }
-
-    getDriverName(driverId: number): string {
-        const driver = this.driverOptions.find((d) => d.id === driverId);
-        return driver ? driver.name : `Driver #${driverId}`;
     }
 
     // ========================
@@ -151,12 +113,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
             }
         } else {
             this.selectedRace = null;
-            this.currentResults = null;
-            this.overridePositions = [];
-            this.fastestLapDriverId = null;
             this.metadataForm = {};
-            this.resultsSaveSuccess = false;
-            this.resultsSaveError = '';
             this.metadataSaveSuccess = false;
             this.metadataSaveError = '';
         }
@@ -165,120 +122,20 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     selectRace(race: AdminRaceDto): void {
         this.selectedRaceId = race.id;
         this.selectedRace = race;
-        this.resultsSaveSuccess = false;
-        this.resultsSaveError = '';
         this.metadataSaveSuccess = false;
         this.metadataSaveError = '';
-        this.showResultsConfirmModal = false;
         this.showMetadataConfirmModal = false;
 
-        // Reset forms
-        this.overridePositions = [];
-        this.fastestLapDriverId = null;
+        // Reset form
         this.metadataForm = {};
-
-        // Load current results
-        this.adminService.getRaceResults(race.id).subscribe({
-            next: (results) => {
-                this.currentResults = results;
-                this.buildResultsOverrideForm(results);
-                this.buildMetadataForm(race, results);
-            },
-            error: (error) => {
-                console.error('Error loading race results:', error);
-                this.currentResults = null;
-                this.overridePositions = [];
-                this.fastestLapDriverId = null;
-            },
-        });
-    }
-
-    // ========================
-    // Results Override Form
-    // ========================
-
-    private buildResultsOverrideForm(results: AdminRaceResultDto): void {
-        // Build positions from existing results - populate with current data if available
-        this.overridePositions = [];
-
-        // We'll let the admin fill in all positions
-        // Pre-populate with a default set of positions (1-10)
-        for (let i = 1; i <= 10; i++) {
-            this.overridePositions.push({
-                position: i,
-                driverId: i,
-            });
-        }
-    }
-
-    addPosition(): void {
-        const nextPosition = this.overridePositions.length + 1;
-        this.overridePositions.push({
-            position: nextPosition,
-            driverId: 0,
-        });
-    }
-
-    removePosition(index: number): void {
-        this.overridePositions.splice(index, 1);
-        // Reposition remaining entries
-        this.overridePositions = this.overridePositions.map((p, i) => ({
-            ...p,
-            position: i + 1,
-        }));
-    }
-
-    openResultsConfirmModal(): void {
-        if (this.overridePositions.length === 0) {
-            this.resultsSaveError = 'Please add at least one position.';
-            return;
-        }
-        this.showOverrideConfirm = true;
-    }
-
-    closeResultsConfirmModal(): void {
-        this.showOverrideConfirm = false;
-    }
-
-    confirmResultsOverride(): void {
-        if (!this.selectedRaceId) return;
-
-        this.isSavingResults = true;
-        this.resultsSaveSuccess = false;
-        this.resultsSaveError = '';
-        this.showOverrideConfirm = false;
-
-        const dto: OverrideRaceResultDto = {
-            positions: this.overridePositions,
-            fastestLapDriverId: this.fastestLapDriverId,
-        };
-
-        this.adminService.overrideRaceResults(this.selectedRaceId, dto).subscribe({
-            next: () => {
-                this.resultsSaveSuccess = true;
-                this.isSavingResults = false;
-
-                // Reload races and results
-                this.loadRaces();
-                this.selectRace(this.selectedRace!);
-
-                // Auto-clear success message after 5 seconds
-                setTimeout(() => {
-                    this.resultsSaveSuccess = false;
-                }, 5000);
-            },
-            error: (error) => {
-                this.resultsSaveError = error.message || 'Failed to override race results';
-                this.isSavingResults = false;
-            },
-        });
+        this.buildMetadataForm(race);
     }
 
     // ========================
     // Metadata Override Form
     // ========================
 
-    private buildMetadataForm(race: AdminRaceDto, results: AdminRaceResultDto): void {
+    private buildMetadataForm(race: AdminRaceDto): void {
         // Format date for datetime-local input (YYYY-MM-DDTHH:MM)
         let formattedDate: string | null = null;
         if (race.raceDate) {

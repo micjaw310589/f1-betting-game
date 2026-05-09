@@ -351,7 +351,21 @@ namespace F1BettingApp.Application.Services
                 TimeAttackResult = "",
                 TimeAttackComment = "",
                 TimeAttackStatus = "",
-                TimeAttackLaps = ""
+                TimeAttackLaps = "",
+                Positions = results
+                    .OrderBy(r => r.Position)
+                    .Select(r => new PositionDto
+                    {
+                        Position = r.Position,
+                        DriverId = r.DriverId,
+                        DriverName = driverLookup.ContainsKey(r.DriverId) ? driverLookup[r.DriverId].Name : "Unknown",
+                        TeamId = driverLookup.ContainsKey(r.DriverId) ? driverLookup[r.DriverId].TeamId : 0,
+                        TeamName = driverLookup.ContainsKey(r.DriverId) ? driverLookup[r.DriverId].Team?.Name ?? "TBD" : "TBD",
+                        Points = CalculatePointsForPosition(r.Position),
+                        FastestLap = r.FastestLap,
+                        PitStopTime = r.PitStopTime
+                    })
+                    .ToList()
             };
         }
 

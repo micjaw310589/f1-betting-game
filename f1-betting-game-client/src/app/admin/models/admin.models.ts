@@ -77,65 +77,6 @@ export interface SyncResultDto {
 }
 
 /**
- * DTO for overriding race results (admin).
- * Corresponds to F1BettingApp.Application.DTOs.OverrideRaceResultDto
- */
-export interface OverrideRaceResultDto {
-    positions: PositionEntryDto[];
-    fastestLapDriverId: number | null;
-}
-
-/**
- * A finishing position with its driver ID.
- * Corresponds to F1BettingApp.Application.DTOs.PositionEntryDto
- */
-export interface PositionEntryDto {
-    position: number;
-    driverId: number;
-}
-
-/**
- * Race result DTO with driver details (admin view).
- * Corresponds to F1BettingApp.Application.DTOs.RaceResultDto
- */
-export interface AdminRaceResultDto {
-    raceId: number;
-    raceName: string;
-    circuit: string;
-    country: string;
-    raceDate: Date;
-    winnerDriverId: number;
-    winnerDriverName: string;
-    winnerTeamId: number;
-    winnerTeamName: string;
-    winningMargin: number;
-    fastestLapDriverId: number;
-    fastestLapDriverName: string;
-    polePositionDriverId: number;
-    polePositionDriverName: string;
-    safetyCar: number;
-    virtualSafetyCar: number;
-    redFlag: number;
-    yellowFlag: number;
-    blackFlag: number;
-    blueFlag: number;
-    blackAndWhiteFlag: number;
-    chequeredFlag: number;
-    raceDistance: number;
-    raceDistanceUnit: number;
-    laps: number;
-    lapsCompleted: number;
-    lapsToFinish: number;
-    raceControlMessage: number;
-    raceControlMessageText: string;
-    timeAttack: string;
-    timeAttackResult: string;
-    timeAttackComment: string;
-    timeAttackStatus: string;
-    timeAttackLaps: string;
-}
-
-/**
  * Race DTO with override status (admin view).
  */
 export interface AdminRaceDto {
@@ -150,6 +91,10 @@ export interface AdminRaceDto {
     odds: Record<number, number>;
     isManuallyOverridden: boolean;
 }
+
+// ========================
+// Driver Models
+// ========================
 
 // ========================
 // Race Metadata Override Models

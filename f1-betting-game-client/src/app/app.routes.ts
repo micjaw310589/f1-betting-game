@@ -16,5 +16,9 @@ export const routes: Routes = [
   {
     path: 'races',
     loadChildren: () => import('./race/race.routes').then(m => m.RaceRoutes)
+  },
+  {
+    path: 'auth',
+    loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule)
   }
 ];

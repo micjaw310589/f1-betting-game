@@ -204,6 +204,93 @@ namespace F1BettingApp.API.Controllers
         }
 
         /// <summary>
+        /// Gets the profile of the currently authenticated user (Task-05 route).
+        /// </summary>
+        /// <response code="200">Returns the current user's profile.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("profile")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<UserProfileDto>> GetCurrentUserProfileForTask05()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var userProfile = await _userService.GetUserProfileAsync(userIdInt);
+                return Ok(userProfile);
+            }
+            catch (Exception ex) when (ex is not KeyNotFoundException && !IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving user profile");
+            }
+        }
+
+        /// <summary>
+        /// Gets paginated bet history for the currently authenticated user (Task-05 route).
+        /// </summary>
+        /// <param name="page">The page number for pagination (default: 1).</param>
+        /// <param name="pageSize">The number of items per page (default: 20, max: 100).</param>
+        /// <response code="200">Returns the current user's bet history.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("bets")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<BetHistoryResponseDto>> GetCurrentUserBetHistoryForTask05(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (page < 1 || page > int.MaxValue / pageSize)
+            {
+                return BadRequest("Invalid page number");
+            }
+
+            if (pageSize < 1 || pageSize > 100)
+            {
+                return BadRequest("Page size must be between 1 and 100");
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                // Per Task-05: use BettingService.GetUserBetHistoryAsync
+                var history = await _userService.GetUserBetHistoryAsync(userIdInt, page, pageSize);
+                return Ok(history);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("User not found");
+            }
+            catch (Exception ex) when (ex is not KeyNotFoundException && !IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving bet history");
+            }
+        }
+
+        /// <summary>
         /// Checks if an exception is related to authorization.
         /// </summary>
         private bool IsAuthorizationException(Exception ex) => 

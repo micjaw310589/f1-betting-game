@@ -1,0 +1,17 @@
+<nav *ngIf="showNavbar$ | async">
+    <ul class="nav-links">
+    <li><a routerLink="/races">Races</a></li>
+
+    <!-- Widoczne tylko gdy użytkownik NIE jest zalogowany -->
+    <ng-container *ngIf="!(authService.currentUser | async)">
+      <li><a routerLink="/auth/login">Login</a></li>
+      <li><a routerLink="/auth/register">Register</a></li>
+    </ng-container>
+
+    <!-- Widoczne tylko gdy użytkownik JEST zalogowany -->
+    <ng-container *ngIf="authService.currentUser | async as user">
+      <li><a routerLink="/profile">My profile</a></li>
+      <li><button (click) = "onLogout()">Logout ({{ user.user?.username}})</button></li>
+    </ng-container>
+  </ul>
+</nav>

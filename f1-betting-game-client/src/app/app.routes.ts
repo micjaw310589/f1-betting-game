@@ -20,5 +20,9 @@ export const routes: Routes = [
   {
     path: 'auth',
     loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule)
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./profile/user-profile/user-profile.component').then(m => m.UserProfileComponent)
   }
 ];

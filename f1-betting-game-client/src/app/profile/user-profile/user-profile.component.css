@@ -1,0 +1,168 @@
+.profile-container {
+  padding: 18px;
+  max-width: 980px;
+  margin: 0 auto;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.loader-overlay,
+.error-message,
+.empty-state {
+  border: 3px solid #000;
+  background: #fff;
+  box-shadow: 6px 6px 0 #000;
+  padding: 12px;
+  margin-top: 14px;
+}
+
+.profile-card,
+.bets-card {
+  border: 3px solid #000;
+  background: #fff;
+  box-shadow: 6px 6px 0 #000;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.profile-name {
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  font-weight: 900;
+  -webkit-text-stroke: 1px #000;
+}
+
+.profile-meta .meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 2px dashed #000;
+}
+
+.profile-meta .meta-row:first-child {
+  border-top: none;
+}
+
+.meta-label {
+  font-weight: 900;
+}
+
+.meta-value {
+  font-weight: 800;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+.meta-value.points {
+  background: #ffe66d;
+  border: 2px solid #000;
+  padding: 4px 10px;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.bets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bets-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  -webkit-text-stroke: 1px #000;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination-controls.compact {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.page-btn {
+  border: 3px solid #000;
+  background: #fff;
+  box-shadow: 4px 4px 0 #000;
+  padding: 8px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.page-info {
+  font-weight: 900;
+}
+
+.bets-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bet-row {
+  border: 3px solid #000;
+  background: #fff;
+  box-shadow: 6px 6px 0 #000;
+  padding: 12px;
+}
+
+.bet-won {
+  border-color: #0a7a00;
+  background: #d6ffd0;
+}
+
+.bet-lost {
+  border-color: #b00020;
+  background: #ffd0d0;
+}
+
+.bet-canceled {
+  border-color: #444;
+  background: #f1f1f1;
+}
+
+.bet-pending,
+.bet-unknown {
+  border-color: #000;
+  background: #fff;
+}
+
+.bet-main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.bet-line {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.bet-label {
+  font-weight: 900;
+}
+
+.bet-value {
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.empty-state {
+  font-weight: 900;
+  text-align: center;
+}

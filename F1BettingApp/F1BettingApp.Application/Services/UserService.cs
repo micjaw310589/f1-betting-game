@@ -30,9 +30,9 @@ namespace F1BettingApp.Application.Services
         {
             _userRepository = userRepository;
             _betRepository = betRepository;
-            _secretKey = configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-            _issuer = configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
-            _audience = configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
+            _secretKey = configuration["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+            _issuer = configuration["JwtSettings:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
+            _audience = configuration["JwtSettings:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
             _tokenHandler = new JwtSecurityTokenHandler();
         }
 

@@ -7,6 +7,8 @@ using F1BettingApp.Infrastructure.OpenF1;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
@@ -126,6 +128,11 @@ builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
+
+// Configure ASP.NET Core Identity for user management
+builder.Services.AddIdentity<F1BettingApp.Domain.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
 
 // JWT Authentication Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

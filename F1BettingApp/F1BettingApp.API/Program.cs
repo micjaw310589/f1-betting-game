@@ -26,9 +26,9 @@ builder.Services.AddSwaggerGen();
 // Register CORS for Angular frontend
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AngularApp", policy =>
+    options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app")
+        policy.WithOrigins("http://localhost:4200")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -213,7 +213,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseCors("AngularApp");
+app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

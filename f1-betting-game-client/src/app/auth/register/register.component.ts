@@ -1,10 +1,17 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-register',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink
+  ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.css']
 })
@@ -27,10 +34,8 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Redirect to home if already logged in
-    if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/']);
-    }
+    // Note: Removed automatic redirect to allow users to register even if they have an invalid session
+    // Users can manually navigate away if they're already logged in
   }
 
   onSubmit(): void {
@@ -49,8 +54,10 @@ export class RegisterComponent implements OnInit {
         if (response.isSuccess) {
           this.successMessage = 'Registration successful! You can now login.';
           this.isLoading = false;
-          // Optionally auto-login after registration
-          // this.authService.login(email, password).subscribe(...);
+          // Auto-redirect to login after 2 seconds
+          setTimeout(() => {
+            this.router.navigate(['/auth/login']);
+          }, 2000);
         } else {
           this.errorMessage = response.errorMessage || 'Registration failed';
           this.isLoading = false;

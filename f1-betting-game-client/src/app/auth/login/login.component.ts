@@ -1,10 +1,17 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink
+  ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
@@ -25,10 +32,8 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Redirect to home if already logged in
-    if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/']);
-    }
+    // Note: Removed automatic redirect to allow users to login even if they have an invalid session
+    // Users can manually navigate away if they're already logged in
   }
 
   onSubmit(): void {
@@ -44,6 +49,7 @@ export class LoginComponent implements OnInit {
     this.authService.login(email, password).subscribe({
       next: (response) => {
         if (response.isSuccess) {
+          this.isLoading = false; // Reset loading state before navigation
           this.router.navigate(['/']);
         } else {
           this.errorMessage = response.errorMessage || 'Login failed';

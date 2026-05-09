@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
-import { AuthService } from './auth.service';
+import { AuthResponse, AuthService } from './auth.service';
 import { Router } from '@angular/router';
 
 @Injectable()
@@ -47,7 +47,7 @@ export class AuthInterceptor implements HttpInterceptor {
       this.isRefreshing = true;
 
       return this.authService.refreshToken().pipe(
-        switchMap((response) => {
+        switchMap((response: AuthResponse) => {
           this.isRefreshing = false;
 
           if (response.isSuccess && response.token) {

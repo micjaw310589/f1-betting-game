@@ -15,12 +15,11 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [
-    LoginComponent,
-    RegisterComponent
-  ],
+  declarations: [],
   imports: [
     CommonModule,
+    LoginComponent,
+    RegisterComponent,
     ReactiveFormsModule,
     HttpClientModule,
     RouterModule.forChild(routes)

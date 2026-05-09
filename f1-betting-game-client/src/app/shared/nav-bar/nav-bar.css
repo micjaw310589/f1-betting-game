@@ -1,0 +1,59 @@
+.main-nav {
+    background-color: white;
+    border-bottom: 1px solid #eee;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Spójne z .race-card */
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-group {
+    display: flex;
+    gap: 10px; /* Spójne z .filter-buttons */
+}
+
+/* Stylizacja linków jako przycisków - kopia Twoich .filter-buttons button */
+.nav-btn {
+    text-decoration: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    color: #333;
+    font-size: 14px;
+    font-family: sans-serif;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+}
+
+.nav-btn:hover {
+    background-color: #eee;
+    transform: translateY(-1px);
+}
+
+/* Przycisk aktywny - spójny z .filter-buttons button.active */
+.nav-btn.active, .active-blue {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Specyficzny styl dla wylogowania, żeby się odróżniał */
+.logout-btn {
+    border-color: #ffc107; /* Kolor status-scheduled */
+    background-color: white;
+}
+
+.logout-btn:hover {
+    background-color: #fff9e6;
+    border-color: #ffc107;
+}

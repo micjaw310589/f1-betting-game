@@ -1,17 +1,26 @@
-<nav *ngIf="showNavbar$ | async">
-    <ul class="nav-links">
-    <li><a routerLink="/races">Races</a></li>
+<nav class="main-nav" *ngIf="showNavbar$ | async">
+  <div class="nav-container">
+    <div class="nav-group">
+      <!-- Przycisk Races jako główny punkt -->
+      <a routerLink="/races" routerLinkActive="active" class="nav-btn">Races</a>
+    </div>
 
-    <!-- Widoczne tylko gdy użytkownik NIE jest zalogowany -->
-    <ng-container *ngIf="!(authService.currentUser | async)">
-      <li><a routerLink="/auth/login">Login</a></li>
-      <li><a routerLink="/auth/register">Register</a></li>
-    </ng-container>
+    <div class="nav-group">
+      <!-- Widoczne tylko gdy użytkownik NIE jest zalogowany -->
+      <ng-container *ngIf="!(authService.currentUser | async)">
+        <a routerLink="/auth/login" class="nav-btn">Login</a>
+        <a routerLink="/auth/register" class="nav-btn active-blue">Register</a>
+      </ng-container>
 
-    <!-- Widoczne tylko gdy użytkownik JEST zalogowany -->
-    <ng-container *ngIf="authService.currentUser | async as user">
-      <li><a routerLink="/profile">My profile</a></li>
-      <li><button (click) = "onLogout()">Logout ({{ user.user?.username}})</button></li>
-    </ng-container>
-  </ul>
+      <!-- Widoczne tylko gdy użytkownik JEST zalogowany -->
+      <ng-container *ngIf="authService.currentUser | async as user">
+        <a routerLink="/profile" routerLinkActive="active" class="nav-btn">
+           My profile
+        </a>
+        <button (click)="onLogout()" class="nav-btn logout-btn">
+          Logout ({{ user.user?.username }})
+        </button>
+      </ng-container>
+    </div>
+  </div>
 </nav>

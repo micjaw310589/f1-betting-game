@@ -23,7 +23,7 @@ export class RaceListComponent implements OnInit, OnDestroy {
   
   // Pagination controls
   page = 1;
-  pageSize = 12;
+  pageSize = 9;
   filterType: 'all' | 'upcoming' | 'past' = 'upcoming';
 
 

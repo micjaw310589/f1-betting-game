@@ -8,11 +8,17 @@ import { BetType, PlaceBetDto } from '../bet.models';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../auth/auth.service';
 
-type DriverOddsMap = Record<number, number>;
+// Nowy interfejs pasujący do DTO z backendu
+export interface DriverWithOdds {
+  driverId: number;
+  driverName: string;
+  odds: number;
+}
 
 interface PendingBetView {
   betId: number;
   driverId: number;
+  driverName?: string; // Dodane dla lepszego widoku
   amount: number;
   betType: BetType;
   createdAt: string;
@@ -29,12 +35,11 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
 
   raceId!: number;
-
   betTypeOptions: BetType[] = ['RaceWinner', 'PodiumFinish', 'Top10Finish', 'FastestLap'];
 
-  odds: DriverOddsMap = {};
-  driverIds: number[] = [];
-
+  // Zmienione: przechowujemy pełne obiekty kierowców
+  driversList: DriverWithOdds[] = [];
+  
   selectedBetType: BetType = 'RaceWinner';
   selectedDriverId?: number;
 
@@ -46,7 +51,7 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
   betsError: string | null = null;
 
   constructor(
-    private activatedRoute: ActivatedRoute,
+    private route: ActivatedRoute,
     private router: Router,
     private raceService: RaceService,
     private betService: BetService,
@@ -54,74 +59,68 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    const sub = this.activatedRoute.paramMap
-      .pipe(
-        switchMap(params => {
-          const id = Number(params.get('id'));
-          this.raceId = id;
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (!idParam) {
+      this.router.navigate(['/races']);
+      return;
+    }
 
-          // Load odds (drivers list) for this race
-          return this.raceService.getRaceOdds(id).pipe(
-            catchError(() => of({} as DriverOddsMap)),
-            switchMap(odds => {
-              this.odds = odds;
-              this.driverIds = Object.keys(odds).map(k => Number(k)).sort((a, b) => a - b);
+    this.raceId = Number(idParam);
 
-              // Load current user's bets for cancellation UI
-              return this.loadPendingBets();
-            })
-          );
-        })
-      )
-      .subscribe();
+    // Ładowanie kierowców i ich kursów
+    const sub = this.raceService.getDriversWithOdds(this.raceId).pipe(
+      catchError(() => {
+        window.alert('Failed to load drivers for this race.');
+        return of([] as DriverWithOdds[]);
+      }),
+      switchMap(drivers => {
+        this.driversList = drivers;
+        // Domyślnie zaznacz pierwszego kierowcę z listy
+        if (drivers.length > 0) {
+          this.selectedDriverId = drivers[0].driverId;
+        }
+        return this.loadPendingBets();
+      })
+    ).subscribe();
 
     this.subscriptions.add(sub);
   }
 
-  private loadPendingBets() {
-    this.betsLoading = true;
-    this.betsError = null;
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
 
+  loadPendingBets() {
+    this.betsLoading = true;
     return this.betService.getMyBets().pipe(
-      switchMap(bets => {
-        this.pendingBets = bets
-          .filter(b => b.status === 'Pending' && b.raceId === this.raceId)
+      catchError(err => {
+        this.betsError = 'Failed to load your bets.';
+        return of([]);
+      }),
+      switchMap(allBets => {
+        this.pendingBets = allBets
+          .filter(b => b.raceId === this.raceId && b.status === 'Pending')
           .map(b => ({
             betId: b.id,
             driverId: b.driverId,
+            driverName: b.driverName || `Driver ${b.driverId}`,
             amount: b.amount,
             betType: b.betType,
-            createdAt: b.createdAt,
+            createdAt: b.createdAt
           }));
-
         this.betsLoading = false;
-        if (this.selectedDriverId === undefined && this.driverIds.length > 0) {
-          this.selectedDriverId = this.driverIds[0];
-        }
-
-        return of(null);
-      }),
-      catchError(err => {
-        this.betsLoading = false;
-        this.betsError = 'Failed to load your pending bets.';
         return of(null);
       })
     );
   }
 
   get canSubmit(): boolean {
-    const amountOk = this.amount > 0;
-    const driverOk = this.selectedDriverId !== undefined;
-    return amountOk && driverOk && !this.isSubmitting;
+    return this.amount > 0 && !!this.selectedDriverId && !this.isSubmitting;
   }
 
-  get canCancel(): boolean {
-    return this.pendingBets.length > 0;
-  }
-
-  get selectedDriverOdds(): number | undefined {
-    if (this.selectedDriverId === undefined) return undefined;
-    return this.odds[this.selectedDriverId];
+  // Pomocnicza metoda do pobrania kursu wybranego kierowcy (do wyświetlenia w UI)
+  get selectedDriverOdds(): number {
+    return this.driversList.find(d => d.driverId === this.selectedDriverId)?.odds || 0;
   }
 
   placeBet(): void {
@@ -135,24 +134,16 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
     };
 
     this.isSubmitting = true;
-
-    const sub = this.betService.placeBet(dto).pipe(
-      catchError(err => {
+    const sub = this.betService.placeBet(dto).subscribe({
+      next: () => {
         this.isSubmitting = false;
-        window.alert('Failed to place bet. ' + (err?.message ?? ''));
-        return of(null);
-      })
-    ).subscribe(result => {
-      this.isSubmitting = false;
-
-      // Backend currently returns { message, userId } (defensive)
-      if (result) {
         window.alert('Bet placed successfully.');
         this.amount = 0;
-        this.selectedBetType = 'RaceWinner';
         this.loadPendingBets().subscribe();
-      } else {
-        // error already alerted
+      },
+      error: (err) => {
+        this.isSubmitting = false;
+        window.alert('Failed to place bet. ' + (err?.error?.message || err?.message || ''));
       }
     });
 
@@ -160,16 +151,14 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
   }
 
   cancelBet(betId: number): void {
-    const sub = this.betService.cancelBet(betId).pipe(
-      catchError(err => {
-        window.alert('Failed to cancel bet.');
-        return of(null);
-      })
-    ).subscribe(res => {
-      if (res) {
+    if (!window.confirm('Are you sure you want to cancel this bet?')) return;
+    
+    const sub = this.betService.cancelBet(betId).subscribe({
+      next: () => {
         window.alert('Bet cancelled successfully.');
         this.loadPendingBets().subscribe();
-      }
+      },
+      error: () => window.alert('Failed to cancel bet.')
     });
 
     this.subscriptions.add(sub);
@@ -177,9 +166,5 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
 
   goBackToRaceDetail(): void {
     this.router.navigate(['/races', this.raceId]);
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
   }
 }

@@ -71,6 +71,10 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(r => r.Name).IsRequired().HasMaxLength(100);
                 entity.Property(r => r.Circuit).IsRequired().HasMaxLength(100);
                 entity.Property(r => r.Country).IsRequired().HasMaxLength(50);
+                entity.Property(r => r.Date)
+                      .HasConversion(
+                          v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
+                          v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
 
                 // Map race status enum to string
                 entity.Property(r => r.Status)

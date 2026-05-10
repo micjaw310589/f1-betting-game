@@ -154,6 +154,24 @@ export class AdminService {
             .pipe(catchError(this.handleError));
     }
 
+    /**
+     * Creates a new race (admin only).
+     */
+    createRace(dto: { name: string; date: string; circuit: string; country: string; season: number }): Observable<AdminRaceDto> {
+        return this.http
+            .post<AdminRaceDto>(`${this.ADMIN_API_URL}/races`, dto)
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Deletes a race (admin only).
+     */
+    deleteRace(raceId: number): Observable<void> {
+        return this.http
+            .delete<void>(`${this.ADMIN_API_URL}/races/${raceId}`)
+            .pipe(catchError(this.handleError));
+    }
+
     private handleError(error: any) {
         let errorMessage = 'Unknown error occurred';
         if (error.error && error.error.message) {

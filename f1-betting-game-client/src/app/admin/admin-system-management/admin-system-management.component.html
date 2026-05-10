@@ -24,6 +24,13 @@
         >
             Race Metadata
         </button>
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'races'"
+            (click)="switchTab('races')"
+        >
+            Race Management
+        </button>
     </div>
 
     <!-- Sync Tab -->
@@ -456,6 +463,212 @@
                     </button>
                     <button class="btn-confirm" (click)="confirmMetadataUpdate()">
                         Confirm Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Race Management Tab -->
+    @if (activeTab === 'races') {
+        <div class="tab-content">
+            <h3>Race Management</h3>
+            <p>View all races, create new ones, or delete races with no bets.</p>
+
+            @if (createRaceSuccess) {
+                <div class="message success">
+                    ✅ Race created successfully!
+                </div>
+            }
+            @if (createRaceError) {
+                <div class="message error">
+                    ❌ {{ createRaceError }}
+                </div>
+            }
+
+            <!-- Create Race Button -->
+            <div class="override-actions" style="margin-bottom: 20px;">
+                <button class="btn-add-driver" (click)="openCreateRaceForm()">
+                    ➕ Create New Race
+                </button>
+            </div>
+
+            <!-- Create Race Form Modal -->
+            @if (showCreateRaceForm) {
+                <div class="modal-overlay" (click)="closeCreateRaceForm()">
+                    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+                        <div class="modal-header">
+                            <h3>Create New Race</h3>
+                            <button class="modal-close" (click)="closeCreateRaceForm()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="race-name">Race Name *</label>
+                                    <input
+                                        id="race-name"
+                                        type="text"
+                                        [(ngModel)]="createRaceForm.name"
+                                        class="form-input"
+                                        placeholder="e.g., Bahrain Grand Prix"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="race-date">Race Date</label>
+                                    <input
+                                        id="race-date"
+                                        type="datetime-local"
+                                        [(ngModel)]="createRaceForm.date"
+                                        class="form-input"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="race-circuit">Circuit *</label>
+                                    <input
+                                        id="race-circuit"
+                                        type="text"
+                                        [(ngModel)]="createRaceForm.circuit"
+                                        class="form-input"
+                                        placeholder="e.g., Bahrain International Circuit"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="race-country">Country *</label>
+                                    <input
+                                        id="race-country"
+                                        type="text"
+                                        [(ngModel)]="createRaceForm.country"
+                                        class="form-input"
+                                        placeholder="e.g., Bahrain"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="race-season">Season</label>
+                                    <input
+                                        id="race-season"
+                                        type="number"
+                                        [(ngModel)]="createRaceForm.season"
+                                        class="form-input"
+                                        min="2000"
+                                        max="2100"
+                                    />
+                                </div>
+                            </div>
+                            @if (createRaceError) {
+                                <div class="message error" style="margin-top: 12px;">
+                                    ❌ {{ createRaceError }}
+                                </div>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-cancel" (click)="closeCreateRaceForm()">
+                                Cancel
+                            </button>
+                            <button
+                                class="btn-confirm"
+                                [disabled]="isCreatingRace"
+                                (click)="createRace()"
+                            >
+                                @if (isCreatingRace) {
+                                    <span class="spinner-small" style="border-top-color: #fff;"></span>
+                                    Creating...
+                                } @else {
+                                    Create Race
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Races List -->
+            <div class="races-list">
+                <h4>All Races ({{ races.length }})</h4>
+                @if (isLoadingRaces) {
+                    <div class="loading">Loading races...</div>
+                } @else if (races.length === 0) {
+                    <div class="message info">No races found. Create one to get started.</div>
+                } @else {
+                    <table class="races-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Race Name</th>
+                                <th>Circuit</th>
+                                <th>Country</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (race of races; track race.id) {
+                                <tr>
+                                    <td>{{ formatDate(race.raceDate) }}</td>
+                                    <td><strong>{{ race.name }}</strong></td>
+                                    <td>{{ race.circuit }}</td>
+                                    <td>{{ race.country }}</td>
+                                    <td>
+                                        <span class="status-badge {{ getStatusClass(race.status) }}">
+                                            {{ getStatusLabel(race.status) }}
+                                        </span>
+                                        @if (race.isManuallyOverridden) {
+                                            <span class="override-badge" style="margin-left: 4px;">⚠️ Override</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button
+                                            class="btn-delete-row"
+                                            (click)="openDeleteConfirm(race.id)"
+                                            title="Delete race"
+                                        >
+                                            🗑️ Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Delete Confirmation Modal -->
+    @if (showDeleteConfirm) {
+        <div class="modal-overlay" (click)="closeDeleteConfirm()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Race Deletion</h3>
+                    <button class="modal-close" (click)="closeDeleteConfirm()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to delete this race?
+                    </p>
+                    @if (deleteRaceError) {
+                        <div class="message error">
+                            ❌ {{ deleteRaceError }}
+                        </div>
+                    }
+                    <p class="warning-text">
+                        ⚠️ This action cannot be undone. Any associated results will also be deleted.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeDeleteConfirm()">
+                        Cancel
+                    </button>
+                    <button
+                        class="btn-confirm"
+                        [disabled]="isDeletingRace"
+                        (click)="deleteRace()"
+                    >
+                        @if (isDeletingRace) {
+                            <span class="spinner-small" style="border-top-color: #fff;"></span>
+                            Deleting...
+                        } @else {
+                            Delete Race
+                        }
                     </button>
                 </div>
             </div>

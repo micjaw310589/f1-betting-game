@@ -88,5 +88,19 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="dto">The metadata to update.</param>
         /// <returns>Task representing the asynchronous operation.</returns>
         Task UpdateRaceMetadataAsync(int raceId, UpdateRaceMetadataDto dto);
+
+        /// <summary>
+        /// Creates a new race (admin only).
+        /// </summary>
+        /// <param name="dto">The race creation data.</param>
+        /// <returns>The created race DTO.</returns>
+        Task<RaceDto> CreateRaceAsync(CreateRaceDto dto);
+
+        /// <summary>
+        /// Deletes a race (admin only). Only allowed if the race has no bets.
+        /// </summary>
+        /// <param name="raceId">The ID of the race to delete.</param>
+        /// <returns>Task representing the asynchronous operation.</returns>
+        Task DeleteRaceAsync(int raceId);
     }
 }

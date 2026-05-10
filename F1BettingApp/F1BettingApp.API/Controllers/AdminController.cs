@@ -305,5 +305,103 @@ namespace F1BettingApp.API.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Creates a new race (admin only).
+        /// </summary>
+        /// <param name="dto">The race creation data.</param>
+        /// <returns>The created race DTO.</returns>
+        [HttpPost("races")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<RaceDto>> CreateRace([FromBody] CreateRaceDto dto)
+        {
+            _logger.LogInformation("Admin creating new race: {Name}", dto.Name);
+
+            try
+            {
+                var race = await _raceService.CreateRaceAsync(dto);
+
+                _logger.LogInformation("Race created successfully: RaceId={RaceId}, Name={Name}", race.Id, race.Name);
+
+                return CreatedAtAction(nameof(GetAdminRaces), new { }, race);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Admin race creation failed: Invalid input");
+                return BadRequest(new ErrorResponse
+                {
+                    Error = "INVALID_INPUT",
+                    Message = ex.Message,
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating race");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "RACE_CREATION_FAILED",
+                    Message = "Failed to create race",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Deletes a race (admin only). Only allowed if the race has no bets.
+        /// </summary>
+        /// <param name="raceId">The ID of the race to delete.</param>
+        [HttpDelete("races/{raceId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult> DeleteRace(int raceId)
+        {
+            _logger.LogInformation("Admin deleting race: RaceId={RaceId}", raceId);
+
+            try
+            {
+                await _raceService.DeleteRaceAsync(raceId);
+
+                _logger.LogInformation("Race deleted successfully: RaceId={RaceId}", raceId);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Admin race deletion failed: Race not found, RaceId={RaceId}", raceId);
+                return NotFound(new ErrorResponse
+                {
+                    Error = "RACE_NOT_FOUND",
+                    Message = $"Race with ID {raceId} not found",
+                    Details = ex.Message
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Admin race deletion failed: Has bets, RaceId={RaceId}", raceId);
+                return BadRequest(new ErrorResponse
+                {
+                    Error = "INVALID_OPERATION",
+                    Message = ex.Message,
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting race: RaceId={RaceId}", raceId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "RACE_DELETION_FAILED",
+                    Message = "Failed to delete race",
+                    Details = ex.Message
+                });
+            }
+        }
     }
 }

@@ -658,6 +658,103 @@
 }
 
 /* ======================== */
+/* Race Management          */
+/* ======================== */
+.races-list {
+    margin-top: 20px;
+}
+
+.races-list h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0 0 12px 0;
+}
+
+.races-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.races-table thead {
+    background: #f8f9fa;
+}
+
+.races-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.races-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.races-table tr:hover {
+    background: #f8f9fa;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.status-scheduled {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.status-badge.status-inprogress {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.status-badge.status-finished {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-badge.status-processed {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}
+
+.status-badge.status-cancelled {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-badge.status-postponed {
+    background: #fff8e1;
+    color: #f57f17;
+}
+
+.btn-delete-row {
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    background: #ffffff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.btn-delete-row:hover {
+    background: #ffebee;
+    border-color: #ef9a9a;
+    color: #c62828;
+}
+
+/* ======================== */
 /* Responsive               */
 /* ======================== */
 @media (max-width: 768px) {

@@ -5,6 +5,7 @@ using F1BettingApp.Domain.Enums;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
 using F1BettingApp.Infrastructure.OpenF1;
+using Microsoft.EntityFrameworkCore;
 using System.Transactions;
 using System.Collections.Generic;
 using System.Linq;
@@ -436,6 +437,72 @@ namespace F1BettingApp.Application.Services
             race.IsManuallyOverridden = true;
 
             await _raceRepository.UpdateAsync(race);
+            await _raceRepository.SaveChangesAsync();
+        }
+
+        public async Task<RaceDto> CreateRaceAsync(CreateRaceDto dto)
+        {
+            // Validate inputs
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Race name is required.");
+            if (string.IsNullOrWhiteSpace(dto.Circuit))
+                throw new ArgumentException("Circuit name is required.");
+            if (string.IsNullOrWhiteSpace(dto.Country))
+                throw new ArgumentException("Country is required.");
+            if (dto.Season <= 0)
+                throw new ArgumentException("Season must be positive.");
+
+            // Generate a unique OpenF1RaceId (use a timestamp-based ID for manual races)
+            string openF1RaceId = $"manual-{DateTime.UtcNow:yyyyMMddHHmmss}";
+
+            // Convert to UTC if provided, otherwise default to UTC now
+            DateTime raceDate = dto.Date.HasValue
+                ? DateTime.SpecifyKind(dto.Date.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow;
+
+            var race = new Race(
+                dto.Name,
+                raceDate,
+                dto.Circuit,
+                dto.Country,
+                openF1RaceId,
+                dto.Season
+            );
+
+            await _raceRepository.AddAsync(race);
+            await _raceRepository.SaveChangesAsync();
+
+            return new RaceDto
+            {
+                Id = race.Id,
+                Name = race.Name,
+                Circuit = race.Circuit,
+                Country = race.Country,
+                RaceDate = race.Date,
+                Status = race.Status,
+                Season = race.Season,
+                Flag = race.Country,
+                Odds = new Dictionary<int, decimal>()
+            };
+        }
+
+        public async Task DeleteRaceAsync(int raceId)
+        {
+            var race = await _raceRepository.GetByIdAsync(raceId);
+            if (race == null)
+                throw new KeyNotFoundException($"Race with ID {raceId} not found.");
+
+            // Check if there are any bets on this race
+            var raceBets = await _dbContext.Bets.Where(b => b.RaceId == raceId).ToListAsync();
+            if (raceBets.Any())
+                throw new InvalidOperationException($"Cannot delete race '{race.Name}' because it has {raceBets.Count} bet(s) placed on it.");
+
+            // Delete associated results
+            var results = await _dbContext.Results.Where(r => r.RaceId == raceId).ToListAsync();
+            _dbContext.Results.RemoveRange(results);
+
+            // Delete the race
+            await _raceRepository.DeleteAsync(raceId);
             await _raceRepository.SaveChangesAsync();
         }
     }

@@ -21,7 +21,7 @@ import {
 })
 export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // --- Tab Navigation ---
-    activeTab: 'sync' | 'results' | 'metadata' = 'sync';
+    activeTab: 'sync' | 'results' | 'metadata' | 'races' = 'sync';
 
     // --- Sync Section ---
     isSyncing = false;
@@ -54,6 +54,23 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     allDrivers: { id: number; name: string; teamName: string }[] = [];
     isLoadingDrivers = true;
 
+    // --- Race Management ---
+    showCreateRaceForm = false;
+    createRaceForm = {
+        name: '',
+        date: '',
+        circuit: '',
+        country: '',
+        season: 2025,
+    };
+    isCreatingRace = false;
+    createRaceSuccess = false;
+    createRaceError = '';
+    deleteRaceId: number | null = null;
+    showDeleteConfirm = false;
+    isDeletingRace = false;
+    deleteRaceError = '';
+
     private syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor(
@@ -76,7 +93,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // Tab Navigation
     // ========================
 
-    switchTab(tab: 'sync' | 'results' | 'metadata'): void {
+    switchTab(tab: 'sync' | 'results' | 'metadata' | 'races'): void {
         this.activeTab = tab;
     }
 
@@ -129,6 +146,99 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
             error: (error) => {
                 console.error('Error loading drivers:', error);
                 this.isLoadingDrivers = false;
+            },
+        });
+    }
+
+    // ========================
+    // Race Management Methods
+    // ========================
+
+    openCreateRaceForm(): void {
+        this.showCreateRaceForm = true;
+        this.createRaceSuccess = false;
+        this.createRaceError = '';
+        // Default to tomorrow at 14:00
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(14, 0, 0, 0);
+        const defaultDate = tomorrow.toISOString().slice(0, 16);
+
+        this.createRaceForm = {
+            name: '',
+            date: defaultDate,
+            circuit: '',
+            country: '',
+            season: 2025,
+        };
+    }
+
+    closeCreateRaceForm(): void {
+        this.showCreateRaceForm = false;
+    }
+
+    createRace(): void {
+        if (!this.createRaceForm.name?.trim()) {
+            this.createRaceError = 'Race name is required.';
+            return;
+        }
+        if (!this.createRaceForm.circuit?.trim()) {
+            this.createRaceError = 'Circuit name is required.';
+            return;
+        }
+        if (!this.createRaceForm.country?.trim()) {
+            this.createRaceError = 'Country is required.';
+            return;
+        }
+
+        this.isCreatingRace = true;
+        this.createRaceSuccess = false;
+        this.createRaceError = '';
+
+        this.adminService.createRace(this.createRaceForm).subscribe({
+            next: () => {
+                this.createRaceSuccess = true;
+                this.isCreatingRace = false;
+                this.showCreateRaceForm = false;
+                this.loadRaces();
+                setTimeout(() => {
+                    this.createRaceSuccess = false;
+                }, 5000);
+            },
+            error: (error) => {
+                this.createRaceError = error.message || 'Failed to create race';
+                this.isCreatingRace = false;
+            },
+        });
+    }
+
+    openDeleteConfirm(raceId: number): void {
+        this.deleteRaceId = raceId;
+        this.showDeleteConfirm = true;
+        this.deleteRaceError = '';
+    }
+
+    closeDeleteConfirm(): void {
+        this.showDeleteConfirm = false;
+        this.deleteRaceId = null;
+    }
+
+    deleteRace(): void {
+        if (!this.deleteRaceId) return;
+
+        this.isDeletingRace = true;
+        this.deleteRaceError = '';
+
+        this.adminService.deleteRace(this.deleteRaceId).subscribe({
+            next: () => {
+                this.isDeletingRace = false;
+                this.showDeleteConfirm = false;
+                this.deleteRaceId = null;
+                this.loadRaces();
+            },
+            error: (error) => {
+                this.deleteRaceError = error.message || 'Failed to delete race';
+                this.isDeletingRace = false;
             },
         });
     }

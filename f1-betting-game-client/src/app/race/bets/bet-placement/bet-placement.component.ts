@@ -150,9 +150,15 @@ loadPendingBets() {
     })
   );
 }
-  get canSubmit(): boolean {
-    return this.amount > 0 && this.amount <= this.userPoints && !!this.selectedDriverId && !this.isSubmitting;
-  }
+get canSubmit(): boolean {
+  return (
+    this.amount > 0 && 
+    this.amount <= this.userPoints && 
+    !!this.selectedDriverId && 
+    !this.isSubmitting &&
+    !this.isBetTypeTaken(this.selectedBetType) // <-- Dodaj to
+  );
+}
 
   // Pomocnicza metoda do pobrania kursu wybranego kierowcy (do wyświetlenia w UI)
   get selectedDriverOdds(): number {
@@ -217,4 +223,15 @@ placeBet(): void {
   goBackToRaceDetail(): void {
     this.router.navigate(['/races', this.raceId]);
   }
+
+  // Wewnątrz klasy BetPlacementComponent
+
+/**
+ * Sprawdza, czy użytkownik ma już postawiony zakład tego typu w tym wyścigu
+ */
+isBetTypeTaken(type: BetType): boolean {
+  return this.pendingBets.some(bet => bet.betType === type);
+}
+
+
 }

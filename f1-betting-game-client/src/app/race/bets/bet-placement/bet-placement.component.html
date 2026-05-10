@@ -12,14 +12,18 @@
       Available balance: <strong>{{ userPoints | number:'1.2-2' }} pts</strong>
     </div>
 
-    <div class="form-row">
-      <label for="betType">Bet type</label>
-      <select id="betType" [(ngModel)]="selectedBetType">
-        @for (opt of betTypeOptions; track opt) {
-          <option [value]="opt">{{ opt }}</option>
-        }
-      </select>
-    </div>
+<div class="form-row">
+  <label for="betType">Bet type</label>
+  <select id="betType" [(ngModel)]="selectedBetType">
+    @for (opt of betTypeOptions; track opt) {
+      <option 
+        [value]="opt" 
+        [disabled]="isBetTypeTaken(opt)">
+        {{ opt }} {{ isBetTypeTaken(opt) ? '(Already placed)' : '' }}
+      </option>
+    }
+  </select>
+</div>
 
     <div class="form-row">
       <label for="driver">Driver</label>

@@ -94,7 +94,7 @@
             </div>
 
             <!-- Results Override Form -->
-            @if (selectedRace && (raceResults || currentPositions.length > 0)) {
+            @if (selectedRace) {
                 <div class="results-form">
                     <h3>Override Race Results: {{ selectedRace.name }}</h3>
 
@@ -120,28 +120,30 @@
                                 <span class="override-badge">⚠️ Manually Overridden</span>
                             }
                         </div>
+                    }
 
-                        <!-- Fastest Lap Selection -->
-                        <div class="fastest-lap-section">
-                            <h4>Fastest Lap</h4>
-                            <select
-                                [(ngModel)]="fastestLapDriverId"
-                                (ngModelChange)="onFastestLapChange(fastestLapDriverId)"
-                                class="form-input"
-                                style="max-width: 300px;"
-                            >
-                                <option [ngValue]="null">-- No fastest lap --</option>
-                                @for (driver of getAvailableDrivers(); track driver.id) {
-                                    <option [ngValue]="driver.id">
-                                        {{ driver.name }} ({{ driver.teamName }})
-                                    </option>
-                                }
-                            </select>
-                        </div>
+                    <!-- Fastest Lap Selection -->
+                    <div class="fastest-lap-section">
+                        <h4>Fastest Lap</h4>
+                        <select
+                            [(ngModel)]="fastestLapDriverId"
+                            (ngModelChange)="onFastestLapChange(fastestLapDriverId)"
+                            class="form-input"
+                            style="max-width: 300px;"
+                        >
+                            <option [ngValue]="null">-- No fastest lap --</option>
+                            @for (driver of getAvailableDrivers(); track driver.id) {
+                                <option [ngValue]="driver.id">
+                                    {{ driver.name }} ({{ driver.teamName }})
+                                </option>
+                            }
+                        </select>
+                    </div>
 
-                        <!-- Positions Table -->
-                        <div class="positions-table-container">
-                            <h4>Finishing Positions</h4>
+                    <!-- Positions Table -->
+                    <div class="positions-table-container">
+                        <h4>Finishing Positions</h4>
+                        @if (currentPositions.length > 0) {
                             <table class="positions-table">
                                 <thead>
                                     <tr>
@@ -150,6 +152,7 @@
                                         <th>Team</th>
                                         <th>Points</th>
                                         <th>Fastest Lap</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -185,7 +188,6 @@
                                                 <button
                                                     class="btn-delete-row"
                                                     (click)="removePosition(i)"
-                                                    [disabled]="currentPositions.length <= 1"
                                                     title="Remove driver"
                                                 >
                                                     🗑️
@@ -195,38 +197,36 @@
                                     }
                                 </tbody>
                             </table>
-                        </div>
+                        } @else {
+                            <p class="no-positions-msg">No drivers added yet. Click "Add Driver" to start.</p>
+                        }
+                    </div>
 
-                        <!-- Add Driver Button -->
-                        <div class="add-driver-section">
-                            <button
-                                class="btn-add-driver"
-                                (click)="addPosition()"
-                            >
-                                ➕ Add Driver
-                            </button>
-                        </div>
+                    <!-- Add Driver Button -->
+                    <div class="add-driver-section">
+                        <button
+                            class="btn-add-driver"
+                            (click)="addPosition()"
+                        >
+                            ➕ Add Driver
+                        </button>
+                    </div>
 
-                        <!-- Action Buttons -->
-                        <div class="override-actions">
-                            <button
-                                class="btn-override"
-                                [disabled]="isSavingResults"
-                                (click)="openResultsConfirmModal()"
-                            >
-                                @if (isSavingResults) {
-                                    <span class="spinner-small"></span>
-                                    Saving...
-                                } @else {
-                                    💾 Override Results
-                                }
-                            </button>
-                        </div>
-                    } @else if (selectedRaceId) {
-                        <div class="message info">
-                            ℹ️ No results data available for this race. Select a driver to start building results.
-                        </div>
-                    }
+                    <!-- Action Buttons -->
+                    <div class="override-actions">
+                        <button
+                            class="btn-override"
+                            [disabled]="isSavingResults"
+                            (click)="openResultsConfirmModal()"
+                        >
+                            @if (isSavingResults) {
+                                <span class="spinner-small"></span>
+                                Saving...
+                            } @else {
+                                💾 Override Results
+                            }
+                        </button>
+                    </div>
                 </div>
             }
         </div>

@@ -532,6 +532,16 @@
     font-size: 13px;
 }
 
+.no-positions-msg {
+    color: #6c757d;
+    font-size: 14px;
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
 .actions-col {
     width: 50px;
     text-align: center;

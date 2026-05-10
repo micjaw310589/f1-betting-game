@@ -105,5 +105,37 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
         /// <returns>Paginated bet history DTO</returns>
         Task<BetHistoryResponseDto> GetUserBetHistoryAsync(int userId, int page = 1, int pageSize = 20);
+
+        // --- Admin Methods ---
+
+        /// <summary>
+        /// Gets all users with optional filtering and pagination (admin only).
+        /// </summary>
+        /// <param name="page">Page number (default: 1)</param>
+        /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
+        /// <param name="filterIsActive">Optional filter by active status. null = all users.</param>
+        /// <param name="searchTerm">Optional search by username or email.</param>
+        /// <returns>Paginated list of admin user DTOs.</returns>
+        Task<PagedResult<AdminUserDto>> GetAllUsersAsync(int page = 1, int pageSize = 20, bool? filterIsActive = null, string? searchTerm = null);
+
+        /// <summary>
+        /// Adjusts a user's point balance (admin only).
+        /// </summary>
+        /// <param name="userId">The ID of the user to adjust.</param>
+        /// <param name="pointsDelta">Positive to add, negative to remove.</param>
+        /// <param name="reason">Optional reason for the adjustment.</param>
+        /// <param name="adminUserId">The ID of the admin performing the action.</param>
+        /// <returns>Result of the adjustment operation.</returns>
+        Task<AdjustPointsResultDto> AdjustUserPointsAsync(int userId, int pointsDelta, string? reason, int adminUserId);
+
+        /// <summary>
+        /// Changes a user's active status (suspend/reactivate) (admin only).
+        /// </summary>
+        /// <param name="userId">The ID of the user to modify.</param>
+        /// <param name="isActive">Whether the user should be active.</param>
+        /// <param name="reason">Optional reason for the status change.</param>
+        /// <param name="adminUserId">The ID of the admin performing the action.</param>
+        /// <returns>Updated user DTO.</returns>
+        Task<AdminUserDto> ChangeUserStatusAsync(int userId, bool isActive, string? reason, int adminUserId);
     }
 }

@@ -1,0 +1,234 @@
+<div class="admin-system-management">
+    <h2>System & Bet Management</h2>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'sync'"
+            (click)="switchTab('sync')"
+        >
+            Sync
+        </button>
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'metadata'"
+            (click)="switchTab('metadata')"
+        >
+            Race Metadata
+        </button>
+    </div>
+
+    <!-- Sync Tab -->
+    @if (activeTab === 'sync') {
+        <div class="tab-content">
+            <div class="sync-section">
+                <h3>OpenF1 Data Synchronization</h3>
+                <p>
+                    Manually trigger synchronization of race data from the OpenF1 API.
+                    This will fetch the latest race information, results, and statistics.
+                </p>
+
+                <!-- Sync Button -->
+                <div class="sync-actions">
+                    <button
+                        class="btn-sync"
+                        [disabled]="isSyncing"
+                        (click)="triggerSync()"
+                    >
+                        @if (isSyncing) {
+                            <span class="spinner-small"></span>
+                            Syncing...
+                        } @else {
+                            🔄 Sync Now
+                        }
+                    </button>
+                </div>
+
+                <!-- Sync Result -->
+                @if (syncResult) {
+                    <div class="message success">
+                        ✅ Sync completed successfully! Processed {{ syncResult.racesProcessed }} races.
+                    </div>
+                }
+                @if (syncError) {
+                    <div class="message error">
+                        ❌ {{ syncError }}
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Metadata Tab -->
+    @if (activeTab === 'metadata') {
+        <div class="tab-content">
+            <!-- Race Selection -->
+            <div class="race-selection">
+                <h3>Select Race</h3>
+                @if (isLoadingRaces) {
+                    <div class="loading">Loading races...</div>
+                } @else {
+                    <select
+                        [(ngModel)]="selectedRaceId"
+                        (change)="onRaceSelect()"
+                        class="race-select"
+                    >
+                        <option [ngValue]="null">-- Select a race --</option>
+                        @for (race of races; track race.id) {
+                            <option [ngValue]="race.id">
+                                {{ race.name }} ({{ race.circuit }})
+                            </option>
+                        }
+                    </select>
+                }
+            </div>
+
+            <!-- Metadata Form -->
+            @if (selectedRace) {
+                <div class="metadata-form">
+                    <h3>Edit Race Metadata</h3>
+
+                    @if (metadataSaveSuccess) {
+                        <div class="message success">
+                            ✅ Race metadata updated successfully!
+                        </div>
+                    }
+                    @if (metadataSaveError) {
+                        <div class="message error">
+                            ❌ {{ metadataSaveError }}
+                        </div>
+                    }
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">Race Name *</label>
+                            <input
+                                id="name"
+                                type="text"
+                                [(ngModel)]="metadataForm.name"
+                                name="name"
+                                class="form-input"
+                                placeholder="Enter race name"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="date">Race Date</label>
+                            <input
+                                id="date"
+                                type="datetime-local"
+                                [(ngModel)]="metadataForm.date"
+                                name="date"
+                                class="form-input"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="circuit">Circuit *</label>
+                            <input
+                                id="circuit"
+                                type="text"
+                                [(ngModel)]="metadataForm.circuit"
+                                name="circuit"
+                                class="form-input"
+                                placeholder="Enter circuit name"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="country">Country *</label>
+                            <input
+                                id="country"
+                                type="text"
+                                [(ngModel)]="metadataForm.country"
+                                name="country"
+                                class="form-input"
+                                placeholder="Enter country"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select
+                                id="status"
+                                [(ngModel)]="metadataForm.status"
+                                name="status"
+                                class="form-input"
+                            >
+                                @for (option of getRaceStatusOptions(); track option.value) {
+                                    <option [ngValue]="option.value">
+                                        {{ option.label }}
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="override-actions">
+                        <button
+                            class="btn-override"
+                            [disabled]="isSavingMetadata"
+                            (click)="openMetadataConfirmModal()"
+                        >
+                            @if (isSavingMetadata) {
+                                <span class="spinner-small"></span>
+                                Saving...
+                            } @else {
+                                💾 Save Changes
+                            }
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Metadata Confirmation Modal -->
+    @if (showMetadataConfirmModal) {
+        <div class="modal-overlay" (click)="closeMetadataConfirmModal()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Metadata Update</h3>
+                    <button class="modal-close" (click)="closeMetadataConfirmModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to update the metadata for
+                        <strong>{{ selectedRace?.name }}</strong>?
+                    </p>
+                    <div class="override-summary">
+                        <p>
+                            <strong>Name:</strong> {{ metadataForm.name }}
+                        </p>
+                        <p>
+                            <strong>Circuit:</strong> {{ metadataForm.circuit }}
+                        </p>
+                        <p>
+                            <strong>Country:</strong> {{ metadataForm.country }}
+                        </p>
+                        @if (metadataForm.date) {
+                            <p>
+                                <strong>Date:</strong> {{ formatDate(metadataForm.date) }}
+                            </p>
+                        }
+                        @if (metadataForm.status) {
+                            <p>
+                                <strong>Status:</strong> {{ getStatusLabel(metadataForm.status) }}
+                            </p>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeMetadataConfirmModal()">
+                        Cancel
+                    </button>
+                    <button class="btn-confirm" (click)="confirmMetadataUpdate()">
+                        Confirm Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>

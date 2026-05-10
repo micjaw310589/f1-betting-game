@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 
+import { AuthRoutes } from './auth/auth.routes';
 import { RaceRoutes } from './race/race.routes';
+import { AdminRoutes } from './admin/admin.routes';
 
 export const routes: Routes = [
   {

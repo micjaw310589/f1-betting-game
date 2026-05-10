@@ -95,7 +95,8 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.HasOne(r => r.User)
                       .WithMany()
                       .HasForeignKey(r => r.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(r => new { r.RaceId, r.DriverId }).IsUnique();
                 entity.Property(r => r.Position).IsRequired();

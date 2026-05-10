@@ -188,7 +188,7 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
-// Apply migrations automatically at startup
+// Apply migrations and seed data at startup (always)
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -204,22 +204,37 @@ using (var scope = app.Services.CreateScope())
     // Apply migrations and seed data in development
     using (var scope = app.Services.CreateScope())
     {
-        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<AppDbContext>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+
         try
         {
-            var context = services.GetRequiredService<AppDbContext>();
             await context.Database.MigrateAsync();
-
-            // Seed initial data
-            await SeedData.Initialize(context);
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex) when (ex.Message.Contains("PendingModelChangesWarning"))
         {
-            var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
+            logger.LogWarning(ex, "Pending model changes detected - applying missing migration manually");
+            // Apply the IsManuallyOverridden column if it doesn't exist
+            await context.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE \"Races\" ADD COLUMN IF NOT EXISTS \"IsManuallyOverridden\" boolean NOT NULL DEFAULT false");
         }
+
+        // Seed initial data (admin user, teams, etc.)
+        await SeedData.Initialize(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
     }
 //}
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 app.UseRouting();

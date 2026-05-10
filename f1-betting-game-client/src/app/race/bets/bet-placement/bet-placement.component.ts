@@ -96,28 +96,34 @@ loadPendingBets() {
   return this.betService.getMyBets().pipe(
     catchError(err => {
       this.betsError = 'Failed to load your bets.';
-      this.betsLoading = false; // Pamiętaj o wyłączeniu loadera przy błędzie
-      this.cdr.detectChanges(); // Powiadom o zmianie błędu
+      this.betsLoading = false;
+      this.cdr.detectChanges();
       return of([]);
     }),
     switchMap(allBets => {
       this.pendingBets = allBets
-        .filter(b => b.raceId === this.raceId && b.status === 'Pending')
-        .map(b => ({
-          betId: b.id,
-          driverId: b.driverId,
-          driverName: b.driverName || `Driver ${b.driverId}`,
-          amount: b.amount,
-          betType: b.betType,
-          createdAt: b.createdAt
-        }));
+  .filter(b => b.raceId === this.raceId && b.status === 'Pending')
+  .map(b => {
+    // Szukamy kierowcy na liście, którą pobraliśmy z raceService
+    const driverFromList = this.driversList.find(d => d.driverId === b.driverId);
+    
+    return {
+      betId: b.id,
+      driverId: b.driverId,
+      // Priorytet: 1. Imię z listy kierowców, 2. Imię z obiektu zakładu, 3. Fallback
+      driverName: driverFromList?.driverName || b.driverName || `Unknown Driver (${b.driverId})`,
+      amount: b.amount,
+      betType: b.betType,
+      createdAt: b.createdAt
+    };
+  });
+
       this.betsLoading = false;
-      this.cdr.detectChanges(); // KLUCZ: Wymuś sprawdzenie zmian po przypisaniu danych
+      this.cdr.detectChanges(); // Wymuszamy odświeżenie widoku
       return of(null);
     })
   );
 }
-
   get canSubmit(): boolean {
     return this.amount > 0 && !!this.selectedDriverId && !this.isSubmitting;
   }

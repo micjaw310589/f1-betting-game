@@ -1,96 +1,56 @@
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <h1>F1 Betting</h1>
-            <p>Create your account</p>
+<a routerLink="/" class="back-btn">
+ <span class="arrow-icon">←</span>Back to home
+</a>
+<div class="register-container">
+  <div class="register-card">
+    <h2>Register</h2>
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" formControlName="email" placeholder="Enter your email" />
+        <div *ngIf="registerForm.get('email')?.invalid && (registerForm.get('email')?.dirty || registerForm.get('email')?.touched)"
+             class="error-message">
+          <div *ngIf="registerForm.get('email')?.errors?.['required']">Email is required</div>
+          <div *ngIf="registerForm.get('email')?.errors?.['email']">Please enter a valid email</div>
         </div>
+      </div>
 
-        @if (errorMessage) {
-            <div class="error-message">
-                <span class="error-icon">⚠️</span>
-                <span>{{ errorMessage }}</span>
-            </div>
-        }
-
-        @if (successMessage) {
-            <div class="success-message">
-                <span class="success-icon">✅</span>
-                <span>{{ successMessage }}</span>
-            </div>
-        }
-
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input
-                    type="text"
-                    id="username"
-                    formControlName="username"
-                    placeholder="Choose a username (min 3 characters)"
-                    [disabled]="isLoading"
-                />
-                @if (registerForm.get('username')?.touched && registerForm.get('username')?.invalid) {
-                    <span class="error-text">Username must be at least 3 characters</span>
-                }
-            </div>
-
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input
-                    type="email"
-                    id="email"
-                    formControlName="email"
-                    placeholder="Enter your email"
-                    [disabled]="isLoading"
-                />
-                @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
-                    <span class="error-text">Please enter a valid email address</span>
-                }
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    formControlName="password"
-                    placeholder="Enter a password (min 6 characters)"
-                    [disabled]="isLoading"
-                />
-                @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
-                    <span class="error-text">Password must be at least 6 characters</span>
-                }
-            </div>
-
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
-                <input
-                    type="password"
-                    id="confirmPassword"
-                    formControlName="confirmPassword"
-                    placeholder="Confirm your password"
-                    [disabled]="isLoading"
-                />
-                @if (registerForm.get('confirmPassword')?.touched && registerForm.get('confirmPassword')?.invalid) {
-                    <span class="error-text">Please confirm your password</span>
-                }
-                @if (registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched) {
-                    <span class="error-text">Passwords do not match</span>
-                }
-            </div>
-
-            <button type="submit" class="btn-register" [disabled]="isLoading || registerForm.invalid">
-                @if (isLoading) {
-                    <span class="spinner"></span>
-                    Creating account...
-                } @else {
-                    Sign Up
-                }
-            </button>
-        </form>
-
-        <div class="auth-footer">
-            <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" formControlName="username" placeholder="Enter your username" />
+        <div *ngIf="registerForm.get('username')?.invalid && (registerForm.get('username')?.dirty || registerForm.get('username')?.touched)"
+             class="error-message">
+          <div *ngIf="registerForm.get('username')?.errors?.['required']">Username is required</div>
+          <div *ngIf="registerForm.get('username')?.errors?.['minlength']">Username must be at least 3 characters</div>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" formControlName="password" placeholder="Enter your password" />
+        <div *ngIf="registerForm.get('password')?.invalid && (registerForm.get('password')?.dirty || registerForm.get('password')?.touched)"
+             class="error-message">
+          <div *ngIf="registerForm.get('password')?.errors?.['required']">Password is required</div>
+          <div *ngIf="registerForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</div>
+        </div>
+      </div>
+
+      <div *ngIf="errorMessage" class="error-banner">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="success-banner">
+        {{ successMessage }}
+      </div>
+
+      <button type="submit" [disabled]="isLoading || registerForm.invalid">
+        <span *ngIf="!isLoading">Register</span>
+        <span *ngIf="isLoading">Registering...</span>
+      </button>
+    </form>
+
+    <div class="login-link">
+      Already have an account? <a routerLink="/auth/login">Login here</a>
     </div>
+  </div>
 </div>

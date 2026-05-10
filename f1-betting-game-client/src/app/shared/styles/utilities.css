@@ -1,0 +1,338 @@
+/* Layout helpers */
+.f1-container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding-left: var(--container-x-padding);
+  padding-right: var(--container-x-padding);
+}
+
+.f1-container-xl {
+  max-width: var(--container-max-width-xl);
+  margin: 0 auto;
+  padding-left: var(--container-x-padding);
+  padding-right: var(--container-x-padding);
+}
+
+/* Host / page backgrounds */
+.f1-page {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  font-family: var(--font-main);
+}
+
+/* Headings with left red bar */
+.f1-title {
+  font-size: 36px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #fff;
+  border-left: 6px solid var(--color-f1-red);
+  padding-left: 20px;
+  margin-bottom: 40px;
+  font-weight: 900;
+}
+
+/* Carbon cards */
+.card-carbon {
+  background: linear-gradient(145deg, var(--color-card-bg-1), var(--color-card-bg-2));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 25px;
+  border-bottom: 3px solid var(--color-border);
+  transition: var(--transition-med);
+}
+
+.card-carbon:hover {
+  border-color: var(--color-f1-red);
+  box-shadow: 0 10px 25px rgba(225, 6, 0, 0.2);
+}
+
+/* Carbon panels (telemetry-like background + grid effect) */
+.panel-carbon {
+  background: var(--color-card-bg-1);
+  padding: 25px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-carbon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60px;
+  height: 60px;
+  background-image: radial-gradient(rgba(225, 6, 0, 0.13) 1px, transparent 1px);
+  background-size: 8px 8px;
+  pointer-events: none;
+}
+
+/* Button base (15deg skew) */
+.btn-f1-style {
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-main);
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: skewX(var(--skew-x));
+  transition: var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-f1-style:hover:not(:disabled) {
+  background-color: var(--color-f1-red-strong);
+  box-shadow: var(--glow-red-soft);
+  transform: skewX(var(--skew-x)) scale(1.02);
+}
+
+/* Primary action buttons (login/register) */
+.btn-primary-f1 {
+  width: 100%;
+  padding: 1.3rem;
+  background-color: var(--color-f1-red);
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+  transform: skewX(var(--skew-x));
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.btn-primary-f1:hover:not(:disabled) {
+  background-color: var(--color-f1-red-strong);
+  box-shadow: 0 0 25px rgba(225, 6, 0, 0.5);
+  transform: skewX(var(--skew-x)) scale(1.02);
+}
+
+/* Nav buttons (shared with nav-bar.css) */
+.nav-btn {
+  text-decoration: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border: none;
+  background-color: var(--color-card-bg-1);
+  color: #eee;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: var(--transition-nav);
+  display: flex;
+  align-items: center;
+  transform: skewX(var(--skew-x));
+  border-bottom: 2px solid transparent;
+}
+
+.nav-btn:hover:not(.active):not(.active-blue) {
+  background-color: var(--color-border);
+  transform: skewX(var(--skew-x)) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.nav-btn.active {
+  background-color: var(--color-f1-red);
+  color: #fff;
+  box-shadow: var(--glow-red);
+}
+
+.nav-btn.active:hover {
+  background-color: var(--color-f1-red-strong);
+  box-shadow: 0 0 25px rgba(255, 30, 30, 0.6);
+  transform: skewX(var(--skew-x)) translateY(-2px);
+}
+
+.nav-btn.active-blue {
+  background-color: #5e0300;
+  color: #eee;
+}
+
+.nav-btn.active-blue:hover {
+  background-color: #8b0000;
+  color: #fff;
+  transform: skewX(var(--skew-x)) translateY(-2px);
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4);
+}
+
+.nav-btn span,
+.nav-btn label {
+  display: inline-block;
+  transform: skewX(15deg);
+}
+
+/* Input focus ring */
+.f1-input {
+  width: 100%;
+  padding: 1.2rem 1.5rem;
+  box-sizing: border-box;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: #fff;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+}
+
+.f1-input:focus {
+  border-color: var(--color-f1-red);
+  background-color: var(--color-card-bg-2);
+  outline: none;
+  box-shadow: inset 0 0 10px rgba(225, 6, 0, 0.1);
+}
+
+/* Section/subheading with smaller left bar */
+.f1-subtitle {
+  font-size: 32px;
+  margin-bottom: 3rem;
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  border-left: 6px solid var(--color-f1-red);
+  padding-left: 20px;
+}
+
+/* Meta label/value */
+.f1-meta-label {
+  color: var(--color-f1-red);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.f1-meta-value {
+  font-weight: bold;
+  color: #fff;
+  font-size: 16px;
+}
+
+.f1-meta-value-points {
+  color: #007bff;
+  text-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  font-size: 1.3em;
+}
+
+/* Shared badge skew (used for status badges) */
+.badge-skew {
+  padding: 8px 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+  display: inline-block;
+  transform: skewX(-15deg);
+}
+
+.status-scheduled {
+  background-color: var(--color-status-scheduled);
+  color: #fff;
+}
+
+.status-in-progress {
+  background-color: var(--color-status-in-progress);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
+
+.status-finished {
+  background-color: var(--color-status-finished);
+  color: #fff;
+}
+
+.status-won {
+  border-left: 5px solid var(--color-status-won);
+}
+
+.status-lost {
+  border-left: 5px solid var(--color-status-lost);
+}
+
+.status-pending {
+  border-left: 5px solid var(--color-status-pending);
+}
+
+/* Pagination buttons (used in race-list + profile) */
+.pagination-btn {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  background-color: var(--color-bg);
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: skewX(var(--skew-x));
+  transition: all 0.2s;
+  font-family: var(--font-main);
+  font-size: 12px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--color-f1-red);
+  box-shadow: 0 0 10px rgba(225, 6, 0, 0.4);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+/* Race-card grid can reuse card styles */
+.race-card {
+  background: linear-gradient(145deg, var(--color-card-bg-1), var(--color-card-bg-2));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 25px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-bottom: 3px solid var(--color-border);
+}
+
+.race-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: var(--color-f1-red);
+  border-bottom-color: var(--color-f1-red);
+  box-shadow: 0 10px 25px rgba(225, 6, 0, 0.3);
+}
+
+/* Neon glow helpers */
+.glow-red {
+  color: var(--color-f1-red);
+  text-shadow: 0 0 10px rgba(225, 6, 0, 0.4);
+}
+
+.glow-blue {
+  color: #007bff;
+  text-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
+
+/* Shared loader/error/empty state blocks */
+.state-box {
+  background: var(--color-card-bg-1);
+  border: 1px solid var(--color-border);
+  color: #fff;
+  padding: 40px;
+  margin-top: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.empty-state {
+  background: rgba(31, 36, 45, 0.4);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-subtle);
+  padding: 40px;
+  margin-top: 20px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 800;
+  font-size: 14px;
+}

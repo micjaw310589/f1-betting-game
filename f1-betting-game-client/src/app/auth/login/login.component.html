@@ -1,69 +1,42 @@
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <h1>F1 Betting</h1>
-            <p>Sign in to your account</p>
+<a routerLink="/" class="back-btn">
+ <span class="arrow-icon">←</span>Back to home
+</a>
+<div class="login-container">
+  <div class="login-card">
+    <h2>Login</h2>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" formControlName="email" placeholder="Enter your email" />
+        <div *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)"
+             class="error-message">
+          <div *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</div>
+          <div *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</div>
         </div>
+      </div>
 
-        @if (errorMessage) {
-            <div class="error-message">
-                <span class="error-icon">⚠️</span>
-                <span>{{ errorMessage }}</span>
-            </div>
-        }
-
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
-            <div class="form-group">
-                <label for="usernameOrEmail">Username or Email</label>
-                <input
-                    type="text"
-                    id="usernameOrEmail"
-                    formControlName="usernameOrEmail"
-                    placeholder="Enter your username or email"
-                    [disabled]="isLoading"
-                />
-                @if (loginForm.get('usernameOrEmail')?.touched && loginForm.get('usernameOrEmail')?.invalid) {
-                    <span class="error-text">Username or email is required</span>
-                }
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    formControlName="password"
-                    placeholder="Enter your password"
-                    [disabled]="isLoading"
-                />
-                @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
-                    <span class="error-text">Password is required</span>
-                }
-            </div>
-
-            <div class="form-options">
-                <label class="checkbox-label">
-                    <input
-                        type="checkbox"
-                        formControlName="rememberMe"
-                        [disabled]="isLoading"
-                    />
-                    <span>Remember me</span>
-                </label>
-            </div>
-
-            <button type="submit" class="btn-login" [disabled]="isLoading || loginForm.invalid">
-                @if (isLoading) {
-                    <span class="spinner"></span>
-                    Signing in...
-                } @else {
-                    Sign In
-                }
-            </button>
-        </form>
-
-        <div class="auth-footer">
-            <p>Don't have an account? <a routerLink="/register">Sign up</a></p>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" formControlName="password" placeholder="Enter your password" />
+        <div *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)"
+             class="error-message">
+          <div *ngIf="loginForm.get('password')?.errors?.['required']">Password is required</div>
+          <div *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</div>
         </div>
+      </div>
+
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Login</span>
+        <span *ngIf="isLoading">Logging in...</span>
+      </button>
+    </form>
+
+    <div class="register-link">
+      Don't have an account? <a routerLink="/auth/register">Register here</a>
     </div>
+  </div>
 </div>

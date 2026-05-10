@@ -4,15 +4,26 @@
         <h1 class="page-header">{{ data.details.name }} Details</h1>
         
         <div class="status-bar">
-            <div class="status-item">
-                <strong>Status:</strong> 
-                <span [ngClass]="'status-badge status-' + getStatusClass(data.details.status)">
-                    {{ getStatusText(data.details.status) }}
-                </span>
+            <div class="status-left">
+                <div class="status-item">
+                    <strong>Status:</strong> 
+                    <span [ngClass]="'status-badge status-' + getStatusClass(data.details.status)">
+                        {{ getStatusText(data.details.status) }}
+                    </span>
+                </div>
+                <div class="status-item">
+                    <strong>Season:</strong> {{ data.details.season }}
+                </div>
             </div>
-            <div class="status-item">
-                <strong>Season:</strong> {{ data.details.season }}
-            </div>
+
+            @if (isLoggedIn$ | async) {
+                <button
+                    class="place-bet-button"
+                    type="button"
+                    title="Place bet">
+                    Place Bet
+                </button>
+            }
         </div>
 
         <div class="detail-grid">
@@ -83,7 +94,7 @@
     }
 
     <div class="betting-callout">
-        <h3>🏎️ Ready to place your bets?</h3>
+        <h3>Ready to place your bets?</h3>
         <p>The betting system is currently in preview mode. Full integration with user wallets is coming soon.</p>
     </div>
 </div>

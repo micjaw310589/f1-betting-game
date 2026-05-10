@@ -7,38 +7,19 @@ import { AdminRoutes } from './admin/admin.routes';
 export const routes: Routes = [
   {
     path: '',
-    children: [
-      {
-        path: '',
-        redirectTo: 'races',
-        pathMatch: 'full'
-      },
-      {
-        path: 'auth',
-        loadChildren: () => import('./auth/auth.routes').then(m => m.AuthRoutes)
-      },
-      {
-        path: 'login',
-        redirectTo: 'auth/login',
-        pathMatch: 'full'
-      },
-      {
-        path: 'register',
-        redirectTo: 'auth/register',
-        pathMatch: 'full'
-      },
-    ]
+    redirectTo: 'races',
+    pathMatch: 'full'
   },
   {
     path: 'races',
     loadChildren: () => import('./race/race.routes').then(m => m.RaceRoutes)
   },
   {
-    path: 'admin',
-    loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes)
+    path: 'auth',
+    loadChildren: () => import('./auth/auth.module').then(m => m.AuthModule)
   },
   {
-    path: '**',
-    redirectTo: 'races'
+    path: 'profile',
+    loadComponent: () => import('./profile/user-profile/user-profile.component').then(m => m.UserProfileComponent)
   }
 ];

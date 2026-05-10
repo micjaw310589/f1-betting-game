@@ -1,72 +1,70 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { AuthService, RegisterDto } from '../services/auth.service';
 
 @Component({
-    selector: 'app-register',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
-    templateUrl: './register.component.html',
-    styleUrl: './register.component.css',
+  selector: 'app-register',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink
+  ],
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.css']
 })
 export class RegisterComponent implements OnInit {
-    private fb = inject(FormBuilder);
-    private authService = inject(AuthService);
-    private router = inject(Router);
+  registerForm: FormGroup;
+  errorMessage: string | null = null;
+  successMessage: string | null = null;
+  isLoading = false;
 
-    registerForm = this.fb.group({
-        username: ['', [Validators.required, Validators.minLength(3)]],
-        email: ['', [Validators.required, Validators.email]],
-        password: ['', [Validators.required, Validators.minLength(6)]],
-        confirmPassword: ['', [Validators.required]],
-    }, { validators: this.passwordMatchValidator.bind(this) });
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef,
+    private router: Router
+  ) {
+    this.registerForm = this.formBuilder.group({
+      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      password: ['', [Validators.required, Validators.minLength(8)]]
+    });
+  }
 
-    errorMessage = '';
-    successMessage = '';
-    isLoading = false;
+  ngOnInit(): void {
+    // Note: Removed automatic redirect to allow users to register even if they have an invalid session
+    // Users can manually navigate away if they're already logged in
+  }
 
-    ngOnInit(): void {
-        // If already logged in, redirect to races
-        if (this.authService.isLoggedIn()) {
-            this.router.navigate(['/races']);
-        }
+  onSubmit(): void {
+  if (this.registerForm.invalid) return;
+
+  this.isLoading = true;
+  this.errorMessage = null;
+
+  const { email, username, password } = this.registerForm.value;
+
+  this.authService.register(email, username, password).subscribe({
+    next: (response) => {
+      this.isLoading = false;
+      if (response.isSuccess) {
+        this.successMessage = 'Success!';
+        this.cdr.detectChanges(); // Wymuś odświeżenie sukcesu
+        setTimeout(() => this.router.navigate(['/auth/login']), 2000);
+      }
+    },
+    error: (errMessage) => {
+      console.log('Komponent odebrał błąd:', errMessage);
+      
+      // TO KLUCZOWE:
+      this.isLoading = false;      // Odblokuj przycisk
+      this.errorMessage = errMessage; // Przypisz tekst błędu
+      
+      this.cdr.detectChanges();    // WYMUŚ ODŚWIEŻENIE WIDOKU TERAZ
     }
-
-    passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
-        const password = control.get('password')?.value;
-        const confirmPassword = control.get('confirmPassword')?.value;
-        return password === confirmPassword ? null : { passwordMismatch: true };
-    }
-
-    onSubmit(): void {
-        if (this.registerForm.invalid) {
-            this.registerForm.markAllAsTouched();
-            return;
-        }
-
-        this.isLoading = true;
-        this.errorMessage = '';
-        this.successMessage = '';
-
-        const formData: RegisterDto = {
-            username: this.registerForm.get('username')!.value!,
-            email: this.registerForm.get('email')!.value!,
-            password: this.registerForm.get('password')!.value!,
-        };
-
-        this.authService.register(formData).subscribe({
-            next: () => {
-                this.successMessage = 'Registration successful! Redirecting to login...';
-                setTimeout(() => {
-                    this.router.navigate(['/login']);
-                }, 2000);
-            },
-            error: (error) => {
-                this.errorMessage = error.message || 'Registration failed. Please try again.';
-                this.isLoading = false;
-            },
-        });
-    }
+  });
+}
 }

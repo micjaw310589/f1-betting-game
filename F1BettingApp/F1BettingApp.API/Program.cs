@@ -7,6 +7,8 @@ using F1BettingApp.Infrastructure.OpenF1;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
@@ -26,13 +28,11 @@ builder.Services.AddSwaggerGen();
 // Register CORS for Angular frontend
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AngularApp", policy =>
+    options.AddPolicy("AllowAngular", policy =>
     {
-        // Allow local development + production frontend
-        policy.WithOrigins(
-                "http://localhost:4200",
-                "https://f1-betting-game-qy5l.vercel.app"
-            )
+        policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app/"
+        ,"http://localhost:4200" //TODO: DELETE THIS LATER PRBLY
+        )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -129,6 +129,11 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
 
+// Configure ASP.NET Core Identity for user management
+//builder.Services.AddIdentity<F1BettingApp.Domain.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>()
+//    .AddEntityFrameworkStores<AppDbContext>()
+//    .AddDefaultTokenProviders();
+
 // JWT Authentication Configuration
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.Configure<JwtSettings>(jwtSettings);
@@ -171,6 +176,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 // Register JWT authentication in the pipeline
 builder.Services.AddAuthorization();
 
@@ -185,8 +191,18 @@ var app = builder.Build();
 // Apply migrations and seed data at startup (always)
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    try
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate();
+}
+
+// Configure the HTTP request pipeline.
+//if (app.Environment.IsDevelopment()) TODO: UNDO IT
+//{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+
+    // Apply migrations and seed data in development
+    using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<AppDbContext>();
         var logger = services.GetRequiredService<ILogger<Program>>();
@@ -211,7 +227,7 @@ using (var scope = app.Services.CreateScope())
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
     }
-}
+//}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -222,7 +238,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseCors("AngularApp");
+app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

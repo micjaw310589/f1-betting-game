@@ -51,6 +51,10 @@ namespace F1BettingApp.Application.DTOs
     /// </summary>
     public class RefreshTokenDto
     {
+        [Required(ErrorMessage = "Access token is required")]
+        [StringLength(500)]
+        public string Token { get; set; }
+
         [Required(ErrorMessage = "Refresh token is required")]
         [StringLength(500)]
         public string RefreshToken { get; set; }

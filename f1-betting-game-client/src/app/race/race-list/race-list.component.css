@@ -219,3 +219,37 @@ h1 {
   color: #555;
   transform: skewX(var(--skew-x));
 }
+
+/* Kontener na akcje w dolnej części karty */
+.card-actions {
+    margin-top: auto; /* Pcha przycisk do dołu */
+    display: flex;
+    justify-content: flex-end; /* ZMIANA: Przesunięcie na prawą stronę */
+}
+
+/* Reszta stylów pozostaje bez zmian */
+.place-bet-button {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 15px;
+    font-size: 11px;
+    color: #fff;
+    border: 2px solid #fff;
+    background-color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    transform: skewX(var(--skew-x));
+    transition: all 0.2s ease-in-out;
+    border-radius: 3px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+    display: inline-block;
+}
+
+.place-bet-button:hover {
+    border-color: var(--color-f1-red);
+    background-color: var(--color-f1-red);
+    transform: skewX(var(--skew-x)) translateY(-1px);
+    color: #fff;
+}

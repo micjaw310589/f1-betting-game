@@ -46,6 +46,18 @@
             <div class="race-status-badge">
                 {{ getStatusText(race.status) }}
             </div>
+
+            @if (authService.currentUser | async) {
+                <div class="card-actions">
+                    <a
+                        class="place-bet-button"
+                        [routerLink]="['/races', race.id, 'bets', 'create']"
+                        (click)="$event.stopPropagation()"
+                        title="Place a bet">
+                        Place Bet
+                    </a>
+                </div>
+            }
         </div>
     } @empty {
         <p>No races found for this category.</p>

@@ -176,6 +176,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 // Register JWT authentication in the pipeline
 builder.Services.AddAuthorization();
 

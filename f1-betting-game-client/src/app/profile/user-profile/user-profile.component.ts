@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ProfileAndBetsResponse, ProfileService } from '../profile.service';
 import { BetHistoryResponseDto, BetHistoryDto, UserProfileDto } from '../profile.models';
+import { NavigationEnd, Router } from '@angular/router';
 
 @Component({
   selector: 'app-user-profile',
@@ -25,7 +26,19 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
   private subscription = new Subscription();
 
-  constructor(private profileService: ProfileService) {}
+constructor(
+  private profileService: ProfileService,
+  private router: Router,
+  private cdr: ChangeDetectorRef
+) {
+  this.subscription.add( 
+    this.router.events.subscribe((val) => {
+      if (val instanceof NavigationEnd && (this.router.url === '/profile' || this.router.url === '/user-profile')) {
+        this.load();
+      }
+    })
+  );
+}
 
   ngOnInit(): void {
     this.load();
@@ -35,26 +48,27 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  load(): void {
-    this.isLoading = true;
-    this.hasError = false;
-    this.errorMessage = '';
+load(): void {
+  this.isLoading = true;
+  this.cdr.detectChanges(); // Powiedz Angularowi: "Heja, kręcę loaderem!"
 
-    const sub = this.profileService.getProfileAndBets(this.page, this.pageSize).subscribe({
-      next: (result: ProfileAndBetsResponse) => {
-        this.profile = result.profile;
-        this.betHistory = result.betHistory;
-        this.isLoading = false;
-      },
-      error: (err: unknown) => {
-        this.hasError = true;
-        this.isLoading = false;
-        this.errorMessage = err instanceof Error ? err.message : 'Failed to load profile';
-      }
-    });
+  const sub = this.profileService.getProfileAndBets(this.page, this.pageSize).subscribe({
+    next: (result: ProfileAndBetsResponse) => {
+      this.profile = result.profile;
+      this.betHistory = result.betHistory;
+      this.isLoading = false;
+      this.cdr.detectChanges(); // KLUCZOWE: "Mam dane, odśwież widok TERAZ"
+    },
+    error: (err: unknown) => {
+      this.hasError = true;
+      this.isLoading = false;
+      this.errorMessage = err instanceof Error ? err.message : 'Failed to load profile';
+      this.cdr.detectChanges(); // Tutaj też, żeby pokazać błąd
+    }
+  });
 
-    this.subscription.add(sub);
-  }
+  this.subscription.add(sub);
+}
 
   paginate(pageNumber: number): void {
     this.page = pageNumber;

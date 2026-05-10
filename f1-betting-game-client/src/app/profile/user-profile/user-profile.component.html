@@ -33,81 +33,59 @@
       </div>
     </section>
 
-    <section class="bets-card" aria-label="Bet history">
-      <div class="bets-header">
-        <h2>Bet History</h2>
+<section class="bets-card" aria-label="Bet history">
+  <div class="bets-header">
+    <h2>Bet History</h2>
 
-        <div class="pagination-controls compact">
-          <button
-            class="page-btn"
-            (click)="paginate(page - 1)"
-            [disabled]="!hasPreviousPage">
-            Previous
-          </button>
+    @if (bets.length > 0) {
+      <div class="pagination-controls compact">
+        <button
+          class="page-btn"
+          (click)="paginate(page - 1)"
+          [disabled]="!hasPreviousPage">
+          Previous
+        </button>
 
-          <span class="page-info">
-            Page {{ page }} of {{ totalPages }}
-          </span>
+        <span class="page-info">
+          Page {{ page }} of {{ totalPages }}
+        </span>
 
-          <button
-            class="page-btn"
-            (click)="paginate(page + 1)"
-            [disabled]="!hasNextPage">
-            Next
-          </button>
-        </div>
+        <button
+          class="page-btn"
+          (click)="paginate(page + 1)"
+          [disabled]="!hasNextPage">
+          Next
+        </button>
       </div>
+    }
+  </div>
 
-      @if (bets.length === 0) {
-        <div class="empty-state">
-          No bets yet.
-        </div>
-      } @else {
-        <div class="bets-list">
-          @for (bet of bets; track bet.id) {
-            <div class="bet-row" [class]="getBetStatusClass(bet.status)">
-              <div class="bet-main">
-                <div class="bet-line">
-                  <span class="bet-label">Race</span>
-                  <span class="bet-value">{{ bet.raceName || ('Race #' + bet.raceId) }}</span>
-                </div>
-
-                <div class="bet-line">
-                  <span class="bet-label">Driver</span>
-                  <span class="bet-value">{{ bet.driverName || ('Driver #' + bet.driverId) }}</span>
-                </div>
-
-                <div class="bet-line">
-                  <span class="bet-label">Type</span>
-                  <span class="bet-value">{{ bet.betType }}</span>
-                </div>
-
-                <div class="bet-line">
-                  <span class="bet-label">Amount</span>
-                  <span class="bet-value">{{ formatMoney(bet.amount) }}</span>
-                </div>
-
-                @if (bet.winnings != null) {
-                  <div class="bet-line">
-                    <span class="bet-label">Winnings</span>
-                    <span class="bet-value">{{ formatMoney(bet.winnings) }}</span>
-                  </div>
-                }
-
-                <div class="bet-line">
-                  <span class="bet-label">Status</span>
-                  <span class="bet-value">{{ bet.status }}</span>
-                </div>
-
-                <div class="bet-line">
-                  <span class="bet-label">Placed</span>
-                  <span class="bet-value">{{ bet.createdAt | date: 'mediumDate' }}</span>
-                </div>
-              </div>
+  @if (bets.length === 0) {
+    <div class="empty-state">
+      No bets yet. Start your race journey!
+    </div>
+  } @else {
+    <div class="bets-list">
+      @for (bet of bets; track bet.id) {
+        <div class="bet-row" [class]="getBetStatusClass(bet.status)">
+          <div class="bet-main">
+            <div class="bet-line">
+              <span class="bet-label">Race</span>
+              <span class="bet-value">{{ bet.raceName || ('Race #' + bet.raceId) }}</span>
             </div>
-          }
+            <div class="bet-line">
+              <span class="bet-label">Amount</span>
+              <span class="bet-value">{{ formatMoney(bet.amount) }}</span>
+            </div>
+            <div class="bet-line">
+              <span class="bet-label">Status</span>
+              <span class="bet-value">{{ bet.status }}</span>
+            </div>
+          </div>
         </div>
       }
-    </section>
+    </div>
+  }
+</section>
   }
 </div>

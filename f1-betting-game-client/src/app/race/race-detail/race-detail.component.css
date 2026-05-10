@@ -1,101 +1,158 @@
-/* Basic styles for the Race Detail Component */
+:host {
+    display: block;
+    background-color: #0b0e11;
+    color: #f0f0f0;
+    min-height: 100vh;
+    font-family: 'Orbitron', sans-serif;
+}
 .race-detail-container {
-    padding: 30px;
+    padding: 40px 20px;
     max-width: 1400px;
     margin: 0 auto;
 }
 
+/* Nagłówek strony */
 .page-header {
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+    font-size: 32px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #fff;
+    border-left: 6px solid #e10600;
+    padding-left: 20px;
+    margin-bottom: 30px;
+    font-weight: 900;
 }
 
+/* Status Bar - teraz wygląda jak pasek telemetryczny */
 .status-bar {
     display: flex;
     gap: 40px;
-    margin-bottom: 30px;
-    padding: 15px;
-    background-color: #e9ecef;
-    border-radius: 8px;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: linear-gradient(90deg, #1f242d 0%, #161a21 100%);
+    border-radius: 4px;
+    border-bottom: 2px solid #e10600;
 }
 
 .status-item strong {
     display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #e10600;
     margin-bottom: 5px;
-    color: #555;
 }
 
+/* Panele z danymi - Carbon Look */
 .detail-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr; /* Primary, Odds, Secondary */
-    gap: 30px;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 25px;
     margin-bottom: 40px;
 }
 
 .detail-panel {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background: #1f242d;
+    padding: 25px;
+    border-radius: 4px;
+    border: 1px solid #2d3440;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Efekt "siatki" w tle panelu */
+.detail-panel::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 60px;
+    background-image: radial-gradient(#e1060022 1px, transparent 1px);
+    background-size: 8px 8px;
 }
 
 .detail-panel h2 {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    font-size: 18px;
+    text-transform: uppercase;
+    color: #fff;
+    border-bottom: 1px solid #e10600;
+    padding-bottom: 15px;
     margin-top: 0;
+    margin-bottom: 20px;
+    font-weight: 700;
 }
 
 .primary-info p, .secondary-info p {
     display: flex;
-    gap: 15px;
-    margin-bottom: 10px;
+    flex-direction: column; /* Etykieta nad wartością wygląda bardziej Pro */
+    gap: 4px;
+    margin-bottom: 15px;
 }
 
 .primary-info strong, .secondary-info strong {
-    min-width: 150px;
+    font-size: 11px;
+    color: #e10600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Badge statusu - spójne z listą */
+.status-badge {
+    padding: 8px 16px;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 1px;
     display: inline-block;
-    color: #555;
+    transform: skewX(-15deg);
 }
 
-.odds-info h2, .secondary-info h2 {
-    color: #007bff;
-}
+.status-scheduled { background-color: #444; color: #fff; }
+.status-finished { background-color: #28a745; color: #fff; }
 
-/* Odds List Styling */
-.odds-list {
-    list-style: none;
-    padding: 0;
-}
-
-.odds-list li {
-    padding: 10px 0;
-    border-bottom: 1px dotted #eee;
+/* Sekcja Kursów (Odds) - Agresywne przyciski */
+.odd-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1.1em;
+    padding: 12px;
+    background: #161a21;
+    border: 1px solid #2d3440;
+    margin-bottom: 10px;
+    transition: all 0.2s;
 }
 
-.odds-value {
-    color: #28a745;
-    font-weight: bold;
-    font-size: 1.2em;
+.odd-item:hover {
+    border-color: #e10600;
+    background: #252b35;
 }
 
-/* Summary List Styling */
-.summary-list {
-    list-style: none;
-    padding: 0;
+.odd-value {
+    color: #e10600;
+    font-weight: 900;
+    font-size: 18px;
 }
 
-.summary-list li {
-    padding: 5px 0;
-    border-bottom: 1px dotted #ddd;
-}
-
-/* Betting Callout */
+/* Betting Callout - Reklama na dole */
 .betting-callout {
-    background-color: #e7f2ff;
-    color: #0056b3;
+    background: linear-gradient(135deg, #e10600 0%, #8b0000 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 4px;
+    text-align: center;
+    transform: skewY(-1deg); /* Lekki skos całego banera */
+    margin-top: 50px;
+}
+
+.betting-callout h3 {
+    text-transform: uppercase;
+    font-weight: 900;
+    font-size: 24px;
+    margin-top: 0;
+}
+
+.api-id {
+    font-family: 'Courier New', monospace;
+    background: #000;
+    color: #0f0; /* Zielony terminalowy haker-style */
+    padding: 2px 6px;
 }

@@ -34,7 +34,10 @@ namespace F1BettingApp.API.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<UserDto>> GetCurrentUserProfile()
         {
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            // Zmień sposób wyciągania ID na bardziej odporny:
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) 
+               ?? User.FindFirst("sub"); // Dodaj to sprawdzenie alternatywnego claimu
+            var userId = userIdClaim?.Value;
 
             if (string.IsNullOrEmpty(userId))
             {

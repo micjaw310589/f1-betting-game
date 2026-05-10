@@ -1,168 +1,184 @@
+:host {
+  display: block;
+  background-color: #0b0e11; /* Techniczna czerń */
+  color: #f0f0f0;
+  min-height: 100vh;
+}
+
 .profile-container {
-  padding: 18px;
-  max-width: 980px;
+  padding: 40px 20px;
+  max-width: 1200px;
   margin: 0 auto;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Orbitron', sans-serif;
 }
 
-.loader-overlay,
-.error-message,
-.empty-state {
-  border: 3px solid #000;
-  background: #fff;
-  box-shadow: 6px 6px 0 #000;
-  padding: 12px;
-  margin-top: 14px;
+h1 {
+  font-size: 36px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #fff;
+  border-left: 6px solid #e10600;
+  padding-left: 20px;
+  margin-bottom: 40px;
+  font-weight: 900;
 }
 
+/* Karty Profilu i Historii - Carbon Look */
 .profile-card,
 .bets-card {
-  border: 3px solid #000;
-  background: #fff;
-  box-shadow: 6px 6px 0 #000;
-  padding: 14px;
-  margin-top: 14px;
+  background: linear-gradient(145deg, #1f242d, #161a21);
+  border: 1px solid #2d3440;
+  border-radius: 4px;
+  padding: 30px;
+  margin-top: 30px;
+  border-bottom: 3px solid #2d3440;
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover,
+.bets-card:hover {
+  border-color: #e10600;
+  box-shadow: 0 10px 25px rgba(225, 6, 0, 0.2);
 }
 
 .profile-name {
-  margin: 0 0 10px 0;
+  margin: 0 0 25px 0;
   font-size: 28px;
+  color: #fff;
   font-weight: 900;
-  -webkit-text-stroke: 1px #000;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .profile-meta .meta-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  padding: 6px 0;
-  border-top: 2px dashed #000;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.profile-meta .meta-row:first-child {
-  border-top: none;
+.profile-meta .meta-row:last-child {
+  border-bottom: none;
 }
 
 .meta-label {
-  font-weight: 900;
+  color: #e10600; /* Czerwone etykiety jak w race-card strong */
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 13px;
 }
 
 .meta-value {
-  font-weight: 800;
-  text-align: right;
-  max-width: 60%;
-  word-break: break-word;
+  font-weight: bold;
+  color: #fff;
+  font-size: 16px;
 }
 
+/* Punkty - neonowy niebieski dla kontrastu */
 .meta-value.points {
-  background: #ffe66d;
-  border: 2px solid #000;
-  padding: 4px 10px;
-  box-shadow: 4px 4px 0 #000;
-}
-
-.bets-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  color: #007bff;
+  text-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  font-size: 1.3em;
 }
 
 .bets-header h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 26px;
+  color: #fff;
+  text-transform: uppercase;
   font-weight: 900;
-  -webkit-text-stroke: 1px #000;
 }
 
-.pagination-controls {
+/* Paginacja - kopia stylu z race-list */
+.pagination-controls.compact {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.pagination-controls.compact {
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  gap: 20px;
 }
 
 .page-btn {
-  border: 3px solid #000;
-  background: #fff;
-  box-shadow: 4px 4px 0 #000;
-  padding: 8px 12px;
-  font-weight: 900;
+  padding: 10px 20px;
   cursor: pointer;
+  border: none;
+  background-color: #0b0e11;
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: skewX(-15deg);
+  transition: all 0.2s;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: #e10600;
+  box-shadow: 0 0 10px rgba(225, 6, 0, 0.4);
 }
 
 .page-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.2;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .page-info {
-  font-weight: 900;
+  font-size: 12px;
+  color: #888;
 }
 
-.bets-list {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
+/* Lista zakładów - wiersze jako "paski postępu" */
 .bet-row {
-  border: 3px solid #000;
-  background: #fff;
-  box-shadow: 6px 6px 0 #000;
-  padding: 12px;
+  border: 1px solid #2d3440;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 15px;
+  background: #111418;
+  transition: all 0.2s;
 }
 
-.bet-won {
-  border-color: #0a7a00;
-  background: #d6ffd0;
-}
-
-.bet-lost {
-  border-color: #b00020;
-  background: #ffd0d0;
-}
-
-.bet-canceled {
+.bet-row:hover {
+  background: #161a21;
   border-color: #444;
-  background: #f1f1f1;
 }
 
-.bet-pending,
-.bet-unknown {
-  border-color: #000;
-  background: #fff;
-}
-
-.bet-main {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-.bet-line {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 12px;
-  align-items: baseline;
-}
+/* Statusy z lewym paskiem */
+.bet-won { border-left: 5px solid #28a745; }
+.bet-lost { border-left: 5px solid #dc3545; }
+.bet-pending { border-left: 5px solid #ffc107; }
 
 .bet-label {
-  font-weight: 900;
+  font-size: 11px;
+  color: #e10600;
+  text-transform: uppercase;
+  font-weight: 800;
 }
 
 .bet-value {
-  font-weight: 800;
-  word-break: break-word;
+  font-weight: 700;
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Loader i błędy */
+.loader-overlay, .error-message, .empty-state {
+  background: #1f242d;
+  border: 1px solid #2d3440;
+  color: #fff;
+  padding: 40px;
+  margin-top: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .empty-state {
-  font-weight: 900;
+  background: rgba(31, 36, 45, 0.4); /* Półprzezroczyste tło Carbon */
+  border: 1px dashed #2d3440;
+  color: #888;
+  padding: 40px;
+  margin-top: 20px;
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 800;
+  font-size: 14px;
 }

@@ -1,8 +1,12 @@
 .main-nav {
-    background-color: white;
-    border-bottom: 1px solid #eee;
-    padding: 10px 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Spójne z .race-card */
+    background-color: #0b0e11; /* Ta sama czerń co w race-list */
+    border-bottom: 2px solid #e10600; /* Czerwona linia F1 jako separator */
+    padding: 15px 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    font-family: 'Orbitron', sans-serif;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .nav-container {
@@ -15,45 +19,71 @@
 
 .nav-group {
     display: flex;
-    gap: 10px; /* Spójne z .filter-buttons */
+    gap: 20px; /* Większy odstęp */
+    align-items: center;
 }
 
-/* Stylizacja linków jako przycisków - kopia Twoich .filter-buttons button */
+/* Stylizacja przycisków w navbarze - 10% większe i skośne */
 .nav-btn {
     text-decoration: none;
-    padding: 8px 15px;
+    padding: 12px 24px;
     cursor: pointer;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    color: #333;
+    border: none;
+    background-color: #1f242d;
+    color: #eee;
     font-size: 14px;
-    font-family: sans-serif;
-    transition: all 0.2s;
+    font-weight: 800;
+    text-transform: uppercase;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Płynniejsza animacja */
     display: flex;
     align-items: center;
-    border: 1px solid #ccc;
+    transform: skewX(-15deg);
+    border-bottom: 2px solid transparent;
 }
 
-.nav-btn:hover {
-    background-color: #eee;
-    transform: translateY(-1px);
+/* EFEKT HOVER DLA ZWYKŁYCH PRZYCISKÓW */
+.nav-btn:hover:not(.active):not(.active-blue) {
+    background-color: #2d3440;
+    transform: skewX(-15deg) translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-/* Przycisk aktywny - spójny z .filter-buttons button.active */
-.nav-btn.active, .active-blue {
-    background-color: #007bff;
+/* EFEKT DLA AKTYWNEGO PRZYCISKU (ten czerwony) */
+.nav-btn.active {
+    background-color: #e10600; /* Standardowa czerwień F1 */
     color: white;
-    border-color: #007bff;
+    box-shadow: 0 0 15px rgba(225, 6, 0, 0.4);
 }
 
-/* Specyficzny styl dla wylogowania, żeby się odróżniał */
-.logout-btn {
-    border-color: #ffc107; /* Kolor status-scheduled */
-    background-color: white;
+/* ZMIANA ODCIENIA PRZY NAJECHANIU NA AKTYWNY/CZERWONY PRZYCISK */
+.nav-btn.active:hover {
+    background-color: #ff1e1e; /* Jaśniejsza, "agresywna" czerwień */
+    box-shadow: 0 0 25px rgba(255, 30, 30, 0.6); /* Mocniejszy glow */
+    transform: skewX(-15deg) translateY(-2px);
 }
 
+/* Przycisk Logout - przy hoverze też mocniejszy efekt */
 .logout-btn:hover {
-    background-color: #fff9e6;
-    border-color: #ffc107;
+    background-color: #ff1e1e;
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 30, 30, 0.5);
+}
+
+/* Aby tekst nie był krzywy wewnątrz przycisku */
+.nav-btn span, .nav-btn label {
+    display: inline-block;
+    transform: skewX(15deg);
+}
+/* Styl dla przycisku Register (active-blue) */
+.nav-btn.active-blue {
+    background-color: #5e0300; /* Bardzo ciemna, stonowana czerwień */
+    color: #eee;
+}
+
+/* Efekt hover dla Register - staje się jaśniejszy, ale nie tak bardzo jak "active" */
+.nav-btn.active-blue:hover {
+    background-color: #8b0000; /* Nieco jaśniejszy bordowy */
+    color: #ffffff;
+    transform: skewX(-15deg) translateY(-2px);
+    box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4);
 }

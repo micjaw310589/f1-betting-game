@@ -1,90 +1,179 @@
-/* Basic styles for the Race List Component */
+/* Główne tło i czcionka */
+:host {
+    display: block;
+    background-color: #0b0e11; /* Techniczna czerń */
+    color: #f0f0f0;
+    min-height: 100vh;
+}
 
 .race-list-container {
+    font-family: 'Orbitron', sans-serif; /* Wyścigowy vibe */
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
 }
 
+h1 {
+    font-size: 36px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #fff;
+    border-left: 6px solid #e10600; /* Czerwień F1 */
+    padding-left: 20px;
+    margin-bottom: 40px;
+    font-weight: 900;
+}
+
+/* Filtry jako sportowe przełączniki */
 .filter-buttons {
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     display: flex;
-    gap: 10px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 15px;
+    gap: 15px;
+    border-bottom: 2px solid #1f242d;
+    padding-bottom: 20px;
 }
 
 .filter-buttons button {
-    padding: 8px 15px;
+    padding: 11px 22px; /* Powiększone */
+    font-size: 13.5px;   /* Powiększone */
     cursor: pointer;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    border: none;
+    background-color: #1f242d;
+    color: #999;
+    font-weight: 800;
+    text-transform: uppercase;
+    transform: skewX(-15deg);
+    transition: all 0.3s ease;
 }
 
 .filter-buttons button.active {
-    background-color: #007bff;
+    background-color: #e10600;
     color: white;
-    border-color: #007bff;
+    box-shadow: 0 0 15px rgba(225, 6, 0, 0.4);
 }
 
+.filter-buttons button:hover:not(.active) {
+    background-color: #2d3440;
+    color: #fff;
+}
+
+/* Grid i Karty - Carbon Look & Glow */
 .race-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
 }
 
 .race-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s;
+    background: linear-gradient(145deg, #1f242d, #161a21);
+    border: 1px solid #2d3440;
+    border-radius: 4px;
+    padding: 25px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-bottom: 3px solid #2d3440;
 }
 
+/* Zmiana koloru cienia i obramowania po najechaniu */
 .race-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-8px) scale(1.02);
+    border-color: #e10600; /* Czerwona ramka przy hoverze */
+    border-bottom-color: #e10600;
+    /* Neonowy czerwony glow */
+    box-shadow: 0 10px 25px rgba(225, 6, 0, 0.3);
 }
 
+/* Większe nazwy wyścigów */
 .race-card h3 {
     margin-top: 0;
-    color: #333;
+    font-size: 24px; /* Zwiększona skala */
+    font-weight: 900;
+    color: #fff;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
 }
 
+.race-card p {
+    color: #bbb;
+    font-size: 15px;
+    margin: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 5px;
+}
+
+.race-card strong {
+    color: #e10600; /* Czerwone etykiety */
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+/* Badge statusu */
 .race-status-badge {
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-weight: bold;
-    font-size: 0.85em;
-    display: inline-block;
+    margin-top: 15px;
+    padding: 6px 14px;
+    border-radius: 2px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.status-scheduled {
-    background-color: #ffc107;
-    color: #333;
-}
+.status-scheduled { background-color: #444; color: #fff; }
+.status-in-progress { background-color: #007bff; color: white; box-shadow: 0 0 10px rgba(0,123,255,0.5); }
+.status-finished { background-color: #28a745; color: white; }
 
-.status-in-progress {
-    background-color: #007bff;
-    color: white;
-}
-
-.status-finished {
-    background-color: #28a745;
-    color: white;
-}
-
-.status-results-processed {
-    background-color: #6c757d;
-    color: white;
-}
-
+/* Paginacja w stylu Dashboardu */
 .pagination-controls {
-    margin-top: 40px;
+    margin-top: 50px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
-    gap: 15px;
+    gap: 30px; /* Zwiększony odstęp między przyciskami a tekstem */
+    padding: 30px 0;
+    border-top: 2px solid #1f242d;
+    flex-wrap: nowrap; /* Blokuje zawijanie, które mogło psuć layout */
+}
+
+.pagination-controls button {
+    padding: 13px 26px; /* Powiększone o ok. 10-15% */
+    font-size: 15.5px;   /* Powiększone */
+    min-width: 140px;   /* Większa stabilność przycisku */
+    cursor: pointer;
+    background-color: #1f242d;
+    color: #fff;
+    /*border: 1px solid #e10600; /* Czerwona obwódka pasuje do F1 */
+    font-weight: 900;
+    text-transform: uppercase;
+    transform: skewX(-15deg);
+    transition: all 0.2s ease-in-out;
+    border:none;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: #e10600;
+    border-color: #e10600;
+}
+
+.pagination-controls span {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+}
+.pagination-controls button:disabled {
+    opacity: 0.3;             /* Mocno go "gasimy" */
+    background-color: #161a21; /* Jeszcze ciemniejszy kolor niż tło przycisku */
+    color: #555;              /* Ciemnoszary tekst, który ledwo widać */
+    cursor: not-allowed;      /* Znak zakazu zamiast łapki */
+    transform: skewX(-15deg); /* Zostawiamy skos, żeby trzymał kształt */
+    box-shadow: none;         /* Zero jakichkolwiek efektów */
+    border: none;             /* Pełny flat */
+}
+
+/* Dodatkowo upewnijmy się, że przy hoverze na nieaktywny nic się nie dzieje */
+.pagination-controls button:disabled:hover {
+    background-color: #161a21; /* Blokujemy zmianę koloru na czerwony */
+    color: #555;
+    transform: skewX(-15deg);  /* Blokujemy podskakiwanie przycisku */
 }

@@ -143,7 +143,7 @@ export interface OverrideRaceResultDto {
  */
 export interface PositionEntryDto {
     position: number;
-    driverId: number;
+    driverId: number | null;
 }
 
 /**
@@ -194,7 +194,7 @@ export interface RaceResultDto {
  */
 export interface PositionItemDto {
     position: number;
-    driverId: number;
+    driverId: number | null;
     driverName: string;
     teamId: number;
     teamName: string;

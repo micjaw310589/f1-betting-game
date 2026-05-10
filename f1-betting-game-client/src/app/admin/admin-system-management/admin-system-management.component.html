@@ -164,6 +164,7 @@
                                                     (ngModelChange)="onPositionChange(i, position.driverId)"
                                                     class="driver-select"
                                                 >
+                                                    <option [ngValue]="null">-- Select Driver --</option>
                                                     @for (driver of getAvailableDrivers(); track driver.id) {
                                                         <option [ngValue]="driver.id">
                                                             {{ driver.name }}
@@ -180,10 +181,30 @@
                                                     <span class="no-data">—</span>
                                                 }
                                             </td>
+                                            <td class="actions-col">
+                                                <button
+                                                    class="btn-delete-row"
+                                                    (click)="removePosition(i)"
+                                                    [disabled]="currentPositions.length <= 1"
+                                                    title="Remove driver"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Add Driver Button -->
+                        <div class="add-driver-section">
+                            <button
+                                class="btn-add-driver"
+                                (click)="addPosition()"
+                            >
+                                ➕ Add Driver
+                            </button>
                         </div>
 
                         <!-- Action Buttons -->

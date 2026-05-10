@@ -309,10 +309,10 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
         const dto: OverrideRaceResultDto = {
             positions: this.currentPositions
-                .filter((p) => p.driverId != null && typeof p.driverId === 'number')
+                .filter((p) => p.driverId != null)
                 .map((p) => ({
                     position: p.position,
-                    driverId: p.driverId,
+                    driverId: p.driverId as number,
                 })),
             fastestLapDriverId: this.fastestLapDriverId,
         };
@@ -399,14 +399,14 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     // --- Helper methods for results form ---
 
-    getDriverName(driverId: number): string {
-        if (!this.raceResults) return 'Unknown';
+    getDriverName(driverId: number | null): string {
+        if (!driverId || !this.raceResults) return '—';
         const pos = this.raceResults.positions.find((p) => p.driverId === driverId);
-        return pos ? pos.driverName : 'Unknown';
+        return pos ? pos.driverName : '—';
     }
 
-    getTeamName(driverId: number): string {
-        if (!this.raceResults) return '';
+    getTeamName(driverId: number | null): string {
+        if (!driverId || !this.raceResults) return '';
         const pos = this.raceResults.positions.find((p) => p.driverId === driverId);
         return pos ? pos.teamName : '';
     }
@@ -415,30 +415,63 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
         return position <= 10 ? [25, 18, 15, 12, 10, 8, 6, 4, 2, 1][position - 1] : 0;
     }
 
-    onPositionChange(positionIndex: number, driverId: number): void {
+    onPositionChange(positionIndex: number, driverId: number | null): void {
         if (this.currentPositions[positionIndex]) {
             this.currentPositions[positionIndex].driverId = driverId;
+            // Update team name based on selected driver
+            if (driverId != null && this.raceResults) {
+                const driver = this.raceResults.positions.find((p) => p.driverId === driverId);
+                if (driver) {
+                    this.currentPositions[positionIndex].teamName = driver.teamName;
+                }
+            }
         }
+    }
+
+    addPosition(): void {
+        const newPosition: PositionItemDto = {
+            position: this.currentPositions.length + 1,
+            driverId: null,
+            driverName: '',
+            teamId: 0,
+            teamName: '',
+            points: 0,
+            fastestLap: null,
+            pitStopTime: null,
+        };
+        this.currentPositions.push(newPosition);
+        this.cdr.markForCheck();
+    }
+
+    removePosition(index: number): void {
+        this.currentPositions.splice(index, 1);
+        // Renumber remaining positions
+        this.currentPositions.forEach((pos, i) => {
+            pos.position = i + 1;
+        });
+        this.cdr.markForCheck();
     }
 
     onFastestLapChange(driverId: number | null): void {
         this.fastestLapDriverId = driverId;
     }
 
-    getExistingDriverIds(): number[] {
+    getExistingDriverIds(): (number | null)[] {
         if (!this.raceResults) return [];
         return this.raceResults.positions.map((p) => p.driverId);
     }
 
-    getAvailableDrivers(): { id: number; name: string; teamName: string }[] {
+    getAvailableDrivers(): { id: number | null; name: string; teamName: string }[] {
         if (!this.raceResults) return [];
         const existingIds = this.getExistingDriverIds();
         // Get all unique drivers from the positions list
-        const allDrivers = this.raceResults.positions.map((p) => ({
-            id: p.driverId,
-            name: p.driverName,
-            teamName: p.teamName,
-        }));
+        const allDrivers = this.raceResults.positions
+            .filter((p) => p.driverId != null)
+            .map((p) => ({
+                id: p.driverId,
+                name: p.driverName,
+                teamName: p.teamName,
+            }));
         // Remove duplicates
         return allDrivers.filter(
             (driver, index, self) =>

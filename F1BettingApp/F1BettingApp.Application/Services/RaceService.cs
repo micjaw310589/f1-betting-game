@@ -267,10 +267,12 @@ namespace F1BettingApp.Application.Services
                     positionEntry.DriverId,
                     positionEntry.Position,
                     points,
-                    TimeSpan.Zero,
+                    default,
                     TimeSpan.Zero,
                     null
                 );
+                // Clear fastest lap for all results initially
+                result.FastestLap = null;
                 _dbContext.Results.Add(result);
                 newResults.Add(result);
             }

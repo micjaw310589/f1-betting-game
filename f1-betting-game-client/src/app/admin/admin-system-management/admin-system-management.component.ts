@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../services/admin.service';
@@ -36,7 +36,6 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     // --- Race Results Override ---
     raceResults: RaceResultDto | null = null;
-    isFetchingResults = false;
     isSavingResults = false;
     resultsSaveSuccess = false;
     resultsSaveError = '';
@@ -57,7 +56,10 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     private syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    constructor(private adminService: AdminService) {}
+    constructor(
+        private adminService: AdminService,
+        private cdr: ChangeDetectorRef
+    ) {}
 
     ngOnInit(): void {
         this.loadRaces();
@@ -117,10 +119,12 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
             next: (races) => {
                 this.races = races;
                 this.isLoadingRaces = false;
+                this.cdr.markForCheck();
             },
             error: (error) => {
                 console.error('Error loading races:', error);
                 this.isLoadingRaces = false;
+                this.cdr.markForCheck();
             },
         });
     }
@@ -237,14 +241,12 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // ========================
 
     loadRaceResults(raceId: number): void {
-        this.isFetchingResults = true;
-        this.raceResults = null;
         this.resultsSaveError = '';
 
         this.adminService.getRaceResults(raceId).subscribe({
             next: (results) => {
                 this.raceResults = results;
-                this.isFetchingResults = false;
+                this.cdr.markForCheck();
 
                 // Initialize editable positions from existing results
                 this.currentPositions = results.positions.map((p) => ({
@@ -263,7 +265,6 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
             },
             error: (error) => {
                 console.error('Error loading race results:', error);
-                this.isFetchingResults = false;
                 this.resultsSaveError = error.message || 'Failed to load race results';
             },
         });
@@ -271,7 +272,10 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     onResultsRaceSelect(): void {
         if (this.selectedRaceId) {
-            this.loadRaceResults(this.selectedRaceId);
+            const race = this.races.find((r) => r.id === this.selectedRaceId);
+            if (race) {
+                this.selectRace(race);
+            }
         } else {
             this.raceResults = null;
             this.currentPositions = [];

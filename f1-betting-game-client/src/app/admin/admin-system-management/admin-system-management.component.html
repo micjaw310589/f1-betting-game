@@ -109,9 +109,7 @@
                         </div>
                     }
 
-                    @if (isFetchingResults) {
-                        <div class="loading">Loading race results...</div>
-                    } @else if (raceResults) {
+                    @if (raceResults) {
                         <!-- Current Results Display -->
                         <div class="results-header">
                             <p>
@@ -203,7 +201,7 @@
                                 }
                             </button>
                         </div>
-                    } @else if (!isFetchingResults && selectedRaceId) {
+                    } @else if (selectedRaceId) {
                         <div class="message info">
                             ℹ️ No results data available for this race.
                         </div>

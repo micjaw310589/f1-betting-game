@@ -2,6 +2,7 @@ using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
+using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
 using F1BettingApp.Infrastructure.OpenF1;
 using System.Transactions;
@@ -16,17 +17,20 @@ namespace F1BettingApp.Application.Services
         private readonly IRepository<Result> _resultRepository;
         private readonly IRepository<Driver> _driverRepository;
         private readonly IOpenF1ApiClient _openF1ApiClient;
+        private readonly AppDbContext _dbContext;
 
         public RaceService(
             IRaceRepositoryExtensions raceRepository,
             IRepository<Result> resultRepository,
             IRepository<Driver> driverRepository,
-            IOpenF1ApiClient openF1ApiClient)
+            IOpenF1ApiClient openF1ApiClient,
+            AppDbContext dbContext)
         {
             _raceRepository = raceRepository;
             _resultRepository = resultRepository;
             _driverRepository = driverRepository;
             _openF1ApiClient = openF1ApiClient;
+            _dbContext = dbContext;
         }
 
         public async Task<RaceDto> GetRaceByIdAsync(int id)
@@ -217,37 +221,47 @@ namespace F1BettingApp.Application.Services
 
         public async Task OverrideRaceResultAsync(int raceId, OverrideRaceResultDto dto)
         {
+            // Validate that at least one position is provided
+            if (dto.Positions == null || !dto.Positions.Any())
+            {
+                throw new ArgumentException("At least one position entry is required.");
+            }
+
+            // Validate that all driver IDs are positive
+            foreach (var positionEntry in dto.Positions)
+            {
+                if (positionEntry.DriverId <= 0)
+                {
+                    throw new ArgumentException($"Invalid driver ID: {positionEntry.DriverId}. Must be greater than 0.");
+                }
+                if (positionEntry.Position < 1)
+                {
+                    throw new ArgumentException($"Position must be at least 1.");
+                }
+            }
+
+            if (dto.FastestLapDriverId.HasValue && dto.FastestLapDriverId.Value <= 0)
+            {
+                throw new ArgumentException($"Invalid fastest lap driver ID: {dto.FastestLapDriverId.Value}. Must be greater than 0.");
+            }
+
+            // Get the race
             var race = await _raceRepository.GetByIdAsync(raceId);
             if (race == null)
             {
                 throw new KeyNotFoundException($"Race with ID {raceId} not found.");
             }
 
-            if (race.IsRaceFinished() && !dto.Positions.Any())
-            {
-                throw new InvalidOperationException("Race already finished and no positions provided.");
-            }
+            // Use DbContext directly for batch operations to avoid state management issues
+            // Delete all existing results for this race
+            var existingResults = _dbContext.Results.Where(r => r.RaceId == raceId).ToList();
+            _dbContext.Results.RemoveRange(existingResults);
 
-            // Validate positions
-            if (dto.Positions.Any(p => p.Position < 1))
-            {
-                throw new ArgumentException("Position must be at least 1.");
-            }
-
-            // Delete existing results for this race
-            var existingResults = await _resultRepository.GetAllAsync();
-            var raceResults = existingResults.Where(r => r.RaceId == raceId).ToList();
-            foreach (var existingResult in raceResults)
-            {
-                await _resultRepository.DeleteAsync(existingResult.Id);
-            }
-
-            // Insert new results
+            // Create and add new results
+            var newResults = new List<Result>();
             foreach (var positionEntry in dto.Positions.OrderBy(p => p.Position))
             {
-                // Calculate points based on position (standard F1 scoring)
                 var points = CalculatePointsForPosition(positionEntry.Position);
-
                 var result = new Result(
                     raceId,
                     positionEntry.DriverId,
@@ -255,38 +269,31 @@ namespace F1BettingApp.Application.Services
                     points,
                     TimeSpan.Zero,
                     TimeSpan.Zero,
-                    null // UserId is optional for race results
+                    null
                 );
-
-                await _resultRepository.AddAsync(result);
+                _dbContext.Results.Add(result);
+                newResults.Add(result);
             }
 
-            // Set fastest lap if provided - update the newly created result
+            // Set fastest lap if provided
             if (dto.FastestLapDriverId.HasValue)
             {
-                var allResults = await _resultRepository.GetAllAsync();
-                var fastestLapResult = allResults.FirstOrDefault(r =>
-                    r.RaceId == raceId && r.DriverId == dto.FastestLapDriverId.Value);
+                var fastestLapResult = newResults.FirstOrDefault(r => r.DriverId == dto.FastestLapDriverId.Value);
                 if (fastestLapResult != null)
                 {
                     fastestLapResult.FastestLap = TimeSpan.Zero;
-                    await _resultRepository.UpdateAsync(fastestLapResult);
                 }
             }
 
-            // Mark race as manually overridden
+            // Update race entity
             race.IsManuallyOverridden = true;
-            await _raceRepository.UpdateAsync(race);
-
-            // Set status to Finished if not already
             if (race.Status != RaceStatus.Finished && race.Status != RaceStatus.ResultsProcessed)
             {
                 race.Status = RaceStatus.Finished;
-                await _raceRepository.UpdateAsync(race);
             }
 
-            await _raceRepository.SaveChangesAsync();
-            await _resultRepository.SaveChangesAsync();
+            // Save all changes in a single transaction
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task<RaceResultDto> GetRaceResultDtoAsync(int raceId)

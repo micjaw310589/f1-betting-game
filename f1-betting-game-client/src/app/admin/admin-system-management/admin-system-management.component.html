@@ -128,7 +128,7 @@
                             <h4>Fastest Lap</h4>
                             <select
                                 [(ngModel)]="fastestLapDriverId"
-                                (change)="onFastestLapChange($any($event).target.value)"
+                                (ngModelChange)="onFastestLapChange(fastestLapDriverId)"
                                 class="form-input"
                                 style="max-width: 300px;"
                             >
@@ -155,7 +155,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @for (position of currentPositions; track position.driverId; let i = $index) {
+                                    @for (position of currentPositions; track position.position; let i = $index) {
                                         <tr [class.highlighted]="position.position === 1">
                                             <td class="position-col">
                                                 <span class="position-number">{{ position.position }}</span>
@@ -163,7 +163,7 @@
                                             <td>
                                                 <select
                                                     [(ngModel)]="position.driverId"
-                                                    (change)="onPositionChange(i, $any($event).target.value)"
+                                                    (ngModelChange)="onPositionChange(i, position.driverId)"
                                                     class="driver-select"
                                                 >
                                                     @for (driver of getAvailableDrivers(); track driver.id) {

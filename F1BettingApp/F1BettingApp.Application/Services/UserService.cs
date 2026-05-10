@@ -48,7 +48,10 @@ namespace F1BettingApp.Application.Services
                 Id = user.Id,
                 Username = user.Username,
                 Email = user.Email,
-                Points = user.Points
+                Points = user.Points,
+                IsAdmin = user.IsAdmin,
+                IsActive = user.IsActive,
+                ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
@@ -63,7 +66,10 @@ namespace F1BettingApp.Application.Services
                 Id = user.Id,
                 Username = user.Username,
                 Email = user.Email,
-                Points = user.Points
+                Points = user.Points,
+                IsAdmin = user.IsAdmin,
+                IsActive = user.IsActive,
+                ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
@@ -116,7 +122,10 @@ namespace F1BettingApp.Application.Services
                     Id = user.Id,
                     Username = user.Username,
                     Email = user.Email,
-                    Points = 0
+                    Points = 0,
+                    IsAdmin = user.IsAdmin,
+                    IsActive = user.IsActive,
+                    ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -161,7 +170,10 @@ namespace F1BettingApp.Application.Services
                     Id = user.Id,
                     Username = user.Username,
                     Email = user.Email,
-                    Points = user.Points
+                    Points = user.Points,
+                    IsAdmin = user.IsAdmin,
+                    IsActive = user.IsActive,
+                    ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -245,7 +257,10 @@ namespace F1BettingApp.Application.Services
                     Id = user.Id,
                     Username = user.Username,
                     Email = user.Email,
-                    Points = user.Points
+                    Points = user.Points,
+                    IsAdmin = user.IsAdmin,
+                    IsActive = user.IsActive,
+                    ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }

@@ -91,6 +91,9 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
                 this.syncResult = result;
                 this.isSyncing = false;
 
+                // Reload races after successful sync
+                this.loadRaces();
+
                 // Auto-clear sync result after 10 seconds
                 this.syncTimeout = setTimeout(() => {
                     this.syncResult = null;
@@ -301,12 +304,17 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
         this.showResultsConfirmModal = false;
 
         const dto: OverrideRaceResultDto = {
-            positions: this.currentPositions.map((p) => ({
-                position: p.position,
-                driverId: p.driverId,
-            })),
+            positions: this.currentPositions
+                .filter((p) => p.driverId != null && typeof p.driverId === 'number')
+                .map((p) => ({
+                    position: p.position,
+                    driverId: p.driverId,
+                })),
             fastestLapDriverId: this.fastestLapDriverId,
         };
+
+        console.log('[Override] Sending DTO:', JSON.stringify(dto, null, 2));
+        console.log('[Override] Positions count:', dto.positions.length);
 
         this.adminService.overrideRaceResults(this.selectedRaceId, dto).subscribe({
             next: () => {

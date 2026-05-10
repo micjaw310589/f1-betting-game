@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { AuthService } from '../../auth/services/auth.service';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
     selector: 'app-navbar',
@@ -20,9 +20,19 @@ import { AuthService } from '../../auth/services/auth.service';
                     </a>
 
                     @if (authService.isAdmin()) {
-                        <a routerLink="/admin/users" routerLinkActive="active">
-                            Admin
-                        </a>
+                        <div class="admin-dropdown" [class.open]="isDropdownOpen">
+                            <button class="admin-dropdown-trigger" (click)="toggleDropdown()">
+                                Admin ▾
+                            </button>
+                            <div class="admin-dropdown-menu">
+                                <a routerLink="/admin/users" routerLinkActive="active" (click)="closeDropdown()">
+                                    Users
+                                </a>
+                                <a routerLink="/admin/system" routerLinkActive="active" (click)="closeDropdown()">
+                                    System
+                                </a>
+                            </div>
+                        </div>
                     }
                 </div>
 
@@ -90,6 +100,62 @@ import { AuthService } from '../../auth/services/auth.service';
         .navbar-links a.active {
             color: white;
             border-bottom-color: #e63946;
+        }
+
+        .admin-dropdown {
+            position: relative;
+        }
+
+        .admin-dropdown-trigger {
+            color: #ccc;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .admin-dropdown-trigger:hover,
+        .admin-dropdown-trigger.active {
+            color: white;
+            border-bottom-color: #e63946;
+        }
+
+        .admin-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #16213e;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            min-width: 160px;
+            padding: 4px 0;
+            z-index: 200;
+        }
+
+        .admin-dropdown.open .admin-dropdown-menu {
+            display: block;
+        }
+
+        .admin-dropdown-menu a {
+            display: block;
+            padding: 10px 16px;
+            color: #ccc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .admin-dropdown-menu a:hover,
+        .admin-dropdown-menu a.active {
+            color: white;
+            background: rgba(230, 57, 70, 0.15);
         }
 
         .navbar-auth {
@@ -172,8 +238,17 @@ import { AuthService } from '../../auth/services/auth.service';
         }
     `]
 })
-export class NavbarComponent {
+    isDropdownOpen = false;
+
     constructor(public authService: AuthService) {}
+
+    toggleDropdown(): void {
+        this.isDropdownOpen = !this.isDropdownOpen;
+    }
+
+    closeDropdown(): void {
+        this.isDropdownOpen = false;
+    }
 
     logout(): void {
         this.authService.logout();

@@ -355,9 +355,15 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
                 this.metadataSaveSuccess = true;
                 this.isSavingMetadata = false;
 
-                // Reload races and refresh the form
+                // Reload races and refresh the form with fresh data
                 this.loadRaces();
-                this.selectRace(this.selectedRace!);
+                // Find the updated race from the refreshed list
+                setTimeout(() => {
+                    const updatedRace = this.races.find(r => r.id === this.selectedRaceId);
+                    if (updatedRace) {
+                        this.selectRace(updatedRace);
+                    }
+                }, 100);
 
                 // Auto-clear success message after 5 seconds
                 setTimeout(() => {

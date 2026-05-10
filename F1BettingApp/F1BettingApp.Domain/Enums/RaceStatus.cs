@@ -5,5 +5,7 @@ public enum RaceStatus
     Scheduled,
     InProgress,
     Finished,
-    ResultsProcessed
+    ResultsProcessed,
+    Cancelled,
+    Postponed
 }

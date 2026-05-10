@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RaceService } from '../services/race.service';
-import { Observable, Subscription, catchError, of, tap, shareReplay, finalize } from 'rxjs';
+import { Observable, Subscription, catchError, of, tap, shareReplay } from 'rxjs';
 import { PagedResult, RaceSummaryDto } from '../models/race.models';
 import { CommonModule } from '@angular/common'; // Dla async, ngIf, date
 import { RouterModule } from '@angular/router'; // DLA [routerLink]
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-race-list',
@@ -17,13 +18,14 @@ export class RaceListComponent implements OnInit, OnDestroy {
   hasError = false;
   raceSummaries$!: Observable<PagedResult<RaceSummaryDto>>;
   private raceSubscription?: Subscription;
+
+  constructor(public authService: AuthService, private raceService: RaceService) {}
   
   // Pagination controls
   page = 1;
   pageSize = 12;
   filterType: 'all' | 'upcoming' | 'past' = 'upcoming';
 
-  constructor(private raceService: RaceService) {}
 
   ngOnInit(): void {
     this.loadRaceSummaries();

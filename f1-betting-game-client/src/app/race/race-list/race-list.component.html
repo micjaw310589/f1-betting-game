@@ -31,26 +31,35 @@
 
     @if (raceSummaries$ | async; as summaries) {
         
-        <div class="race-card-grid">
-            @for (race of summaries.items; track race.id) {
-                <div 
-                    class="race-card"
-                    [class]="'status-' + getStatusClass(race.status)" 
-                    [routerLink]="['/races', race.id]">
-                    
-                    <h3>{{ race.name }}</h3>
-                    <p><strong>Circuit:</strong> {{ race.circuit }}</p>
-                    <p><strong>Country:</strong> {{ race.country }}</p>
-                    <p><strong>Date:</strong> {{ race.raceDate | date: 'mediumDate' }}</p>
-                    
-                    <div class="race-status-badge">
-                        {{ getStatusText(race.status) }}
-                    </div>
-                </div>
-            } @empty {
-                <p>No races found for this category.</p>
-            }
+<div class="race-card-grid">
+    @for (race of summaries.items; track race.id) {
+        <div 
+            class="race-card"
+            [class]="'status-' + getStatusClass(race.status)" 
+            [routerLink]="['/races', race.id]">
+            
+            <h3>{{ race.name }}</h3>
+            <p><strong>Circuit:</strong> {{ race.circuit }}</p>
+            <p><strong>Country:</strong> {{ race.country }}</p>
+            <p><strong>Date:</strong> {{ race.raceDate | date: 'mediumDate' }}</p>
+            
+            <div class="race-status-badge">
+                {{ getStatusText(race.status) }}
+            </div>
+
+            <ng-container *ngIf="authService.currentUser | async">
+                <button 
+                    class="place-bet-button" 
+                    (click)="$event.stopPropagation()"
+                    type="button">
+                    Place Bet
+                </button>
+            </ng-container>
         </div>
+    } @empty {
+        <p>No races found for this category.</p>
+    }
+</div>
 <div class="pagination-controls">
     <button 
         (click)="paginate(page - 1)" 

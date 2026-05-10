@@ -13,19 +13,28 @@ public static class SeedData
     public static async Task Initialize(AppDbContext context)
     {
         // Seed admin user (ensure id=1 is available)
-        var existingUserWithId1 = context.Users.FirstOrDefault(u => u.Id == 1);
-        if (existingUserWithId1 != null)
-        {
-            context.Users.Remove(existingUserWithId1);
-            await context.SaveChangesAsync();
-        }
         var adminPassword = BCrypt.Net.BCrypt.HashPassword("Admin@123456");
-        var adminUser = new User("admin", "admin@f1bet.com", adminPassword, isActive: true, isAdmin: true)
+        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Id == 1);
+        if (adminUser == null)
         {
-            Id = 1,
-            Points = 10000
-        };
-        await context.Users.AddAsync(adminUser);
+            adminUser = new User("admin", "admin@f1bet.com", adminPassword, isActive: true, isAdmin: true)
+            {
+                Id = 1,
+                Points = 10000
+            };
+            await context.Users.AddAsync(adminUser);
+        }
+        else
+        {
+            // Update existing admin user
+            adminUser.Username = "admin";
+            adminUser.Email = "admin@f1bet.com";
+            adminUser.PasswordHash = adminPassword;
+            adminUser.IsActive = true;
+            adminUser.IsAdmin = true;
+            adminUser.Points = 10000;
+            context.Users.Update(adminUser);
+        }
         await context.SaveChangesAsync();
 
         // Seed teams if not already seeded

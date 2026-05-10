@@ -34,13 +34,6 @@
   transition: var(--transition-med);
 }
 
-/* Hover state kept identical to original values */
-.profile-card:hover,
-.bets-card:hover {
-  border-color: var(--color-f1-red);
-  box-shadow: 0 10px 25px rgba(225, 6, 0, 0.2);
-}
-
 .profile-name {
   margin: 0 0 25px 0;
   font-size: 28px;

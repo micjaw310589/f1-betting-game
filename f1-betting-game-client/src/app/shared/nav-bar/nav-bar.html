@@ -11,13 +11,13 @@
       </ng-container>
 
       <ng-container *ngIf="authService.currentUser | async as session">
-        <a routerLink="/profile" routerLinkActive="active" class="nav-btn">
-           My profile
-        </a>
-        <button (click)="onLogout()" class="nav-btn logout-btn">
-          Logout ({{ session.user?.username || session.username || 'User' }})
-        </button> 
-      </ng-container>
+  <a routerLink="/profile" routerLinkActive="active" class="nav-btn active-blue">
+     My profile
+  </a>
+  <button (click)="onLogout()" class="nav-btn logout-btn">
+    Logout ({{ session.user?.username || session.username || 'User' }})
+  </button> 
+</ng-container>
     </div>
   </div>
 </nav>

@@ -13,6 +13,7 @@ import {
     UpdateRaceMetadataDto,
     RaceResultDto,
     OverrideRaceResultDto,
+    DriverDto,
 } from '../models/admin.models';
 
 @Injectable({
@@ -141,6 +142,15 @@ export class AdminService {
                 positionsCount: number;
                 isManuallyOverridden: boolean;
             }>(`${this.ADMIN_API_URL}/races/${raceId}/results`, dto)
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Gets all available drivers (for admin override dropdowns).
+     */
+    getAllDrivers(): Observable<DriverDto[]> {
+        return this.http
+            .get<DriverDto[]>(`${environment.apiUrl}/races/drivers`)
             .pipe(catchError(this.handleError));
     }
 

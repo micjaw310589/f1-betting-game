@@ -51,8 +51,8 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     metadataForm: UpdateRaceMetadataDto = {};
 
     // --- Driver List for Select ---
-    availableDrivers: { id: number; name: string; teamId: number; teamName: string }[] = [];
-    isLoadingDrivers = false;
+    allDrivers: { id: number; name: string; teamName: string }[] = [];
+    isLoadingDrivers = true;
 
     private syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -63,6 +63,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.loadRaces();
+        this.loadAllDrivers();
     }
 
     ngOnDestroy(): void {
@@ -104,6 +105,30 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
             error: (error) => {
                 this.syncError = error.message || 'Sync failed';
                 this.isSyncing = false;
+            },
+        });
+    }
+
+    // ========================
+    // Driver Loading Methods
+    // ========================
+
+    loadAllDrivers(): void {
+        this.isLoadingDrivers = true;
+
+        this.adminService.getAllDrivers().subscribe({
+            next: (drivers) => {
+                this.allDrivers = drivers.map((d) => ({
+                    id: d.id,
+                    name: d.name,
+                    teamName: d.teamName,
+                }));
+                this.isLoadingDrivers = false;
+                this.cdr.markForCheck();
+            },
+            error: (error) => {
+                console.error('Error loading drivers:', error);
+                this.isLoadingDrivers = false;
             },
         });
     }
@@ -249,16 +274,30 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
                 this.cdr.markForCheck();
 
                 // Initialize editable positions from existing results
-                this.currentPositions = results.positions.map((p) => ({
-                    position: p.position,
-                    driverId: p.driverId,
-                    driverName: p.driverName,
-                    teamId: p.teamId,
-                    teamName: p.teamName,
-                    points: p.points,
-                    fastestLap: p.fastestLap,
-                    pitStopTime: p.pitStopTime,
-                }));
+                if (results.positions.length > 0) {
+                    this.currentPositions = results.positions.map((p) => ({
+                        position: p.position,
+                        driverId: p.driverId,
+                        driverName: p.driverName,
+                        teamId: p.teamId,
+                        teamName: p.teamName,
+                        points: p.points,
+                        fastestLap: p.fastestLap,
+                        pitStopTime: p.pitStopTime,
+                    }));
+                } else {
+                    // No existing results - start with one empty row
+                    this.currentPositions = [{
+                        position: 1,
+                        driverId: null,
+                        driverName: '',
+                        teamId: 0,
+                        teamName: '',
+                        points: 0,
+                        fastestLap: null,
+                        pitStopTime: null,
+                    }];
+                }
 
                 // Set fastest lap driver
                 this.fastestLapDriverId = results.fastestLapDriverId || null;
@@ -406,9 +445,15 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     }
 
     getTeamName(driverId: number | null): string {
-        if (!driverId || !this.raceResults) return '';
-        const pos = this.raceResults.positions.find((p) => p.driverId === driverId);
-        return pos ? pos.teamName : '';
+        if (!driverId) return '';
+        // Try to find from existing results first
+        if (this.raceResults) {
+            const pos = this.raceResults.positions.find((p) => p.driverId === driverId);
+            if (pos) return pos.teamName;
+        }
+        // Fallback to allDrivers list
+        const driver = this.allDrivers.find((d) => d.id === driverId);
+        return driver ? driver.teamName : '';
     }
 
     getPointsForPosition(position: number): number {
@@ -462,20 +507,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     }
 
     getAvailableDrivers(): { id: number | null; name: string; teamName: string }[] {
-        if (!this.raceResults) return [];
-        const existingIds = this.getExistingDriverIds();
-        // Get all unique drivers from the positions list
-        const allDrivers = this.raceResults.positions
-            .filter((p) => p.driverId != null)
-            .map((p) => ({
-                id: p.driverId,
-                name: p.driverName,
-                teamName: p.teamName,
-            }));
-        // Remove duplicates
-        return allDrivers.filter(
-            (driver, index, self) =>
-                index === self.findIndex((d) => d.id === driver.id)
-        );
+        if (this.isLoadingDrivers) return [];
+        return this.allDrivers;
     }
 }

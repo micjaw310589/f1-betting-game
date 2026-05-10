@@ -96,6 +96,18 @@ export interface AdminRaceDto {
 // Driver Models
 // ========================
 
+/**
+ * Driver information for admin dropdowns.
+ * Corresponds to F1BettingApp.Application.DTOs.DriverDto
+ */
+export interface DriverDto {
+    id: number;
+    name: string;
+    abbreviation: string;
+    teamId: number;
+    teamName: string;
+}
+
 // ========================
 // Race Metadata Override Models
 // ========================

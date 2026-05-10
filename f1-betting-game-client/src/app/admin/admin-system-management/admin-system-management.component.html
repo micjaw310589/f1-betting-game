@@ -94,7 +94,7 @@
             </div>
 
             <!-- Results Override Form -->
-            @if (selectedRace) {
+            @if (selectedRace && (raceResults || currentPositions.length > 0)) {
                 <div class="results-form">
                     <h3>Override Race Results: {{ selectedRace.name }}</h3>
 
@@ -224,7 +224,7 @@
                         </div>
                     } @else if (selectedRaceId) {
                         <div class="message info">
-                            ℹ️ No results data available for this race.
+                            ℹ️ No results data available for this race. Select a driver to start building results.
                         </div>
                     }
                 </div>

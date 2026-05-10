@@ -17,12 +17,12 @@
             </div>
 
             @if (isLoggedIn$ | async) {
-                <button
+                <a
                     class="place-bet-button"
-                    type="button"
-                    title="Place bet">
-                    Place Bet
-                </button>
+                    [routerLink]="['/races', (data.details.id ?? data.details.id), 'bets', 'create']"
+                    title="Place a bet">
+                    Create Bet
+                </a>
             }
         </div>
 

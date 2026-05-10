@@ -1,0 +1,100 @@
+<div class="bet-placement-container">
+  <button class="back-button" type="button" (click)="goBackToRaceDetail()">
+    ← Back to race
+  </button>
+
+  <h1 class="page-header">Create Bet</h1>
+
+  <section class="panel">
+    <h2>Place a new bet</h2>
+
+    <div class="form-row">
+      <label for="betType">Bet type</label>
+      <select
+        id="betType"
+        [(ngModel)]="selectedBetType">
+        @for (opt of betTypeOptions; track opt) {
+          <option [value]="opt">{{ opt }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="driver">Driver</label>
+      <select
+        id="driver"
+        [(ngModel)]="selectedDriverId">
+        @for (dId of driverIds; track dId) {
+          <option [value]="dId">
+            Driver {{ dId }} — odds {{ odds[dId] | number:'1.2-2' }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="amount">Stake amount</label>
+      <input
+        id="amount"
+        type="number"
+        min="0.1"
+        step="0.1"
+        [(ngModel)]="amount"
+        placeholder="e.g. 100" />
+      <div class="hint">
+        Amount must be > 0.
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button
+        class="primary-button"
+        type="button"
+        (click)="placeBet()"
+        [disabled]="!canSubmit">
+        {{ isSubmitting ? 'Placing...' : 'Place Bet' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Your pending bets (cancel)</h2>
+
+    @if (betsLoading) {
+      <div class="loader-inline">Loading your bets...</div>
+    }
+
+    @if (betsError) {
+      <div class="error-message">{{ betsError }}</div>
+    }
+
+    @if (!betsLoading && pendingBets.length === 0) {
+      <div class="empty-state">No pending bets for this race.</div>
+    }
+
+    @if (!betsLoading && pendingBets.length > 0) {
+      <div class="pending-list">
+        @for (bet of pendingBets; track bet.betId) {
+          <div class="pending-item">
+            <div class="pending-meta">
+              <div><strong>Bet #{{ bet.betId }}</strong></div>
+              <div>Driver: {{ bet.driverId }}</div>
+              <div>Type: {{ bet.betType }}</div>
+              <div>Stake: {{ bet.amount }}</div>
+            </div>
+
+            <div class="pending-actions">
+              <button
+                class="danger-button"
+                type="button"
+                (click)="cancelBet(bet.betId)"
+                [disabled]="isSubmitting">
+                Cancel
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+</div>

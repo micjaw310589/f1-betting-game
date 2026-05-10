@@ -21,5 +21,9 @@ export const routes: Routes = [
   {
     path: 'profile',
     loadComponent: () => import('./profile/user-profile/user-profile.component').then(m => m.UserProfileComponent)
+  },
+  {
+    path: 'admin',
+    loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes)
   }
 ];

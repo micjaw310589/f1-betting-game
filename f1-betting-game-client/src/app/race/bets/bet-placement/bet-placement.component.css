@@ -317,3 +317,37 @@ input[type="text"]:focus {
     width: 100%;
   }
 }
+
+
+/* Balance Info Styling */
+.user-balance-info {
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 4px solid #007bff;
+  font-family: var(--font-main);
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.user-balance-info strong {
+  color: #007bff;
+  font-size: 15px;
+  margin-left: 5px;
+}
+
+/* Inline Error Styling (matching Register styles) */
+.error-message-inline {
+  color: #ff4d4d;
+  font-size: 12px;
+  margin-top: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+input.input-error {
+  border-color: #ff4d4d !important;
+  background-color: rgba(255, 77, 77, 0.05) !important;
+}

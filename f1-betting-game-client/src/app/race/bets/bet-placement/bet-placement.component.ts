@@ -7,6 +7,7 @@ import { BetService } from '../bet.service';
 import { BetType, PlaceBetDto } from '../bet.models';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../auth/auth.service';
+import { ProfileService } from '../../../profile/profile.service';
 
 // Nowy interfejs pasujący do DTO z backendu
 export interface DriverWithOdds {
@@ -33,6 +34,7 @@ interface PendingBetView {
 })
 export class BetPlacementComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
+  userPoints: number = 0;
 
   raceId!: number;
   betTypeOptions: BetType[] = ['RaceWinner', 'PodiumFinish', 'Top10Finish', 'FastestLap'];
@@ -56,17 +58,21 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
     private raceService: RaceService,
     private betService: BetService,
     private authService: AuthService,
+    private profileService: ProfileService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    if (!idParam) {
-      this.router.navigate(['/races']);
-      return;
-    }
+const idParam = this.route.snapshot.paramMap.get('id');
+  if (!idParam) {
+    this.router.navigate(['/races']);
+    return;
+  }
 
-    this.raceId = Number(idParam);
+  this.raceId = Number(idParam);
+
+  // Ładujemy punkty NAJPIERW lub równolegle
+  this.loadUserPoints();
 
     // Ładowanie kierowców i ich kursów
     const sub = this.raceService.getDriversWithOdds(this.raceId).pipe(
@@ -85,6 +91,26 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
     ).subscribe();
 
     this.subscriptions.add(sub);
+  }
+
+  
+loadUserPoints(): void {
+  // Używamy .add(), aby upewnić się, że subskrypcja zostanie zamknięta w ngOnDestroy
+  this.subscriptions.add(
+    this.profileService.getProfile().subscribe({
+      next: (profile) => {
+        console.log('Pobrano profil:', profile); // Dodaj loga, żeby sprawdzić w konsoli (F12) czy dane płyną
+        this.userPoints = profile.points;
+        this.cdr.detectChanges(); // Wymuś odświeżenie widoku
+      },
+      error: (err) => {
+        console.error('Błąd pobierania punktów:', err);
+      }
+    })
+  );
+}
+  get hasInsufficientFunds(): boolean {
+    return this.amount > this.userPoints;
   }
 
   ngOnDestroy(): void {
@@ -125,7 +151,7 @@ loadPendingBets() {
   );
 }
   get canSubmit(): boolean {
-    return this.amount > 0 && !!this.selectedDriverId && !this.isSubmitting;
+    return this.amount > 0 && this.amount <= this.userPoints && !!this.selectedDriverId && !this.isSubmitting;
   }
 
   // Pomocnicza metoda do pobrania kursu wybranego kierowcy (do wyświetlenia w UI)
@@ -149,6 +175,7 @@ placeBet(): void {
     next: () => {
       this.isSubmitting = false;
       this.amount = 0; // Resetujemy kwotę w formularzu
+      this.loadUserPoints(); // Odświeżamy punkty
       
       // Odświeżamy listę zakładów
       this.loadPendingBets().subscribe({
@@ -179,6 +206,7 @@ placeBet(): void {
       next: () => {
         window.alert('Bet cancelled successfully.');
         this.loadPendingBets().subscribe();
+    this.loadUserPoints();
       },
       error: () => window.alert('Failed to cancel bet.')
     });

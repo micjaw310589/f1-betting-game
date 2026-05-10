@@ -80,11 +80,10 @@ namespace F1BettingApp.API.Controllers
                     return BadRequest(ModelState);
                 }
 
-
                 // Call service to place the bet using the authenticated user ID
                 var result = await _bettingService.PlaceBetAsync(userId, dto);
 
-                 _logger.LogInformation("Bet placed successfully");
+                _logger.LogInformation("Bet placed successfully");
 
                 return Ok(new { message = "Bet placed successfully", userId });
             }
@@ -118,6 +117,23 @@ namespace F1BettingApp.API.Controllers
                 _logger.LogError(ex, "Error placing bet");
                 return StatusCode(500, new { error = "An error occurred while placing the bet" });
             }
+        }
+
+        /// <summary>
+        /// Spec-aligned alias for placing a bet.
+        /// </summary>
+        [HttpPost("place")]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public Task<IActionResult> PlaceBetSpecAlias([FromBody] PlaceBetDto dto)
+        {
+            // Reuse the existing implementation to avoid divergence.
+            return PlaceBet(dto);
         }
 
         /// <summary>
@@ -205,8 +221,6 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-
-
                 await _bettingService.CancelBetAsync(id, userId);
 
                 _logger.LogInformation("Bet cancelled successfully. BetId: {BetId}, UserId: {UserId}", id, userId);
@@ -228,6 +242,20 @@ namespace F1BettingApp.API.Controllers
                 _logger.LogError(ex, "Error cancelling bet");
                 return StatusCode(500, new { error = "An error occurred while cancelling the bet" });
             }
+        }
+
+        /// <summary>
+        /// Spec-aligned alias for cancelling a bet.
+        /// </summary>
+        [HttpPost("{id}/cancel")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public Task<IActionResult> CancelBetSpecAlias([FromRoute] int id)
+        {
+            // Reuse the existing implementation to avoid divergence.
+            return CancelBet(id);
         }
     }
 }

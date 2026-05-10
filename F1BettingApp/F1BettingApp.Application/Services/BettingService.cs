@@ -83,7 +83,8 @@ namespace F1BettingApp.Application.Services
                 throw new RaceNotFoundException(dto.RaceId);
             }
 
-            if (race.Status != RaceStatus.Scheduled && race.Status != RaceStatus.InProgress)
+            // Task 03 strict requirement: only Scheduled races accept new bets
+            if (race.Status != RaceStatus.Scheduled)
             {
                 throw new RaceNotUpcomingException();
             }

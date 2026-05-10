@@ -107,45 +107,6 @@ h1 {
   box-shadow: 0 10px 25px rgba(225, 6, 0, 0.3);
 }
 
-/* Place Bet - pinned to the bottom-right corner of the race card */
-.place-bet-button {
-  position: absolute;
-  right: 18px;
-  bottom: 18px;
-
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-
-  padding: 12px 18px;
-  font-size: 13px;
-  
-  /* Zmiana na biały tekst i czarne tło z białą ramką (jak w race-detail) */
-  color: #fff;
-  border: 2px solid #fff;
-  background-color: #000;
-
-  cursor: pointer;
-  transform: skewX(var(--skew-x));
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-  border-radius: 3px;
-}
-
-/* Efekt hover - zmiana na czerwony (jak w race-detail) */
-.place-bet-button:hover {
-  border-color: var(--color-f1-red);
-  background-color: var(--color-f1-red);
-  color: #fff;
-  transform: skewX(var(--skew-x)) translateY(-1px);
-  box-shadow: 0 5px 15px rgba(225, 6, 0, 0.4);
-}
-
-.place-bet-button:active {
-  transform: skewX(var(--skew-x)) translateY(0px);
-}
-
 /* Większe nazwy wyścigów */
 .race-card h3 {
   margin-top: 0;

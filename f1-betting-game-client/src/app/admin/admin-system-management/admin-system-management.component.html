@@ -12,6 +12,13 @@
         </button>
         <button
             class="tab-button"
+            [class.active]="activeTab === 'results'"
+            (click)="switchTab('results')"
+        >
+            Race Results
+        </button>
+        <button
+            class="tab-button"
             [class.active]="activeTab === 'metadata'"
             (click)="switchTab('metadata')"
         >
@@ -27,6 +34,7 @@
                 <p>
                     Manually trigger synchronization of race data from the OpenF1 API.
                     This will fetch the latest race information, results, and statistics.
+                    Races marked as manually overridden will be skipped.
                 </p>
 
                 <!-- Sync Button -->
@@ -48,7 +56,8 @@
                 <!-- Sync Result -->
                 @if (syncResult) {
                     <div class="message success">
-                        ✅ Sync completed successfully! Processed {{ syncResult.racesProcessed }} races.
+                        ✅ Sync completed successfully! Processed {{ syncResult.racesProcessed }} races
+                        (Created: {{ syncResult.racesCreated }}, Updated: {{ syncResult.racesUpdated }}).
                     </div>
                 }
                 @if (syncError) {
@@ -57,6 +66,150 @@
                     </div>
                 }
             </div>
+        </div>
+    }
+
+    <!-- Race Results Tab -->
+    @if (activeTab === 'results') {
+        <div class="tab-content">
+            <!-- Race Selection -->
+            <div class="race-selection">
+                <h3>Select Race</h3>
+                @if (isLoadingRaces) {
+                    <div class="loading">Loading races...</div>
+                } @else {
+                    <select
+                        [(ngModel)]="selectedRaceId"
+                        (change)="onResultsRaceSelect()"
+                        class="race-select"
+                    >
+                        <option [ngValue]="null">-- Select a race --</option>
+                        @for (race of races; track race.id) {
+                            <option [ngValue]="race.id">
+                                {{ race.name }} ({{ race.circuit }}) - {{ race.status }}
+                            </option>
+                        }
+                    </select>
+                }
+            </div>
+
+            <!-- Results Override Form -->
+            @if (selectedRace) {
+                <div class="results-form">
+                    <h3>Override Race Results: {{ selectedRace.name }}</h3>
+
+                    @if (resultsSaveSuccess) {
+                        <div class="message success">
+                            ✅ Race results overridden successfully!
+                        </div>
+                    }
+                    @if (resultsSaveError) {
+                        <div class="message error">
+                            ❌ {{ resultsSaveError }}
+                        </div>
+                    }
+
+                    @if (isFetchingResults) {
+                        <div class="loading">Loading race results...</div>
+                    } @else if (raceResults) {
+                        <!-- Current Results Display -->
+                        <div class="results-header">
+                            <p>
+                                <strong>Circuit:</strong> {{ raceResults.circuit }}, {{ raceResults.country }}
+                                | <strong>Date:</strong> {{ formatDate(raceResults.raceDate) }}
+                            </p>
+                            @if (selectedRace.isManuallyOverridden) {
+                                <span class="override-badge">⚠️ Manually Overridden</span>
+                            }
+                        </div>
+
+                        <!-- Fastest Lap Selection -->
+                        <div class="fastest-lap-section">
+                            <h4>Fastest Lap</h4>
+                            <select
+                                [(ngModel)]="fastestLapDriverId"
+                                (change)="onFastestLapChange($any($event).target.value)"
+                                class="form-input"
+                                style="max-width: 300px;"
+                            >
+                                <option [ngValue]="null">-- No fastest lap --</option>
+                                @for (driver of getAvailableDrivers(); track driver.id) {
+                                    <option [ngValue]="driver.id">
+                                        {{ driver.name }} ({{ driver.teamName }})
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Positions Table -->
+                        <div class="positions-table-container">
+                            <h4>Finishing Positions</h4>
+                            <table class="positions-table">
+                                <thead>
+                                    <tr>
+                                        <th class="position-col">Position</th>
+                                        <th>Driver</th>
+                                        <th>Team</th>
+                                        <th>Points</th>
+                                        <th>Fastest Lap</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (position of currentPositions; track position.driverId; let i = $index) {
+                                        <tr [class.highlighted]="position.position === 1">
+                                            <td class="position-col">
+                                                <span class="position-number">{{ position.position }}</span>
+                                            </td>
+                                            <td>
+                                                <select
+                                                    [(ngModel)]="position.driverId"
+                                                    (change)="onPositionChange(i, $any($event).target.value)"
+                                                    class="driver-select"
+                                                >
+                                                    @for (driver of getAvailableDrivers(); track driver.id) {
+                                                        <option [ngValue]="driver.id">
+                                                            {{ driver.name }}
+                                                        </option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td>{{ position.teamName }}</td>
+                                            <td>{{ getPointsForPosition(position.position) }}</td>
+                                            <td>
+                                                @if (position.fastestLap) {
+                                                    <span class="fastest-lap-badge">⏱️ {{ position.fastestLap | date:'mm:ss.S' }}</span>
+                                                } @else {
+                                                    <span class="no-data">—</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="override-actions">
+                            <button
+                                class="btn-override"
+                                [disabled]="isSavingResults"
+                                (click)="openResultsConfirmModal()"
+                            >
+                                @if (isSavingResults) {
+                                    <span class="spinner-small"></span>
+                                    Saving...
+                                } @else {
+                                    💾 Override Results
+                                }
+                            </button>
+                        </div>
+                    } @else if (!isFetchingResults && selectedRaceId) {
+                        <div class="message info">
+                            ℹ️ No results data available for this race.
+                        </div>
+                    }
+                </div>
+            }
         </div>
     }
 
@@ -182,6 +335,64 @@
                     </div>
                 </div>
             }
+        </div>
+    }
+
+    <!-- Results Confirmation Modal -->
+    @if (showResultsConfirmModal) {
+        <div class="modal-overlay" (click)="closeResultsConfirmModal()">
+            <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Results Override</h3>
+                    <button class="modal-close" (click)="closeResultsConfirmModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to override the results for
+                        <strong>{{ selectedRace?.name }}</strong>?
+                    </p>
+                    <p class="warning-text">
+                        ⚠️ This will mark the race as manually overridden and prevent future
+                        automatic syncs from overwriting these results.
+                    </p>
+                    <div class="override-summary">
+                        <h4>Summary ({{ currentPositions.length }} positions)</h4>
+                        <table class="summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Pos</th>
+                                    <th>Driver</th>
+                                    <th>Team</th>
+                                    <th>Pts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (position of currentPositions; track position.driverId) {
+                                    <tr [class.highlighted]="position.position === 1">
+                                        <td>{{ position.position }}</td>
+                                        <td>{{ getDriverName(position.driverId) }}</td>
+                                        <td>{{ getTeamName(position.driverId) }}</td>
+                                        <td>{{ getPointsForPosition(position.position) }}</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (fastestLapDriverId) {
+                            <p class="fastest-lap-summary">
+                                <strong>Fastest Lap:</strong> {{ getDriverName(fastestLapDriverId) }}
+                            </p>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeResultsConfirmModal()">
+                        Cancel
+                    </button>
+                    <button class="btn-confirm" (click)="confirmResultsOverride()">
+                        Confirm Override
+                    </button>
+                </div>
+            </div>
         </div>
     }
 

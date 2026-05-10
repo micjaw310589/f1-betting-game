@@ -188,6 +188,30 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
+// Helper function for applying migrations and seeding data
+async Task ApplyMigrationsAndSeedAsync()
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AppDbContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        await context.Database.MigrateAsync();
+    }
+    catch (InvalidOperationException ex) when (ex.Message.Contains("PendingModelChangesWarning"))
+    {
+        logger.LogWarning(ex, "Pending model changes detected - applying missing migration manually");
+        // Apply the IsManuallyOverridden column if it doesn't exist
+        await context.Database.ExecuteSqlRawAsync(
+            "ALTER TABLE \"Races\" ADD COLUMN IF NOT EXISTS \"IsManuallyOverridden\" boolean NOT NULL DEFAULT false");
+    }
+
+    // Seed initial data (admin user, teams, etc.)
+    await SeedData.Initialize(context);
+}
+
 // Apply migrations and seed data at startup (always)
 using (var scope = app.Services.CreateScope())
 {
@@ -196,44 +220,13 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment()) TODO: UNDO IT
-//{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-
-    // Apply migrations and seed data in development
-    using (var scope = app.Services.CreateScope())
-    {
-        var context = services.GetRequiredService<AppDbContext>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
-
-        try
-        {
-            await context.Database.MigrateAsync();
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("PendingModelChangesWarning"))
-        {
-            logger.LogWarning(ex, "Pending model changes detected - applying missing migration manually");
-            // Apply the IsManuallyOverridden column if it doesn't exist
-            await context.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE \"Races\" ADD COLUMN IF NOT EXISTS \"IsManuallyOverridden\" boolean NOT NULL DEFAULT false");
-        }
-
-        // Seed initial data (admin user, teams, etc.)
-        await SeedData.Initialize(context);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
-    }
-//}
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // Apply migrations and seed data in development
+    await ApplyMigrationsAndSeedAsync();
 }
 
 app.UseHttpsRedirection();

@@ -123,3 +123,82 @@ export const RACE_STATUSES = [
     { value: 'Cancelled', label: 'Cancelled' },
     { value: 'Postponed', label: 'Postponed' },
 ] as const;
+
+// ========================
+// Race Results Override Models
+// ========================
+
+/**
+ * DTO for overriding race results manually (admin only).
+ * Corresponds to F1BettingApp.Application.DTOs.OverrideRaceResultDto
+ */
+export interface OverrideRaceResultDto {
+    positions: PositionEntryDto[];
+    fastestLapDriverId?: number | null;
+}
+
+/**
+ * Represents a finishing position with its driver ID.
+ * Corresponds to F1BettingApp.Application.DTOs.PositionEntryDto
+ */
+export interface PositionEntryDto {
+    position: number;
+    driverId: number;
+}
+
+/**
+ * Race result DTO with driver details (admin view).
+ * Corresponds to F1BettingApp.Application.DTOs.RaceResultDto
+ */
+export interface RaceResultDto {
+    raceId: number;
+    raceName: string;
+    circuit: string;
+    country: string;
+    raceDate: Date;
+    winnerDriverId: number;
+    winnerDriverName: string;
+    winnerTeamId: number;
+    winnerTeamName: string;
+    fastestLapDriverId: number;
+    fastestLapDriverName: string;
+    winningMargin: number;
+    polePositionDriverId: number;
+    polePositionDriverName: string;
+    safetyCar: number;
+    virtualSafetyCar: number;
+    redFlag: number;
+    yellowFlag: number;
+    blackFlag: number;
+    blueFlag: number;
+    blackAndWhiteFlag: number;
+    chequeredFlag: number;
+    raceDistance: number;
+    raceDistanceUnit: number;
+    laps: number;
+    lapsCompleted: number;
+    lapsToFinish: number;
+    raceControlMessage: number;
+    raceControlMessageText: string;
+    timeAttack: string;
+    timeAttackResult: string;
+    timeAttackComment: string;
+    timeAttackStatus: string;
+    timeAttackLaps: string;
+    positions: PositionItemDto[];
+}
+
+/**
+ * A single finishing position entry with driver/team details.
+ * Corresponds to F1BettingApp.Application.DTOs.PositionDto
+ */
+export interface PositionItemDto {
+    position: number;
+    driverId: number;
+    driverName: string;
+    teamId: number;
+    teamName: string;
+    points: number;
+    fastestLap: Date | null;
+    pitStopTime: Date | null;
+}

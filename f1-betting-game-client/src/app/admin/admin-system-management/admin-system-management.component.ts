@@ -7,6 +7,9 @@ import {
     AdminRaceDto,
     UpdateRaceMetadataDto,
     RACE_STATUSES,
+    RaceResultDto,
+    PositionItemDto,
+    OverrideRaceResultDto,
 } from '../models/admin.models';
 
 @Component({
@@ -18,7 +21,7 @@ import {
 })
 export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // --- Tab Navigation ---
-    activeTab: 'sync' | 'metadata' = 'sync';
+    activeTab: 'sync' | 'results' | 'metadata' = 'sync';
 
     // --- Sync Section ---
     isSyncing = false;
@@ -31,12 +34,26 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     selectedRaceId: number | null = null;
     selectedRace: AdminRaceDto | null = null;
 
+    // --- Race Results Override ---
+    raceResults: RaceResultDto | null = null;
+    isFetchingResults = false;
+    isSavingResults = false;
+    resultsSaveSuccess = false;
+    resultsSaveError = '';
+    showResultsConfirmModal = false;
+    currentPositions: PositionItemDto[] = [];
+    fastestLapDriverId: number | null = null;
+
     // --- Race Metadata Override ---
     isSavingMetadata = false;
     metadataSaveSuccess = false;
     metadataSaveError = '';
     showMetadataConfirmModal = false;
     metadataForm: UpdateRaceMetadataDto = {};
+
+    // --- Driver List for Select ---
+    availableDrivers: { id: number; name: string; teamId: number; teamName: string }[] = [];
+    isLoadingDrivers = false;
 
     private syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -56,7 +73,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // Tab Navigation
     // ========================
 
-    switchTab(tab: 'sync' | 'metadata'): void {
+    switchTab(tab: 'sync' | 'results' | 'metadata'): void {
         this.activeTab = tab;
     }
 
@@ -125,10 +142,18 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
         this.metadataSaveSuccess = false;
         this.metadataSaveError = '';
         this.showMetadataConfirmModal = false;
+        this.resultsSaveSuccess = false;
+        this.resultsSaveError = '';
+        this.showResultsConfirmModal = false;
 
         // Reset form
         this.metadataForm = {};
         this.buildMetadataForm(race);
+
+        // Load race results if on results tab
+        if (this.activeTab === 'results') {
+            this.loadRaceResults(race.id);
+        }
     }
 
     // ========================
@@ -205,6 +230,106 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     }
 
     // ========================
+    // Race Results Methods
+    // ========================
+
+    loadRaceResults(raceId: number): void {
+        this.isFetchingResults = true;
+        this.raceResults = null;
+        this.resultsSaveError = '';
+
+        this.adminService.getRaceResults(raceId).subscribe({
+            next: (results) => {
+                this.raceResults = results;
+                this.isFetchingResults = false;
+
+                // Initialize editable positions from existing results
+                this.currentPositions = results.positions.map((p) => ({
+                    position: p.position,
+                    driverId: p.driverId,
+                    driverName: p.driverName,
+                    teamId: p.teamId,
+                    teamName: p.teamName,
+                    points: p.points,
+                    fastestLap: p.fastestLap,
+                    pitStopTime: p.pitStopTime,
+                }));
+
+                // Set fastest lap driver
+                this.fastestLapDriverId = results.fastestLapDriverId || null;
+            },
+            error: (error) => {
+                console.error('Error loading race results:', error);
+                this.isFetchingResults = false;
+                this.resultsSaveError = error.message || 'Failed to load race results';
+            },
+        });
+    }
+
+    onResultsRaceSelect(): void {
+        if (this.selectedRaceId) {
+            this.loadRaceResults(this.selectedRaceId);
+        } else {
+            this.raceResults = null;
+            this.currentPositions = [];
+            this.resultsSaveError = '';
+        }
+    }
+
+    openResultsConfirmModal(): void {
+        if (!this.selectedRaceId) {
+            this.resultsSaveError = 'Please select a race first.';
+            return;
+        }
+        if (this.currentPositions.length === 0) {
+            this.resultsSaveError = 'At least one position is required.';
+            return;
+        }
+        this.showResultsConfirmModal = true;
+    }
+
+    closeResultsConfirmModal(): void {
+        this.showResultsConfirmModal = false;
+    }
+
+    confirmResultsOverride(): void {
+        if (!this.selectedRaceId) return;
+
+        this.isSavingResults = true;
+        this.resultsSaveSuccess = false;
+        this.resultsSaveError = '';
+        this.showResultsConfirmModal = false;
+
+        const dto: OverrideRaceResultDto = {
+            positions: this.currentPositions.map((p) => ({
+                position: p.position,
+                driverId: p.driverId,
+            })),
+            fastestLapDriverId: this.fastestLapDriverId,
+        };
+
+        this.adminService.overrideRaceResults(this.selectedRaceId, dto).subscribe({
+            next: () => {
+                this.resultsSaveSuccess = true;
+                this.isSavingResults = false;
+
+                // Reload results and races
+                this.loadRaceResults(this.selectedRaceId!);
+                this.loadRaces();
+
+                // Auto-clear success message after 5 seconds
+                setTimeout(() => {
+                    this.resultsSaveSuccess = false;
+                }, 5000);
+            },
+            error: (error) => {
+                this.resultsSaveError = error.message || 'Failed to override race results';
+                this.isSavingResults = false;
+            },
+        });
+    }
+
+    // ========================
     // Utility Methods
     // ========================
 
@@ -258,5 +383,54 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     getRaceStatusOptions(): typeof RACE_STATUSES {
         return RACE_STATUSES;
+    }
+
+    // --- Helper methods for results form ---
+
+    getDriverName(driverId: number): string {
+        if (!this.raceResults) return 'Unknown';
+        const pos = this.raceResults.positions.find((p) => p.driverId === driverId);
+        return pos ? pos.driverName : 'Unknown';
+    }
+
+    getTeamName(driverId: number): string {
+        if (!this.raceResults) return '';
+        const pos = this.raceResults.positions.find((p) => p.driverId === driverId);
+        return pos ? pos.teamName : '';
+    }
+
+    getPointsForPosition(position: number): number {
+        return position <= 10 ? [25, 18, 15, 12, 10, 8, 6, 4, 2, 1][position - 1] : 0;
+    }
+
+    onPositionChange(positionIndex: number, driverId: number): void {
+        if (this.currentPositions[positionIndex]) {
+            this.currentPositions[positionIndex].driverId = driverId;
+        }
+    }
+
+    onFastestLapChange(driverId: number | null): void {
+        this.fastestLapDriverId = driverId;
+    }
+
+    getExistingDriverIds(): number[] {
+        if (!this.raceResults) return [];
+        return this.raceResults.positions.map((p) => p.driverId);
+    }
+
+    getAvailableDrivers(): { id: number; name: string; teamName: string }[] {
+        if (!this.raceResults) return [];
+        const existingIds = this.getExistingDriverIds();
+        // Get all unique drivers from the positions list
+        const allDrivers = this.raceResults.positions.map((p) => ({
+            id: p.driverId,
+            name: p.driverName,
+            teamName: p.teamName,
+        }));
+        // Remove duplicates
+        return allDrivers.filter(
+            (driver, index, self) =>
+                index === self.findIndex((d) => d.id === driver.id)
+        );
     }
 }

@@ -4,6 +4,8 @@ import { Subscription } from 'rxjs';
 import { ProfileAndBetsResponse, ProfileService } from '../profile.service';
 import { BetHistoryResponseDto, BetHistoryDto, UserProfileDto } from '../profile.models';
 import { NavigationEnd, Router } from '@angular/router';
+import { RaceService } from '../../race/services/race.service';
+import { BetService } from '../../race/bets/bet.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -29,7 +31,9 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 constructor(
   private profileService: ProfileService,
   private router: Router,
-  private cdr: ChangeDetectorRef
+  private cdr: ChangeDetectorRef,
+  private raceService: RaceService,
+  private betService: BetService
 ) {
   this.subscription.add( 
     this.router.events.subscribe((val) => {
@@ -50,26 +54,34 @@ constructor(
 
 load(): void {
   this.isLoading = true;
-  this.cdr.detectChanges(); // Powiedz Angularowi: "Heja, kręcę loaderem!"
+  this.cdr.detectChanges();
 
-  const sub = this.profileService.getProfileAndBets(this.page, this.pageSize).subscribe({
-    next: (result: ProfileAndBetsResponse) => {
+  this.profileService.getProfileAndBets(this.page, this.pageSize).subscribe({
+    next: (result) => {
       this.profile = result.profile;
       this.betHistory = result.betHistory;
+
+      // Mapujemy zakłady, żeby dociągnąć nazwy wyścigów, jeśli ich brakuje
+      this.bets.forEach(bet => {
+        if (!bet.raceName) {
+          this.raceService.getRaceDetails(bet.raceId).subscribe(details => {
+            bet.raceName = details.name;
+            bet.raceDate = details.raceDate;
+            this.cdr.detectChanges(); // Odśwież widok, gdy nazwa "dojedzie"
+          });
+        }
+      });
+
       this.isLoading = false;
-      this.cdr.detectChanges(); // KLUCZOWE: "Mam dane, odśwież widok TERAZ"
+      this.cdr.detectChanges();
     },
-    error: (err: unknown) => {
+    error: (err) => {
       this.hasError = true;
       this.isLoading = false;
-      this.errorMessage = err instanceof Error ? err.message : 'Failed to load profile';
-      this.cdr.detectChanges(); // Tutaj też, żeby pokazać błąd
+      this.cdr.detectChanges();
     }
   });
-
-  this.subscription.add(sub);
 }
-
   paginate(pageNumber: number): void {
     this.page = pageNumber;
     this.load();
@@ -108,4 +120,25 @@ load(): void {
   get hasPreviousPage(): boolean {
     return this.betHistory?.hasPreviousPage ?? false;
   }
+
+  // W klasie UserProfileComponent
+formatBetType(type: string): string {
+  if (!type) return '';
+  // Dodaje spację przed wielkimi literami, np. RaceWinner -> Race Winner
+  return type.replace(/([A-Z])/g, ' $1').trim();
+}
+
+cancelBet(betId: number): void {
+  if (!window.confirm('Are you sure you want to cancel this bet?')) return;
+  
+  this.subscription.add(
+    this.betService.cancelBet(betId).subscribe({
+      next: () => {
+        window.alert('Bet cancelled successfully.');
+        this.load(); // Odświeżamy profil i historię, żeby punkty i lista wróciły do normy
+      },
+      error: () => window.alert('Failed to cancel bet.')
+    })
+  );
+}
 }

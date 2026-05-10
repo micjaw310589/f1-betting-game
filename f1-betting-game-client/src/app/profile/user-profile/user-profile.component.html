@@ -67,22 +67,38 @@
   } @else {
     <div class="bets-list">
       @for (bet of bets; track bet.id) {
-        <div class="bet-row" [class]="getBetStatusClass(bet.status)">
-          <div class="bet-main">
-            <div class="bet-line">
-              <span class="bet-label">Race</span>
-              <span class="bet-value">{{ bet.raceName || ('Race #' + bet.raceId) }}</span>
-            </div>
-            <div class="bet-line">
-              <span class="bet-label">Amount</span>
-              <span class="bet-value">{{ formatMoney(bet.amount) }}</span>
-            </div>
-            <div class="bet-line">
-              <span class="bet-label">Status</span>
-              <span class="bet-value">{{ bet.status }}</span>
-            </div>
-          </div>
-        </div>
+      <div class="bet-row" [class]="getBetStatusClass(bet.status)">
+  <div class="bet-content"> <div class="bet-main">
+      <div class="bet-line">
+        <span class="bet-label">Race</span>
+        <span class="bet-value">{{ bet.raceName ? bet.raceName : ('Race #' + bet.raceId) }}</span>
+      </div>
+      <div class="bet-line">
+        <span class="bet-label">Type</span>
+        <span class="bet-value">{{ formatBetType(bet.betType) }}</span>
+      </div>
+      <div class="bet-line">
+        <span class="bet-label">Date</span>
+        <span class="bet-value">{{ bet.raceDate | date: 'mediumDate' }}</span>
+      </div>
+      <div class="bet-line">
+        <span class="bet-label">Stake</span>
+        <span class="bet-value">{{ formatMoney(bet.amount) }} pts</span>
+      </div>
+    </div>
+
+    <div class="bet-actions">
+      @if (bet.status === 'Pending') {
+        <button 
+          class="danger-button" 
+          type="button" 
+          (click)="cancelBet(bet.id)">
+          Cancel
+        </button>
+      }
+    </div>
+  </div>
+</div>
       }
     </div>
   }

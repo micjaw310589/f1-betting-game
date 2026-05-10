@@ -162,3 +162,45 @@ button:hover:not(:disabled) {
   color: #fff;
   transform: skewX(15deg) translateY(-4px) translateX(-3px);
 }
+/* Styl dla banera błędu (np. Email already taken) */
+.error-banner {
+  background-color: rgba(255, 77, 77, 0.1); /* Delikatne czerwone tło */
+  border-left: 5px solid #ff4d4d;          /* Mocna czerwona linia z boku */
+  color: #ff4d4d;                          /* Czerwony tekst */
+  padding: 1.2rem;
+  margin-bottom: 2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  animation: shake 0.4s ease-in-out;       /* Opcjonalny efekt potrząsania */
+}
+
+/* Styl dla banera sukcesu */
+.success-banner {
+  background-color: rgba(0, 255, 127, 0.1);
+  border-left: 5px solid #00ff7f;
+  color: #00ff7f;
+  padding: 1.2rem;
+  margin-bottom: 2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+/* Animacja potrząsania dla błędu */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

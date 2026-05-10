@@ -35,13 +35,13 @@
         </div>
       </div>
 
-      <div *ngIf="errorMessage" class="error-banner">
-        {{ errorMessage }}
-      </div>
+<div *ngIf="errorMessage" class="error-banner animate-fade-in">
+  {{ errorMessage }}
+</div>
 
-      <div *ngIf="successMessage" class="success-banner">
-        {{ successMessage }}
-      </div>
+<div *ngIf="successMessage" class="success-banner animate-fade-in">
+  {{ successMessage }}
+</div>
 
       <button type="submit" [disabled]="isLoading || registerForm.invalid">
         <span *ngIf="!isLoading">Register</span>

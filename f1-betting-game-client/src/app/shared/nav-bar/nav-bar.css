@@ -1,89 +1,85 @@
 .main-nav {
-    background-color: #0b0e11; /* Ta sama czerń co w race-list */
-    border-bottom: 2px solid #e10600; /* Czerwona linia F1 jako separator */
-    padding: 15px 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    font-family: 'Orbitron', sans-serif;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+  background-color: var(--color-bg);
+  border-bottom: 2px solid var(--color-f1-red);
+  padding: 15px 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-main);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .nav-group {
-    display: flex;
-    gap: 20px; /* Większy odstęp */
-    align-items: center;
+  display: flex;
+  gap: 20px;
+  align-items: center;
 }
 
-/* Stylizacja przycisków w navbarze - 10% większe i skośne */
+/* Buttons in navbar */
 .nav-btn {
-    text-decoration: none;
-    padding: 12px 24px;
-    cursor: pointer;
-    border: none;
-    background-color: #1f242d;
-    color: #eee;
-    font-size: 14px;
-    font-weight: 800;
-    text-transform: uppercase;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Płynniejsza animacja */
-    display: flex;
-    align-items: center;
-    transform: skewX(-15deg);
-    border-bottom: 2px solid transparent;
+  text-decoration: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border: none;
+  background-color: var(--color-card-bg-1);
+  color: #eee;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: var(--transition-nav);
+  display: flex;
+  align-items: center;
+  transform: skewX(var(--skew-x));
+  border-bottom: 2px solid transparent;
 }
 
-/* EFEKT HOVER DLA ZWYKŁYCH PRZYCISKÓW */
 .nav-btn:hover:not(.active):not(.active-blue) {
-    background-color: #2d3440;
-    transform: skewX(-15deg) translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  background-color: var(--color-border);
+  transform: skewX(var(--skew-x)) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-/* EFEKT DLA AKTYWNEGO PRZYCISKU (ten czerwony) */
 .nav-btn.active {
-    background-color: #e10600; /* Standardowa czerwień F1 */
-    color: white;
-    box-shadow: 0 0 15px rgba(225, 6, 0, 0.4);
+  background-color: var(--color-f1-red);
+  color: #fff;
+  box-shadow: var(--glow-red);
 }
 
-/* ZMIANA ODCIENIA PRZY NAJECHANIU NA AKTYWNY/CZERWONY PRZYCISK */
 .nav-btn.active:hover {
-    background-color: #ff1e1e; /* Jaśniejsza, "agresywna" czerwień */
-    box-shadow: 0 0 25px rgba(255, 30, 30, 0.6); /* Mocniejszy glow */
-    transform: skewX(-15deg) translateY(-2px);
+  background-color: var(--color-f1-red-strong);
+  box-shadow: 0 0 25px rgba(255, 30, 30, 0.6);
+  transform: skewX(var(--skew-x)) translateY(-2px);
 }
 
-/* Przycisk Logout - przy hoverze też mocniejszy efekt */
+/* Logout button uses same hover behavior as active-red */
 .logout-btn:hover {
-    background-color: #ff1e1e;
-    color: white;
-    box-shadow: 0 0 20px rgba(255, 30, 30, 0.5);
+  background-color: var(--color-f1-red-strong);
+  color: white;
+  box-shadow: 0 0 20px rgba(255, 30, 30, 0.5);
 }
 
-/* Aby tekst nie był krzywy wewnątrz przycisku */
-.nav-btn span, .nav-btn label {
-    display: inline-block;
-    transform: skewX(15deg);
+.nav-btn span,
+.nav-btn label {
+  display: inline-block;
+  transform: skewX(15deg);
 }
-/* Styl dla przycisku Register (active-blue) */
+
 .nav-btn.active-blue {
-    background-color: #5e0300; /* Bardzo ciemna, stonowana czerwień */
-    color: #eee;
+  background-color: #5e0300;
+  color: #eee;
 }
 
-/* Efekt hover dla Register - staje się jaśniejszy, ale nie tak bardzo jak "active" */
 .nav-btn.active-blue:hover {
-    background-color: #8b0000; /* Nieco jaśniejszy bordowy */
-    color: #ffffff;
-    transform: skewX(-15deg) translateY(-2px);
-    box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4);
+  background-color: #8b0000;
+  color: #ffffff;
+  transform: skewX(var(--skew-x)) translateY(-2px);
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4);
 }

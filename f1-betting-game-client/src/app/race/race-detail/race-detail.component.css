@@ -194,23 +194,6 @@
     transform: skewX(var(--skew-x)) translateY(0px);
 }
 
-/* Betting Callout - aggressive banner */
-.betting-callout {
-    background: linear-gradient(135deg, var(--color-f1-red) 0%, #8b0000 100%);
-    color: white;
-    padding: 30px;
-    border-radius: var(--radius-sm);
-    text-align: center;
-    transform: skewY(-1deg);
-    margin-top: 50px;
-}
-
-.betting-callout h3 {
-    text-transform: uppercase;
-    font-weight: 900;
-    font-size: 24px;
-    margin-top: 0;
-}
 
 /* API id */
 .api-id {

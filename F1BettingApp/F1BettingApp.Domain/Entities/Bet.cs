@@ -38,8 +38,8 @@ namespace F1BettingApp.Domain.Entities
             BetType = betType;
             Odds = odds;
             Status = BetStatus.Pending;
-            CreatedAt = DateTime.Now;
-            PotentialWinnings = 0m;
+            CreatedAt = DateTime.UtcNow;
+            //PotentialWinnings = 1m;
             Winnings = 0m;
             ResolvedAt = null;
         }

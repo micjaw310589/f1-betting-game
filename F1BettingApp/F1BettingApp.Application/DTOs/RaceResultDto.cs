@@ -43,5 +43,25 @@ namespace F1BettingApp.Application.DTOs
         public string TimeAttackComment { get; set; }
         public string TimeAttackStatus { get; set; }
         public string TimeAttackLaps { get; set; }
+
+        /// <summary>
+        /// All finishing positions for this race.
+        /// </summary>
+        public List<PositionDto> Positions { get; set; } = new();
+    }
+
+    /// <summary>
+    /// A single finishing position entry.
+    /// </summary>
+    public class PositionDto
+    {
+        public int Position { get; set; }
+        public int DriverId { get; set; }
+        public string DriverName { get; set; } = string.Empty;
+        public int TeamId { get; set; }
+        public string TeamName { get; set; } = string.Empty;
+        public int Points { get; set; }
+        public TimeSpan? FastestLap { get; set; }
+        public TimeSpan? PitStopTime { get; set; }
     }
 }

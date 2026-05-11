@@ -34,7 +34,7 @@ namespace F1BettingApp.Application.Interfaces
         /// Synchronizes race data from OpenF1 API
         /// </summary>
         /// <returns>Task representing the asynchronous operation</returns>
-        Task SyncRaceDataFromOpenF1Async();
+        Task<SyncResultDto> SyncRaceDataFromOpenF1Async();
 
         /// <summary>
         /// Gets upcoming races with odds information
@@ -58,10 +58,56 @@ namespace F1BettingApp.Application.Interfaces
         Task<IEnumerable<RaceDto>> GetRacesByIdsAsync(IEnumerable<int> ids);
 
         /// <summary>
+        /// Gets race drivers with their odds for a given race
+        /// </summary>
+        /// <param name="raceId">The ID of the race</param>
+        /// <returns>Drivers with odds</returns>
+        Task<IEnumerable<DriverWithOddsDto>> GetDriversWithOddsForRaceAsync(int raceId);
+
+        /// <summary>
         /// Gets race results for a completed race
         /// </summary>
         /// <param name="raceId">The ID of the race</param>
         /// <returns>Collection of results for the race</returns>
         Task<IEnumerable<Result>> GetResultsAsync(int raceId);
+
+        /// <summary>
+        /// Manually overrides race results (admin only).
+        /// Sets IsManuallyOverridden to prevent future auto-sync from reverting.
+        /// </summary>
+        /// <param name="raceId">The ID of the race to override.</param>
+        /// <param name="dto">The override data with positions.</param>
+        /// <returns>Task representing the asynchronous operation.</returns>
+        Task OverrideRaceResultAsync(int raceId, OverrideRaceResultDto dto);
+
+        /// <summary>
+        /// Gets race results with driver details for display (admin).
+        /// </summary>
+        /// <param name="raceId">The ID of the race.</param>
+        /// <returns>Race result DTO with filled-in data.</returns>
+        Task<RaceResultDto> GetRaceResultDtoAsync(int raceId);
+
+        /// <summary>
+        /// Updates race metadata (name, date, status, circuit, country) - admin only.
+        /// Sets IsManuallyOverridden to prevent future auto-sync from reverting.
+        /// </summary>
+        /// <param name="raceId">The ID of the race to update.</param>
+        /// <param name="dto">The metadata to update.</param>
+        /// <returns>Task representing the asynchronous operation.</returns>
+        Task UpdateRaceMetadataAsync(int raceId, UpdateRaceMetadataDto dto);
+
+        /// <summary>
+        /// Creates a new race (admin only).
+        /// </summary>
+        /// <param name="dto">The race creation data.</param>
+        /// <returns>The created race DTO.</returns>
+        Task<RaceDto> CreateRaceAsync(CreateRaceDto dto);
+
+        /// <summary>
+        /// Deletes a race (admin only). Only allowed if the race has no bets.
+        /// </summary>
+        /// <param name="raceId">The ID of the race to delete.</param>
+        /// <returns>Task representing the asynchronous operation.</returns>
+        Task DeleteRaceAsync(int raceId);
     }
 }

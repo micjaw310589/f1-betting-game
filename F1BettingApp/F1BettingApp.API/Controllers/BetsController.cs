@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
-using System.Text.Json;
+using System.Security.Claims;
 using F1BettingApp.Application.Exceptions;
 
 namespace F1BettingApp.API.Controllers
@@ -19,10 +19,9 @@ namespace F1BettingApp.API.Controllers
     {
         private readonly IBettingService _bettingService;
         private readonly ILogger<BetsController> _logger;
-        private int userId;
 
         /// <summary>
-        /// Constructor for BetsController
+        /// Constructor for BetsController - simplified to avoid NullReferenceException
         /// </summary>
         public BetsController(
             IBettingService bettingService,
@@ -30,42 +29,40 @@ namespace F1BettingApp.API.Controllers
         {
             _bettingService = bettingService;
             _logger = logger;
+        }
 
-            // Extract userId from authenticated token
-            var claimValue = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(claimValue))
+        /// <summary>
+        /// Helper property to safely extract userId from authenticated token during request execution
+        /// </summary>
+        private int AuthenticatedUserId
+        {
+            get
             {
-                throw new UnauthorizedAccessException("User is not authenticated");
-            }
+                var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(claimValue))
+                {
+                    _logger.LogError("User claim not found in token");
+                    throw new UnauthorizedAccessException("User is not authenticated");
+                }
 
-            if (!int.TryParse(claimValue, out userId))
-            {
-                _logger.LogWarning("Invalid user identifier in token: {ClaimValue}", claimValue);
-                throw new UnauthorizedAccessException("Invalid user identifier in authentication token");
+                if (!int.TryParse(claimValue, out var id))
+                {
+                    _logger.LogWarning("Invalid user identifier in token: {ClaimValue}", claimValue);
+                    throw new UnauthorizedAccessException("Invalid user identifier in authentication token");
+                }
+                return id;
             }
         }
 
         /// <summary>
         /// Place a new bet
         /// </summary>
-        /// <remarks>
-        /// <example>
-        /// POST /api/bets
-        /// {
-        ///   "raceId": 1,
-        ///   "driverId": 5,
-        ///   "amount": 100,
-        ///   "betType": "RaceWinner"
-        /// }
-        /// </example>
-        /// </remarks>
         [HttpPost]
         [Consumes(MediaTypeNames.Application.Json)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> PlaceBet([FromBody] PlaceBetDto dto)
         {
@@ -74,43 +71,28 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-                // Validate DTO
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
                 }
 
+                // Use the helper property instead of constructor field
+                var result = await _bettingService.PlaceBetAsync(AuthenticatedUserId, dto);
 
-                // Call service to place the bet using the authenticated user ID
-                var result = await _bettingService.PlaceBetAsync(userId, dto);
+                _logger.LogInformation("Bet placed successfully");
 
-                 _logger.LogInformation("Bet placed successfully");
-
-                return Ok(new { message = "Bet placed successfully", userId });
+                return Ok(new { message = "Bet placed successfully", userId = AuthenticatedUserId });
             }
             catch (UserNotFoundException)
             {
-                _logger.LogWarning("User not found for bet placement");
                 return Unauthorized();
             }
             catch (InsufficientFundsException ex)
             {
-                _logger.LogWarning(ex.Message);
                 return BadRequest(new { error = ex.Message });
             }
             catch (RaceNotFoundException)
             {
-                _logger.LogWarning("Race not found for bet placement");
-                return NotFound();
-            }
-            catch (RaceNotUpcomingException)
-            {
-                _logger.LogWarning("Race is not upcoming");
-                return BadRequest(new { error = "Race is not scheduled" });
-            }
-            catch (DriverNotFoundException)
-            {
-                _logger.LogWarning("Driver not found for bet placement");
                 return NotFound();
             }
             catch (Exception ex)
@@ -120,14 +102,15 @@ namespace F1BettingApp.API.Controllers
             }
         }
 
+        [HttpPost("place")]
+        public Task<IActionResult> PlaceBetSpecAlias([FromBody] PlaceBetDto dto)
+        {
+            return PlaceBet(dto);
+        }
+
         /// <summary>
         /// Get all bets for the current user
         /// </summary>
-        /// <remarks>
-        /// <example>
-        /// GET /api/bets
-        /// </example>
-        /// </remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -138,9 +121,7 @@ namespace F1BettingApp.API.Controllers
 
             try
             {
-
-
-                var bets = await _bettingService.GetUserBetsAsync(userId);
+                var bets = await _bettingService.GetUserBetsAsync(AuthenticatedUserId);
                 return Ok(bets);
             }
             catch (Exception ex)
@@ -153,24 +134,14 @@ namespace F1BettingApp.API.Controllers
         /// <summary>
         /// Get a specific bet by ID
         /// </summary>
-        /// <remarks>
-        /// <example>
-        /// GET /api/bets/123
-        /// </example>
-        /// </remarks>
         [HttpGet("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetBetById([FromRoute] int id)
         {
             _logger.LogInformation("Fetching bet with ID: {BetId}", id);
 
             try
             {
-
-
-                var bet = await _bettingService.GetBetByIdAsync(id, userId);
+                var bet = await _bettingService.GetBetByIdAsync(id, AuthenticatedUserId);
 
                 if (bet == null)
                 {
@@ -189,38 +160,22 @@ namespace F1BettingApp.API.Controllers
         /// <summary>
         /// Cancel a bet
         /// </summary>
-        /// <remarks>
-        /// <example>
-        /// DELETE /api/bets/123
-        /// </example>
-        /// </remarks>
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CancelBet([FromRoute] int id)
         {
             _logger.LogInformation("Attempting to cancel bet with ID: {BetId}", id);
 
             try
             {
-
-
-                await _bettingService.CancelBetAsync(id, userId);
-
-                _logger.LogInformation("Bet cancelled successfully. BetId: {BetId}, UserId: {UserId}", id, userId);
-
+                await _bettingService.CancelBetAsync(id, AuthenticatedUserId);
                 return Ok(new { message = "Bet cancelled successfully", betId = id });
             }
             catch (BetNotFoundException)
             {
-                _logger.LogWarning("Bet not found for cancellation");
                 return NotFound();
             }
             catch (RaceAlreadyStartedException)
             {
-                _logger.LogWarning("Cannot cancel bet after race started");
                 return UnprocessableEntity(new { error = "Cannot cancel bet after race has started" });
             }
             catch (Exception ex)
@@ -228,6 +183,12 @@ namespace F1BettingApp.API.Controllers
                 _logger.LogError(ex, "Error cancelling bet");
                 return StatusCode(500, new { error = "An error occurred while cancelling the bet" });
             }
+        }
+
+        [HttpPost("{id}/cancel")]
+        public Task<IActionResult> CancelBetSpecAlias([FromRoute] int id)
+        {
+            return CancelBet(id);
         }
     }
 }

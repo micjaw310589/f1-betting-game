@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
@@ -24,12 +24,13 @@ export class RegisterComponent implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
+    private cdr: ChangeDetectorRef,
     private router: Router
   ) {
     this.registerForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       username: ['', [Validators.required, Validators.minLength(3)]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(8)]]
     });
   }
 
@@ -39,34 +40,31 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.registerForm.invalid) {
-      return;
-    }
+  if (this.registerForm.invalid) return;
 
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
+  this.isLoading = true;
+  this.errorMessage = null;
 
-    const { email, username, password } = this.registerForm.value;
+  const { email, username, password } = this.registerForm.value;
 
-    this.authService.register(email, username, password).subscribe({
-      next: (response) => {
-        if (response.isSuccess) {
-          this.successMessage = 'Registration successful! You can now login.';
-          this.isLoading = false;
-          // Auto-redirect to login after 2 seconds
-          setTimeout(() => {
-            this.router.navigate(['/auth/login']);
-          }, 2000);
-        } else {
-          this.errorMessage = response.errorMessage || 'Registration failed';
-          this.isLoading = false;
-        }
-      },
-      error: (error) => {
-        this.errorMessage = error.message || 'Registration failed';
-        this.isLoading = false;
+  this.authService.register(email, username, password).subscribe({
+    next: (response) => {
+      this.isLoading = false;
+      if (response.isSuccess) {
+        this.successMessage = 'Success!';
+        this.cdr.detectChanges(); // Wymuś odświeżenie sukcesu
+        setTimeout(() => this.router.navigate(['/auth/login']), 2000);
       }
-    });
-  }
+    },
+    error: (errMessage) => {
+      console.log('Komponent odebrał błąd:', errMessage);
+      
+      // TO KLUCZOWE:
+      this.isLoading = false;      // Odblokuj przycisk
+      this.errorMessage = errMessage; // Przypisz tekst błędu
+      
+      this.cdr.detectChanges();    // WYMUŚ ODŚWIEŻENIE WIDOKU TERAZ
+    }
+  });
+}
 }

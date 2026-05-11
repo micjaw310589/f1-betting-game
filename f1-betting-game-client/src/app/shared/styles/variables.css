@@ -1,0 +1,61 @@
+:root {
+  /* Core colors */
+  --color-bg: #0b0e11; /* Carbon black */
+  --color-card-bg-1: #1f242d;
+  --color-card-bg-2: #161a21;
+  --color-border: #2d3440;
+  --color-f1-red: #e10600;
+  --color-f1-red-strong: #ff1e1e;
+
+  --color-text: #f0f0f0;
+  --color-text-muted: #bbb;
+  --color-text-dim: #999;
+  --color-text-subtle: #888;
+
+  /* Status colors */
+  --color-status-scheduled: #444;
+  --color-status-in-progress: #007bff;
+  --color-status-finished: #28a745;
+
+  --color-status-won: #28a745;
+  --color-status-lost: #dc3545;
+  --color-status-pending: #ffc107;
+
+  /* Typography */
+  --font-main: 'Orbitron', sans-serif;
+
+  /* Spacing */
+  --container-x-padding: 20px;
+  --container-max-width: 1200px;
+  --container-max-width-xl: 1400px;
+
+  --space-1: 10px;
+  --space-2: 15px;
+  --space-3: 20px;
+  --space-4: 25px;
+  --space-5: 30px;
+  --space-6: 40px;
+
+  /* Card visuals */
+  --radius-sm: 4px;
+
+  /* Effects */
+  --elev-1: 0 10px 25px rgba(225, 6, 0, 0.2);
+  --elev-2: 0 10px 25px rgba(225, 6, 0, 0.3);
+  --elev-strong: 0 10px 25px rgba(225, 6, 0, 0.4);
+
+  --glow-red: 0 0 10px rgba(225, 6, 0, 0.4);
+  --glow-red-soft: 0 0 15px rgba(225, 6, 0, 0.4);
+  --glow-red-strong: 0 0 25px rgba(255, 30, 30, 0.6);
+
+  /* Neon */
+  --neon-blue: rgba(0, 123, 255, 0.5);
+
+  /* Motion */
+  --transition-fast: all 0.2s ease-in-out;
+  --transition-med: all 0.3s ease;
+  --transition-nav: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Geometry (F1 skew) */
+  --skew-x: -15deg;
+}

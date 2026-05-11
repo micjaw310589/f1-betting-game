@@ -1,0 +1,139 @@
+.main-nav {
+  background-color: var(--color-bg);
+  border-bottom: 2px solid var(--color-f1-red);
+  padding: 15px 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-main);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-group {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+/* Buttons in navbar */
+.nav-btn {
+  text-decoration: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border: none;
+  background-color: var(--color-card-bg-1);
+  color: #eee;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: var(--transition-nav);
+  display: flex;
+  align-items: center;
+  transform: skewX(var(--skew-x));
+  border-bottom: 2px solid transparent;
+}
+
+.nav-btn:hover:not(.active):not(.active-blue) {
+  background-color: var(--color-border);
+  transform: skewX(var(--skew-x)) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.nav-btn.active {
+  background-color: var(--color-f1-red);
+  color: #fff;
+  box-shadow: var(--glow-red);
+}
+
+.nav-btn.active:hover {
+  background-color: var(--color-f1-red-strong);
+  box-shadow: 0 0 25px rgba(255, 30, 30, 0.6);
+  transform: skewX(var(--skew-x)) translateY(-2px);
+}
+
+/* Logout button uses same hover behavior as active-red */
+.logout-btn:hover {
+  background-color: var(--color-f1-red-strong);
+  color: white;
+  box-shadow: 0 0 20px rgba(255, 30, 30, 0.5);
+}
+
+.nav-btn span,
+.nav-btn label {
+  display: inline-block;
+  transform: skewX(15deg);
+}
+
+.nav-btn.active-blue {
+  background-color: #5e0300;
+  color: #eee;
+}
+
+.nav-btn.active-blue:hover {
+  background-color: #8b0000;
+  color: #ffffff;
+  transform: skewX(var(--skew-x)) translateY(-2px);
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4);
+}
+
+/* Admin dropdown */
+.admin-dropdown {
+  position: relative;
+}
+
+.admin-dropdown-trigger {
+  background-color: var(--color-card-bg-1);
+}
+
+.admin-dropdown-trigger:hover:not(.active) {
+  background-color: var(--color-border);
+}
+
+.admin-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--color-card-bg-1);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  min-width: 160px;
+  padding: 4px 0;
+  z-index: 2000;
+}
+
+.admin-dropdown.open .admin-dropdown-menu {
+  display: block;
+}
+
+.dropdown-link {
+  display: block;
+  padding: 10px 20px;
+  color: #eee;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: var(--transition-nav);
+  transform: skewX(var(--skew-x));
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-link:hover,
+.dropdown-link.active {
+  background-color: var(--color-f1-red);
+  color: #fff;
+}

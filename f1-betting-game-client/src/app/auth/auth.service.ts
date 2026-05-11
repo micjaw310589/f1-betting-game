@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, shareReplay, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 export interface AuthResponse {
   isSuccess: boolean;
@@ -17,13 +18,13 @@ export interface AuthResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5000/api/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
   private currentUserSubject: BehaviorSubject<any>;
   public currentUser: Observable<any>;
 
   constructor(private http: HttpClient, private router: Router) {
     this.currentUserSubject = new BehaviorSubject<any>(JSON.parse(localStorage.getItem('currentUser') || 'null'));
-    this.currentUser = this.currentUserSubject.asObservable();
+    this.currentUser = this.currentUserSubject.asObservable().pipe(shareReplay(1));
   }
 
   public get currentUserValue(): any {
@@ -43,12 +44,17 @@ export class AuthService {
       );
   }
 
-  register(email: string, username: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, { email, username, password })
-      .pipe(
-        catchError(error => throwError(() => new Error(error.error?.errorMessage || 'Registration failed')))
-      );
-  }
+register(email: string, username: string, password: string): Observable<AuthResponse> {
+  return this.http.post<AuthResponse>(`${this.apiUrl}/register`, { email, username, password })
+    .pipe(
+      catchError(error => {
+        // Wyciągamy czysty tekst błędu z backendu
+        const errorMessage = error.error?.errorMessage || error.message || 'Registration failed';
+        // Rzucamy go dalej jako prosty błąd
+        return throwError(() => errorMessage); 
+      })
+    );
+}
 
   refreshToken(): Observable<AuthResponse> {
     const currentUser = this.currentUserValue;
@@ -81,7 +87,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);
-    this.router.navigate(['/auth/login']);
+    this.router.navigate(['/']); 
   }
 
   isLoggedIn(): boolean {
@@ -94,5 +100,18 @@ export class AuthService {
 
   getRefreshToken(): string | null {
     return this.currentUserValue?.refreshToken || null;
+  }
+
+  isAdmin(): boolean {
+    return this.currentUserValue?.user?.isAdmin === true;
+  }
+
+  getAuthorizationHeader(): string | null {
+    const token = this.getToken();
+    return token ? `Bearer ${token}` : null;
+  }
+
+  user(): any {
+    return this.currentUserValue?.user || null;
   }
 }

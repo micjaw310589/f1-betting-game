@@ -34,7 +34,10 @@ namespace F1BettingApp.API.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<UserDto>> GetCurrentUserProfile()
         {
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            // Zmień sposób wyciągania ID na bardziej odporny:
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) 
+               ?? User.FindFirst("sub"); // Dodaj to sprawdzenie alternatywnego claimu
+            var userId = userIdClaim?.Value;
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -204,11 +207,240 @@ namespace F1BettingApp.API.Controllers
         }
 
         /// <summary>
+        /// Gets the profile of the currently authenticated user (Task-05 route).
+        /// </summary>
+        /// <response code="200">Returns the current user's profile.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("profile")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<UserProfileDto>> GetCurrentUserProfileForTask05()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var userProfile = await _userService.GetUserProfileAsync(userIdInt);
+                return Ok(userProfile);
+            }
+            catch (Exception ex) when (ex is not KeyNotFoundException && !IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving user profile");
+            }
+        }
+
+        /// <summary>
+        /// Gets paginated bet history for the currently authenticated user (Task-05 route).
+        /// </summary>
+        /// <param name="page">The page number for pagination (default: 1).</param>
+        /// <param name="pageSize">The number of items per page (default: 20, max: 100).</param>
+        /// <response code="200">Returns the current user's bet history.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("bets")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<BetHistoryResponseDto>> GetCurrentUserBetHistoryForTask05(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            if (page < 1 || page > int.MaxValue / pageSize)
+            {
+                return BadRequest("Invalid page number");
+            }
+
+            if (pageSize < 1 || pageSize > 100)
+            {
+                return BadRequest("Page size must be between 1 and 100");
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                // Per Task-05: use BettingService.GetUserBetHistoryAsync
+                var history = await _userService.GetUserBetHistoryAsync(userIdInt, page, pageSize);
+                return Ok(history);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("User not found");
+            }
+            catch (Exception ex) when (ex is not KeyNotFoundException && !IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving bet history");
+            }
+        }
+
+        /// <summary>
         /// Checks if an exception is related to authorization.
         /// </summary>
         private bool IsAuthorizationException(Exception ex) => 
             ex is UnauthorizedAccessException || 
             ex.Message.Contains("unauthorized") ||
             ex.Message.Contains("forbidden");
+
+        // ========================================
+        // Admin Endpoints
+        // ========================================
+
+        /// <summary>
+        /// Lists all users with optional filtering and pagination (admin only).
+        /// </summary>
+        /// <param name="page">Page number (default: 1)</param>
+        /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
+        /// <param name="filterIsActive">Optional filter by active status.</param>
+        /// <param name="searchTerm">Optional search by username or email.</param>
+        /// <response code="200">Returns paginated list of users.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        /// <response code="403">Returns forbidden if user is not an admin.</response>
+        [HttpGet("admin/users")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<PagedResult<AdminUserDto>>> GetAllUsers(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] bool? filterIsActive = null,
+            [FromQuery] string? searchTerm = null)
+        {
+            // Validate pagination parameters
+            if (page < 1)
+            {
+                return BadRequest("Page number must be at least 1");
+            }
+            if (pageSize < 1 || pageSize > 100)
+            {
+                return BadRequest("Page size must be between 1 and 100");
+            }
+
+            try
+            {
+                var result = await _userService.GetAllUsersAsync(page, pageSize, filterIsActive, searchTerm);
+                return Ok(result);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving users");
+            }
+        }
+
+        /// <summary>
+        /// Adjusts a user's point balance (admin only).
+        /// </summary>
+        /// <param name="userId">The ID of the user to adjust.</param>
+        /// <param name="dto">The adjustment details including delta and reason.</param>
+        /// <response code="200">Returns the adjustment result.</response>
+        /// <response code="400">Returns bad request if validation fails or balance would go negative.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        /// <response code="403">Returns forbidden if user is not an admin.</response>
+        /// <response code="404">Returns not found if user does not exist.</response>
+        [HttpPatch("admin/users/{userId}/points")]
+        [Authorize(Roles = "Admin")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<AdjustPointsResultDto>> AdjustUserPoints(
+            int userId,
+            [FromBody] AdjustUserPointsDto dto)
+        {
+            // Validate the adjustment amount
+            if (dto.Points == 0)
+            {
+                return BadRequest("Points adjustment must be non-zero.");
+            }
+
+            // Get admin user ID from claims
+            var adminUserIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(adminUserIdClaim) || !int.TryParse(adminUserIdClaim, out var adminUserId))
+            {
+                return Unauthorized("Unable to identify admin user.");
+            }
+
+            try
+            {
+                var result = await _userService.AdjustUserPointsAsync(userId, dto.Points, dto.Reason, adminUserId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"User with ID {userId} not found.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while adjusting points");
+            }
+        }
+
+        /// <summary>
+        /// Changes a user's account status (suspend/reactivate) (admin only).
+        /// </summary>
+        /// <param name="userId">The ID of the user to modify.</param>
+        /// <param name="dto">The status change details.</param>
+        /// <response code="200">Returns the updated user.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        /// <response code="403">Returns forbidden if user is not an admin.</response>
+        /// <response code="404">Returns not found if user does not exist.</response>
+        [HttpPatch("admin/users/{userId}/status")]
+        [Authorize(Roles = "Admin")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<AdminUserDto>> ChangeUserStatus(
+            int userId,
+            [FromBody] ChangeUserStatusDto dto)
+        {
+            // Get admin user ID from claims
+            var adminUserIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(adminUserIdClaim) || !int.TryParse(adminUserIdClaim, out var adminUserId))
+            {
+                return Unauthorized("Unable to identify admin user.");
+            }
+
+            try
+            {
+                var result = await _userService.ChangeUserStatusAsync(userId, dto.IsActive, dto.Reason, adminUserId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"User with ID {userId} not found.");
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while changing user status");
+            }
+        }
     }
 }

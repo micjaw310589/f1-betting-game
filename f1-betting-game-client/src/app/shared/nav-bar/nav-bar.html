@@ -1,0 +1,39 @@
+<nav class="main-nav" *ngIf="showNavbar$ | async">
+  <div class="nav-container">
+    <div class="nav-group">
+      <a routerLink="/races" routerLinkActive="active" class="nav-btn">Races</a>
+    </div>
+
+    <div class="nav-group">
+      <ng-container *ngIf="!(authService.currentUser | async)">
+        <a routerLink="/auth/login" class="nav-btn">Login</a>
+        <a routerLink="/auth/register" class="nav-btn active-blue">Register</a>
+      </ng-container>
+
+      <ng-container *ngIf="authService.currentUser | async as session">
+        <a routerLink="/profile" routerLinkActive="active" class="nav-btn active-blue">
+          My profile
+        </a>
+        <button (click)="onLogout()" class="nav-btn logout-btn">
+          Logout ({{ session.user?.username || session.username || 'User' }})
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="authService.isAdmin()">
+        <div class="admin-dropdown" [class.open]="isDropdownOpen">
+          <button class="nav-btn admin-dropdown-trigger" (click)="toggleDropdown()">
+            Admin ▾
+          </button>
+          <div class="admin-dropdown-menu">
+            <a routerLink="/admin/users" routerLinkActive="active" (click)="closeDropdown()" class="dropdown-link">
+              Users
+            </a>
+            <a routerLink="/admin/system" routerLinkActive="active" (click)="closeDropdown()" class="dropdown-link">
+              System
+            </a>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</nav>

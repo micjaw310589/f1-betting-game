@@ -1,3 +1,6 @@
+<a routerLink="/" class="back-btn">
+ <span class="arrow-icon">←</span>Back to home
+</a>
 <div class="register-container">
   <div class="register-card">
     <h2>Register</h2>
@@ -28,19 +31,19 @@
         <div *ngIf="registerForm.get('password')?.invalid && (registerForm.get('password')?.dirty || registerForm.get('password')?.touched)"
              class="error-message">
           <div *ngIf="registerForm.get('password')?.errors?.['required']">Password is required</div>
-          <div *ngIf="registerForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</div>
+          <div *ngIf="registerForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</div>
         </div>
       </div>
 
-      <div *ngIf="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
+<div *ngIf="errorMessage" class="error-banner animate-fade-in">
+  {{ errorMessage }}
+</div>
 
-      <div *ngIf="successMessage" class="success-message">
-        {{ successMessage }}
-      </div>
+<div *ngIf="successMessage" class="success-banner animate-fade-in">
+  {{ successMessage }}
+</div>
 
-      <button type="submit" [disabled]="isLoading">
+      <button type="submit" [disabled]="isLoading || registerForm.invalid">
         <span *ngIf="!isLoading">Register</span>
         <span *ngIf="isLoading">Registering...</span>
       </button>

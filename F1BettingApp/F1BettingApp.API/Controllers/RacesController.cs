@@ -527,15 +527,12 @@ namespace F1BettingApp.API.Controllers
         }
 
         // W RacesController.cs
-[HttpGet("{raceId}/drivers-with-odds")]
-public async Task<ActionResult<IEnumerable<DriverWithOddsDto>>> GetDriversWithOdds(int raceId)
-{
-    _logger.LogInformation("Pobieranie kierowców z kursami dla wyścigu: {RaceId}", raceId);
-    var results = await _raceService.GetDriversWithOddsForRaceAsync(raceId);
-    return Ok(results);
-}
+        [HttpGet("{raceId}/drivers-with-odds")]
+        public async Task<ActionResult<IEnumerable<DriverWithOddsDto>>> GetDriversWithOdds(int raceId)
+        {
+            _logger.LogInformation("Pobieranie kierowców z kursami dla wyścigu: {RaceId}", raceId);
+            var results = await _raceService.GetDriversWithOddsForRaceAsync(raceId);
+            return Ok(results);
+        }
     }
-
-    
 }
-

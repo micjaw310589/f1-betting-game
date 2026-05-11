@@ -56,5 +56,38 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
         {
             await _context.SaveChangesAsync();
         }
+
+        /// <summary>
+        /// Adds an entity without immediately saving changes. Use SaveChangesAsync() to persist.
+        /// Useful for batch operations where you want to save once at the end.
+        /// </summary>
+        public async Task AddAsyncNoBatch(T entity)
+        {
+            await _dbSet.AddAsync(entity);
+        }
+
+        /// <summary>
+        /// Updates an entity without immediately saving changes. Use SaveChangesAsync() to persist.
+        /// Useful for batch operations where you want to save once at the end.
+        /// </summary>
+        public async Task UpdateAsyncNoBatch(T entity)
+        {
+            _dbSet.Update(entity);
+            await Task.CompletedTask; // Just to make it async for consistency
+        }
+
+        /// <summary>
+        /// Deletes an entity without immediately saving changes. Use SaveChangesAsync() to persist.
+        /// Useful for batch operations where you want to save once at the end.
+        /// </summary>
+        public async Task DeleteAsyncNoBatch(int id)
+        {
+            var entity = await GetByIdAsync(id);
+            if (entity != null)
+            {
+                _dbSet.Remove(entity);
+            }
+        }
     }
 }
+

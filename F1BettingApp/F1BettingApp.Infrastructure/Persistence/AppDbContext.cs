@@ -27,9 +27,9 @@ namespace F1BettingApp.Infrastructure.Persistence
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(u => u.Email).IsUnique();
-                entity.HasIndex(u => u.Username).IsUnique();
+                entity.HasIndex(u => u.UserName).IsUnique();
                 entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
-                entity.Property(u => u.Username).IsRequired().HasMaxLength(50);
+                entity.Property(u => u.UserName).IsRequired().HasMaxLength(50);
                 entity.Property(u => u.PasswordHash).IsRequired();
                 entity.Property(u => u.Points).HasDefaultValue(10000);
             });
@@ -71,6 +71,10 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(r => r.Name).IsRequired().HasMaxLength(100);
                 entity.Property(r => r.Circuit).IsRequired().HasMaxLength(100);
                 entity.Property(r => r.Country).IsRequired().HasMaxLength(50);
+                entity.Property(r => r.Date)
+                      .HasConversion(
+                          v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
+                          v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
 
                 // Map race status enum to string
                 entity.Property(r => r.Status)
@@ -95,7 +99,8 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.HasOne(r => r.User)
                       .WithMany()
                       .HasForeignKey(r => r.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(r => new { r.RaceId, r.DriverId }).IsUnique();
                 entity.Property(r => r.Position).IsRequired();

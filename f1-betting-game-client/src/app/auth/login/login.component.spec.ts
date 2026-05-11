@@ -1,57 +1,41 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+// cd f1-betting-game-client
+// ng test --include=src/app/auth/login/login.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../auth.service';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
-import { of, throwError } from 'rxjs';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { of, throwError, Observable } from 'rxjs';
 import { RouterTestingModule } from '@angular/router/testing';
-import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let authService: any;
-  let router: any;
+  let router: Router;
 
   beforeEach(async () => {
-    // Create simple mock objects with manual call tracking
-    const authServiceSpy = {
-      loginCalls: [] as any[],
-      login: function(email: string, password: string) {
-        this.loginCalls.push({ email, password });
-        return of({ isSuccess: false });
-      },
-      returnValue: function(val: any) {
-        this.login = function(email: string, password: string) {
-          this.loginCalls.push({ email, password });
-          return val;
-        };
-        return this;
-      }
-    };
-    const routerSpy = {
-      navigateCalls: [] as any[],
-      navigate: function(path: any) {
-        this.navigateCalls.push(path);
-      }
-    };
+    const authServiceSpy = { login: vi.fn() };
 
     await TestBed.configureTestingModule({
       imports: [
-        LoginComponent,
-        ReactiveFormsModule,
-        HttpClientTestingModule,
+        ReactiveFormsModule, 
         RouterTestingModule
       ],
       providers: [
-        { provide: AuthService, useValue: authServiceSpy },
-        { provide: Router, useValue: routerSpy }
+        { provide: AuthService, useValue: authServiceSpy }
       ]
     }).compileComponents();
 
     authService = TestBed.inject(AuthService);
     router = TestBed.inject(Router);
+    
+    vi.spyOn(router, 'navigate');
+  });
+
+  beforeEach(() => {
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -63,97 +47,123 @@ describe('LoginComponent', () => {
 
   it('should initialize login form with empty fields', () => {
     expect(component.loginForm).toBeDefined();
-    expect(component.loginForm.get('email')?.value).toBe('');
-    expect(component.loginForm.get('password')?.value).toBe('');
+    expect(component.loginForm.controls['email']).toBeDefined();
+    expect(component.loginForm.controls['password']).toBeDefined();
+    expect(component.loginForm.controls['email'].value).toBe('');
+    expect(component.loginForm.controls['password'].value).toBe('');
   });
 
-  it('should make email field required', () => {
-    const emailControl = component.loginForm.get('email');
-    emailControl?.setValue('');
-    expect(emailControl?.valid).toBeFalsy();
-    expect(emailControl?.errors?.['required']).toBeTruthy();
+  it('should have required validators on email and password fields', () => {
+    const emailControl = component.loginForm.controls['email'];
+    const passwordControl = component.loginForm.controls['password'];
+
+    emailControl.setValue('');
+    passwordControl.setValue('');
+    expect(emailControl.valid).toBe(false);
+    expect(passwordControl.valid).toBe(false);
+    expect(emailControl.errors?.['required']).toBeTruthy();
+    expect(passwordControl.errors?.['required']).toBeTruthy();
   });
 
-  it('should validate email format', () => {
-    const emailControl = component.loginForm.get('email');
-    emailControl?.setValue('invalid-email');
-    expect(emailControl?.valid).toBeFalsy();
-    expect(emailControl?.errors?.['email']).toBeTruthy();
+  it('should have email validator on email field', () => {
+    const emailControl = component.loginForm.controls['email'];
 
-    emailControl?.setValue('valid@example.com');
-    expect(emailControl?.valid).toBeTruthy();
-    expect(emailControl?.errors).toBeNull();
+    emailControl.setValue('invalid-email');
+    expect(emailControl.valid).toBe(false);
+    expect(emailControl.errors?.['email']).toBeTruthy();
+
+    emailControl.setValue('valid@example.com');
+    expect(emailControl.valid).toBe(true);
+    expect(emailControl.errors).toBeNull();
   });
 
-  it('should make password field required', () => {
-    const passwordControl = component.loginForm.get('password');
-    passwordControl?.setValue('');
-    expect(passwordControl?.valid).toBeFalsy();
-    expect(passwordControl?.errors?.['required']).toBeTruthy();
+  it('should have minLength validator on password field', () => {
+    const passwordControl = component.loginForm.controls['password'];
+
+    passwordControl.setValue('short');
+    expect(passwordControl.valid).toBe(false);
+    expect(passwordControl.errors?.['minlength']).toBeTruthy();
+
+    passwordControl.setValue('longenough');
+    expect(passwordControl.valid).toBe(true);
+    expect(passwordControl.errors).toBeNull();
   });
 
-  it('should validate password minimum length', () => {
-    const passwordControl = component.loginForm.get('password');
-    passwordControl?.setValue('short');
-    expect(passwordControl?.valid).toBeFalsy();
-    expect(passwordControl?.errors?.['minlength']).toBeTruthy();
-
-    passwordControl?.setValue('longenough');
-    expect(passwordControl?.valid).toBeTruthy();
-    expect(passwordControl?.errors).toBeNull();
-  });
-
-  it('should not submit form when invalid', () => {
-    component.loginForm.get('email')?.setValue('invalid-email');
-    component.loginForm.get('password')?.setValue('short');
-    expect(component.loginForm.valid).toBeFalsy();
+  it('should not call authService.login when form is invalid', () => {
+    component.loginForm.controls['email'].setValue('');
+    component.loginForm.controls['password'].setValue('');
 
     component.onSubmit();
-    expect(authService.loginCalls.length).toBe(0);
+
+    expect(authService.login).not.toHaveBeenCalled();
   });
 
-  it('should call auth service and navigate on successful login', fakeAsync(() => {
-    const mockResponse = { isSuccess: true, accessToken: 'test-token', refreshToken: 'refresh-token' };
-    authService.returnValue(of(mockResponse));
+  it('should call authService.login with correct parameters when form is valid', async () => {
+    component.loginForm.controls['email'].setValue('test@example.com');
+    component.loginForm.controls['password'].setValue('password123');
 
-    component.loginForm.get('email')?.setValue('test@example.com');
-    component.loginForm.get('password')?.setValue('password123');
-    expect(component.loginForm.valid).toBeTruthy();
-
-    component.onSubmit();
-    tick();
-
-    expect(authService.loginCalls.length).toBe(1);
-    expect(authService.loginCalls[0].email).toBe('test@example.com');
-    expect(authService.loginCalls[0].password).toBe('password123');
-    expect(router.navigateCalls.length).toBe(1);
-    expect(router.navigateCalls[0]).toEqual(['/']);
-    expect(component.isLoading).toBeFalsy();
-    expect(component.errorMessage).toBeNull();
-  }));
-
-  it('should handle login error', fakeAsync(() => {
-    const mockError = { message: 'Invalid credentials' };
-    authService.returnValue(throwError(() => mockError));
-
-    component.loginForm.get('email')?.setValue('test@example.com');
-    component.loginForm.get('password')?.setValue('password123');
+    const mockResponse = { isSuccess: true };
+    authService.login.mockReturnValue(of(mockResponse));
 
     component.onSubmit();
-    tick();
 
-    expect(authService.loginCalls.length).toBe(1);
+    expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123');
+  });
+
+  it('should set errorMessage and isLoading when login fails', async () => {
+    component.loginForm.controls['email'].setValue('test@example.com');
+    component.loginForm.controls['password'].setValue('password123');
+
+    const mockResponse = { isSuccess: false, errorMessage: 'Invalid credentials' };
+    authService.login.mockReturnValue(of(mockResponse));
+
+    component.onSubmit();
+
     expect(component.errorMessage).toBe('Invalid credentials');
-    expect(component.isLoading).toBeFalsy();
-  }));
+    expect(component.isLoading).toBe(false);
+  });
 
-  it('should show loading state during login', () => {
-    authService.returnValue(new Promise(() => {})); // Never resolves
+  it('should set errorMessage and isLoading when login throws error', async () => {
+    component.loginForm.controls['email'].setValue('test@example.com');
+    component.loginForm.controls['password'].setValue('password123');
 
-    component.loginForm.get('email')?.setValue('test@example.com');
-    component.loginForm.get('password')?.setValue('password123');
+    authService.login.mockReturnValue(throwError(() => new Error('Network error')));
 
     component.onSubmit();
-    expect(component.isLoading).toBeTruthy();
+
+    expect(component.errorMessage).toBe('Network error');
+    expect(component.isLoading).toBe(false);
+  });
+
+  it('should navigate to home page when login is successful', async () => {
+    component.loginForm.controls['email'].setValue('test@example.com');
+    component.loginForm.controls['password'].setValue('password123');
+
+    const mockResponse = { isSuccess: true };
+    authService.login.mockReturnValue(of(mockResponse));
+
+    component.onSubmit();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(component.isLoading).toBe(false);
+  });
+
+  it('should show loading state during login', async () => {
+    component.loginForm.controls['email'].setValue('test@example.com');
+    component.loginForm.controls['password'].setValue('password123');
+
+    authService.login.mockReturnValue(new Observable(subscriber => {
+      setTimeout(() => {
+        subscriber.next({ isSuccess: true });
+        subscriber.complete();
+      }, 100);
+    }));
+
+    component.onSubmit();
+    expect(component.isLoading).toBe(true);
+
+    await new Promise(resolve => setTimeout(resolve, 110));
+    
+    expect(component.isLoading).toBe(false);
   });
 });

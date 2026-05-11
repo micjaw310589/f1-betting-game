@@ -5,6 +5,8 @@ using F1BettingApp.Domain.Enums;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -44,24 +46,30 @@ namespace F1BettingApp.Application.Services
             return new UserDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
-                Points = user.Points
+                Points = user.Points,
+                IsAdmin = user.IsAdmin,
+                IsActive = user.IsActive,
+                // ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
         public async Task<UserDto> GetUserByUsernameAsync(string username)
         {
             var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == username);
+            var user = users.FirstOrDefault(u => u.UserName == username);
             if (user == null) return null;
 
             return new UserDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
-                Points = user.Points
+                Points = user.Points,
+                IsAdmin = user.IsAdmin,
+                IsActive = user.IsActive,
+                // ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
@@ -79,6 +87,10 @@ namespace F1BettingApp.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Password)) throw new ArgumentException("Password is required");
             if (dto.Password.Length < 8) throw new ArgumentException("Password must be at least 8 characters");
 
+            // Check if user already exists
+            var existingUsers = await _userRepository.GetAllAsync();
+            if (existingUsers.Any(u => u.UserName == dto.Username)) throw new InvalidOperationException("Username already exists");
+            if (existingUsers.Any(u => u.Email == dto.Email)) throw new InvalidOperationException("Email already exists");
             // Znacznie lepsze podejście - pytamy bazę tylko o to, co nas interesuje
             var users = await _userRepository.GetAllAsync(); 
 
@@ -112,9 +124,12 @@ namespace F1BettingApp.Application.Services
                 User = new UserDto
                 {
                     Id = user.Id,
-                    Username = user.Username,
+                    Username = user.UserName,
                     Email = user.Email,
-                    Points = 0
+                    Points = 0,
+                    IsAdmin = user.IsAdmin,
+                    IsActive = user.IsActive,
+                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -122,7 +137,7 @@ namespace F1BettingApp.Application.Services
         public async Task<AuthResponseDto> AuthenticateUserAsync(LoginDto dto)
         {
             var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == dto.UsernameOrEmail || u.Email == dto.UsernameOrEmail);
+            var user = users.FirstOrDefault(u => u.UserName == dto.UsernameOrEmail || u.Email == dto.UsernameOrEmail);
 
             if (user == null)
                 return new AuthResponseDto
@@ -157,9 +172,12 @@ namespace F1BettingApp.Application.Services
                 User = new UserDto
                 {
                     Id = user.Id,
-                    Username = user.Username,
+                    Username = user.UserName,
                     Email = user.Email,
-                    Points = user.Points
+                    Points = user.Points,
+                    IsAdmin = user.IsAdmin,
+                    IsActive = user.IsActive,
+                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -241,9 +259,12 @@ namespace F1BettingApp.Application.Services
                 User = new UserDto
                 {
                     Id = user.Id,
-                    Username = user.Username,
+                    Username = user.UserName,
                     Email = user.Email,
-                    Points = user.Points
+                    Points = user.Points,
+                    IsAdmin = user.IsAdmin,
+                    IsActive = user.IsActive,
+                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -251,7 +272,7 @@ namespace F1BettingApp.Application.Services
         public async Task<bool> ValidateUserAsync(string username, string password)
         {
             var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == username);
+            var user = users.FirstOrDefault(u => u.UserName == username);
             if (user == null) return false;
 
             return BCryptNet.Verify(password, user.PasswordHash);
@@ -280,7 +301,7 @@ namespace F1BettingApp.Application.Services
             return new UserStatisticsDto
             {
                 UserId = userId,
-                Username = user.Username,
+                Username = user.UserName,
                 TotalBets = totalBets,
                 WinningBets = winningBets,
                 WinRate = totalBets > 0 ? (decimal)winningBets / totalBets * 100 : 0,
@@ -309,7 +330,7 @@ namespace F1BettingApp.Application.Services
             return new UserProfileDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
                 Points = user.Points,
                 CreatedAt = user.CreatedAt,
@@ -324,7 +345,7 @@ namespace F1BettingApp.Application.Services
 
             // Update fields if provided
             if (!string.IsNullOrWhiteSpace(dto.Username))
-                user.Username = dto.Username;
+                user.UserName = dto.Username;
             if (!string.IsNullOrWhiteSpace(dto.Email))
                 user.Email = dto.Email;
 
@@ -334,7 +355,7 @@ namespace F1BettingApp.Application.Services
             return new UserProfileDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
                 Points = user.Points,
                 CreatedAt = user.CreatedAt,
@@ -381,15 +402,29 @@ namespace F1BettingApp.Application.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, user.Username),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            };
+
+            // Add admin role claim if user is an admin
+            if (user.IsAdmin)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+            }
+
             var token = new JwtSecurityToken(
                 issuer: _issuer,
                 audience: _audience,
-                claims: new[]
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Name, user.Username),
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
-                },
+                // claims: new[]
+                // {
+                //     new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                //     new Claim(JwtRegisteredClaimNames.Name, user.Username),
+                //     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                // },
+                claims: claims.ToArray(),
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials
             );
@@ -405,6 +440,119 @@ namespace F1BettingApp.Application.Services
                 characters.Skip(random.Next(0, characters.Length)).Take(64).ToArray()
             );
             return refreshToken;
+        }
+
+        // --- Admin Methods ---
+
+        public async Task<PagedResult<AdminUserDto>> GetAllUsersAsync(int page = 1, int pageSize = 20, bool? filterIsActive = null, string? searchTerm = null)
+        {
+            var allUsers = await _userRepository.GetAllAsync();
+
+            // Apply filters
+            var query = allUsers.AsQueryable();
+
+            if (filterIsActive.HasValue)
+            {
+                query = query.Where(u => u.IsActive == filterIsActive.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                query = query.Where(u => u.Username.ToLower().Contains(term) || u.Email.ToLower().Contains(term));
+            }
+
+            var totalCount = query.Count();
+            var pagedUsers = query
+                .OrderByDescending(u => u.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var adminUserDtos = pagedUsers.Select(u => new AdminUserDto
+            {
+                Id = u.Id,
+                Username = u.Username,
+                Email = u.Email,
+                Points = u.Points,
+                IsActive = u.IsActive,
+                IsAdmin = u.IsAdmin,
+                CreatedAt = u.CreatedAt,
+                LastLogin = u.LastLogin
+            }).ToList();
+
+            return new PagedResult<AdminUserDto>
+            {
+                Items = adminUserDtos,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalCount,
+                TotalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 0
+            };
+        }
+
+        public async Task<AdjustPointsResultDto> AdjustUserPointsAsync(int userId, int pointsDelta, string? reason, int adminUserId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException($"User with ID {userId} not found.");
+            }
+
+            // Prevent negative balance
+            var newBalance = user.Points + pointsDelta;
+            if (newBalance < 0)
+            {
+                throw new InvalidOperationException("Cannot deduct points below zero.");
+            }
+
+            // Apply the adjustment
+            if (pointsDelta > 0)
+            {
+                user.AddPoints(pointsDelta);
+            }
+            else if (pointsDelta < 0)
+            {
+                user.DeductPoints(Math.Abs(pointsDelta));
+            }
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            return new AdjustPointsResultDto
+            {
+                UserId = user.Id,
+                Username = user.Username,
+                NewBalance = user.Points,
+                AdjustedBy = adminUserId,
+                Reason = reason,
+                AdjustedAt = DateTime.UtcNow
+            };
+        }
+
+        public async Task<AdminUserDto> ChangeUserStatusAsync(int userId, bool isActive, string? reason, int adminUserId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException($"User with ID {userId} not found.");
+            }
+
+            user.IsActive = isActive;
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            return new AdminUserDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Points = user.Points,
+                IsActive = user.IsActive,
+                IsAdmin = user.IsAdmin,
+                CreatedAt = user.CreatedAt,
+                LastLogin = user.LastLogin
+            };
         }
     }
 }

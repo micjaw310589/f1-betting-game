@@ -101,4 +101,17 @@ register(email: string, username: string, password: string): Observable<AuthResp
   getRefreshToken(): string | null {
     return this.currentUserValue?.refreshToken || null;
   }
+
+  isAdmin(): boolean {
+    return this.currentUserValue?.user?.isAdmin === true;
+  }
+
+  getAuthorizationHeader(): string | null {
+    const token = this.getToken();
+    return token ? `Bearer ${token}` : null;
+  }
+
+  user(): any {
+    return this.currentUserValue?.user || null;
+  }
 }

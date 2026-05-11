@@ -14,8 +14,9 @@ import { filter, map, Observable } from 'rxjs';
 export class NavBar implements OnInit { // Dodaj interfejs
   showNavbar$: Observable<boolean>;
   currentUser$: Observable<any>;
-  
-constructor(public authService: AuthService, private router: Router, private cdr: ChangeDetectorRef) {
+  isDropdownOpen = false;
+
+  constructor(public authService: AuthService, private router: Router, private cdr: ChangeDetectorRef) {
     this.currentUser$ = this.authService.currentUser; // Podpinamy się pod strumień
     
     this.showNavbar$ = this.router.events.pipe(
@@ -30,6 +31,14 @@ constructor(public authService: AuthService, private router: Router, private cdr
       //this.cdr.detectChanges(); // Wymuś natychmiastową aktualizację
     });
  }
+
+  toggleDropdown(): void {
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  closeDropdown(): void {
+    this.isDropdownOpen = false;
+  }
 
   onLogout(): void {
     this.authService.logout();

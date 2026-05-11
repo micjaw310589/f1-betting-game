@@ -14,6 +14,7 @@ public class Race
     public int Season { get; set; }
     public decimal? TotalBets { get; set; } = 0m;
     public decimal? TotalAmount { get; set; } = 0m;
+    public bool IsManuallyOverridden { get; set; }
     public ICollection<Bet> Bets { get; set; }
 
     public Race(string name, DateTime date, string circuit, string country, string openF1RaceId, int season)
@@ -39,7 +40,7 @@ public class Race
         return Status == RaceStatus.Scheduled;
     }
 
-public bool IsRaceFinished()
+    public bool IsRaceFinished()
     {
         return Status == RaceStatus.Finished;
     }

@@ -96,7 +96,7 @@ namespace F1BettingApp.Application.Services
 
             // Zamiast pobierać wszystko, lepiej byłoby mieć metodę w repozytorium typu .AnyAsync()
             // Ale skoro używamy generycznego IRepository, zróbmy to chociaż tak:
-            if (users.Any(u => u.Username == dto.Username)) 
+            if (users.Any(u => u.UserName == dto.Username)) 
                 throw new InvalidOperationException("Username already exists");
 
             if (users.Any(u => u.Email == dto.Email)) 
@@ -405,7 +405,7 @@ namespace F1BettingApp.Application.Services
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Name, user.Username),
+                new Claim(JwtRegisteredClaimNames.Name, user.UserName),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
 
@@ -421,7 +421,7 @@ namespace F1BettingApp.Application.Services
                 // claims: new[]
                 // {
                 //     new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                //     new Claim(JwtRegisteredClaimNames.Name, user.Username),
+                //     new Claim(JwtRegisteredClaimNames.Name, user.UserName),
                 //     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
                 // },
                 claims: claims.ToArray(),
@@ -459,7 +459,7 @@ namespace F1BettingApp.Application.Services
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 var term = searchTerm.ToLower();
-                query = query.Where(u => u.Username.ToLower().Contains(term) || u.Email.ToLower().Contains(term));
+                query = query.Where(u => u.UserName.ToLower().Contains(term) || u.Email.ToLower().Contains(term));
             }
 
             var totalCount = query.Count();
@@ -472,7 +472,7 @@ namespace F1BettingApp.Application.Services
             var adminUserDtos = pagedUsers.Select(u => new AdminUserDto
             {
                 Id = u.Id,
-                Username = u.Username,
+                Username = u.UserName,
                 Email = u.Email,
                 Points = u.Points,
                 IsActive = u.IsActive,
@@ -522,7 +522,7 @@ namespace F1BettingApp.Application.Services
             return new AdjustPointsResultDto
             {
                 UserId = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 NewBalance = user.Points,
                 AdjustedBy = adminUserId,
                 Reason = reason,
@@ -545,7 +545,7 @@ namespace F1BettingApp.Application.Services
             return new AdminUserDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
                 Points = user.Points,
                 IsActive = user.IsActive,

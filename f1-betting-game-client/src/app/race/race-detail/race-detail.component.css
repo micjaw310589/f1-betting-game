@@ -1,101 +1,204 @@
-/* Basic styles for the Race Detail Component */
+:host {
+    display: block;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    min-height: 100vh;
+    font-family: var(--font-main);
+}
+
 .race-detail-container {
-    padding: 30px;
-    max-width: 1400px;
+    padding: 40px 20px;
+    max-width: var(--container-max-width-xl);
     margin: 0 auto;
 }
 
+/* Page header */
 .page-header {
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+    font-size: 32px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #fff;
+    border-left: 6px solid var(--color-f1-red);
+    padding-left: 20px;
+    margin-bottom: 30px;
+    font-weight: 900;
 }
 
+/* Status Bar - telemetry-like */
+/* Poprawiony pasek statusu - teraz ciemny, nie czerwony */
 .status-bar {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 40px;
-    margin-bottom: 30px;
-    padding: 15px;
-    background-color: #e9ecef;
-    border-radius: 8px;
+    margin-bottom: 40px;
+    padding: 25px; /* Nieco więcej paddingu */
+    background: var(--color-card-bg-1); /* Zmienione z czerwonego na Carbon */
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    border-bottom: 3px solid var(--color-f1-red); /* Czerwona linia tylko na dole */
+    /* Usuwamy skewY, żeby pasek był prosty jak w race-list */
+    transform: none; 
 }
 
+/* Usuwamy revert skosu z dzieci, bo kontener już nie jest krzywy */
+.status-left {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    transform: none;
+}
+
+/* Etykiety wewnątrz paska */
 .status-item strong {
     display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--color-f1-red); /* Czerwony tekst etykiety */
     margin-bottom: 5px;
-    color: #555;
 }
 
+/* Wartości wewnątrz paska */
+.status-item {
+    color: #fff;
+    font-family: var(--font-main);
+}
+
+/* Panels with Carbon look */
 .detail-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr; /* Primary, Odds, Secondary */
-    gap: 30px;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 25px;
     margin-bottom: 40px;
 }
 
 .detail-panel {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background: var(--color-card-bg-1);
+    padding: 25px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Efekt "siatki" w tle panelu */
+.detail-panel::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 60px;
+    background-image: radial-gradient(rgba(225, 6, 0, 0.13) 1px, transparent 1px);
+    background-size: 8px 8px;
+    pointer-events: none;
 }
 
 .detail-panel h2 {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    font-size: 18px;
+    text-transform: uppercase;
+    color: #fff;
+    border-bottom: 1px solid var(--color-f1-red);
+    padding-bottom: 15px;
     margin-top: 0;
+    margin-bottom: 20px;
+    font-weight: 700;
 }
 
 .primary-info p, .secondary-info p {
     display: flex;
-    gap: 15px;
-    margin-bottom: 10px;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 15px;
 }
 
 .primary-info strong, .secondary-info strong {
-    min-width: 150px;
+    font-size: 11px;
+    color: var(--color-f1-red);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Badge statusu */
+.status-badge {
+    padding: 8px 16px;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 1px;
     display: inline-block;
-    color: #555;
+    transform: skewX(var(--skew-x));
 }
 
-.odds-info h2, .secondary-info h2 {
-    color: #007bff;
+.status-scheduled {
+    background-color: var(--color-status-scheduled);
+    color: #fff;
 }
 
-/* Odds List Styling */
-.odds-list {
-    list-style: none;
-    padding: 0;
+.status-finished {
+    background-color: var(--color-status-finished);
+    color: #fff;
 }
 
-.odds-list li {
-    padding: 10px 0;
-    border-bottom: 1px dotted #eee;
+/* Odds items */
+.odd-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1.1em;
+    padding: 12px;
+    background: var(--color-card-bg-2);
+    border: 1px solid var(--color-border);
+    margin-bottom: 10px;
+    transition: all 0.2s;
 }
 
-.odds-value {
-    color: #28a745;
-    font-weight: bold;
-    font-size: 1.2em;
+.odd-item:hover {
+    border-color: var(--color-f1-red);
+    background: #252b35;
 }
 
-/* Summary List Styling */
-.summary-list {
-    list-style: none;
-    padding: 0;
+.odd-value {
+    color: var(--color-f1-red);
+    font-weight: 900;
+    font-size: 18px;
 }
 
-.summary-list li {
-    padding: 5px 0;
-    border-bottom: 1px dotted #ddd;
+/* Place Bet - right side of status bar */
+.place-bet-button {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+
+    padding: 12px 18px;
+    font-size: 13px;
+    color: #fff;
+
+    border: 2px solid #fff;
+    background-color: #000;
+
+    cursor: pointer;
+    transform: skewX(var(--skew-x));
+    transition: all 0.2s ease-in-out;
+    border-radius: 3px;
+
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
 }
 
-/* Betting Callout */
-.betting-callout {
-    background-color: #e7f2ff;
-    color: #0056b3;
+.place-bet-button:hover {
+    border-color: var(--color-f1-red);
+    background-color: var(--color-f1-red);
+    transform: skewX(var(--skew-x)) translateY(-1px);
+}
+
+.place-bet-button:active {
+    transform: skewX(var(--skew-x)) translateY(0px);
+}
+
+
+/* API id */
+.api-id {
+    font-family: 'Courier New', monospace;
+    background: #000;
+    color: #0f0;
+    padding: 2px 6px;
 }

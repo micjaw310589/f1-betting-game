@@ -40,7 +40,7 @@ namespace F1BettingApp.Domain.Entities
             Email = email;
             PasswordHash = passwordHash;
             Points = 10000; // Start with 0 points or initial points if provided
-            CreatedAt = DateTime.Now;
+            CreatedAt = DateTime.UtcNow;
             IsActive = isActive;
             IsAdmin = isAdmin;
             LastLogin = null;

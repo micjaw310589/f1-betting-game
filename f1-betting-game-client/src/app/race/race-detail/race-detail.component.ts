@@ -6,6 +6,7 @@ import { switchMap, map, catchError, shareReplay } from 'rxjs/operators';
 import { RaceDetailDto } from '../models/race.models';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../auth/auth.service';
 
 interface RaceDetailData {
   details: RaceDetailDto;
@@ -24,8 +25,13 @@ export class RaceDetailComponent implements OnInit {
 
   constructor(
     private activatedRoute: ActivatedRoute,
-    private raceService: RaceService
+    private raceService: RaceService,
+    private authService: AuthService
   ) {}
+
+  get isLoggedIn$(): Observable<unknown> {
+    return this.authService.currentUser;
+  }
 
   ngOnInit(): void {
     this.raceDetailData$ = this.activatedRoute.paramMap.pipe(

@@ -31,50 +31,55 @@
 
     @if (raceSummaries$ | async; as summaries) {
         
-        <div class="race-card-grid">
-            @for (race of summaries.items; track race.id) {
-                <div 
-                    class="race-card"
-                    [class]="'status-' + getStatusClass(race.status)" 
-                    [routerLink]="['/races', race.id]">
-                    
-                    <h3>{{ race.name }}</h3>
-                    <p><strong>Circuit:</strong> {{ race.circuit }}</p>
-                    <p><strong>Country:</strong> {{ race.country }}</p>
-                    <p><strong>Date:</strong> {{ race.raceDate | date: 'mediumDate' }}</p>
-                    
-                    <div class="race-status-badge">
-                        {{ getStatusText(race.status) }}
-                    </div>
+<div class="race-card-grid">
+    @for (race of summaries.items; track race.id) {
+        <div 
+            class="race-card"
+            [class]="'status-' + getStatusClass(race.status)" 
+            [routerLink]="['/races', race.id]">
+            
+            <h3>{{ race.name }}</h3>
+            <p><strong>Circuit:</strong> {{ race.circuit }}</p>
+            <p><strong>Country:</strong> {{ race.country }}</p>
+            <p><strong>Date:</strong> {{ race.raceDate | date: 'mediumDate' }}</p>
+            
+            <div class="race-status-badge">
+                {{ getStatusText(race.status) }}
+            </div>
 
-                    <div class="card-footer" style="margin-top: 15px;">
-                        <button class="view-details-btn" [routerLink]="['/races', race.id]">
-                            View Details
-                        </button>
-                    </div>
+            @if (authService.currentUser | async) {
+                <div class="card-actions">
+                    <a
+                        class="place-bet-button"
+                        [routerLink]="['/races', race.id, 'bets', 'create']"
+                        (click)="$event.stopPropagation()"
+                        title="Place a bet">
+                        Place Bet
+                    </a>
                 </div>
-            } @empty {
-                <p>No races found for this category.</p>
             }
         </div>
+    } @empty {
+        <p>No races found for this category.</p>
+    }
+</div>
+<div class="pagination-controls">
+    <button 
+        (click)="paginate(page - 1)" 
+        [disabled]="page === 1"
+        [class.disabled]="page === 1">
+        ← Previous
+    </button>
+    
+    <span> Page {{ page }} of {{ summaries.totalPages || 1 }}</span>
 
-        <div class="pagination-controls">
-            <button 
-                (click)="paginate(page - 1)" 
-                [disabled]="page === 1"
-                [class.disabled]="page === 1">
-                Previous
-            </button>
-            
-            <span>Page {{ page }} of {{ summaries.totalPages || 1 }}</span>
-
-            <button 
-                (click)="paginate(page + 1)" 
-                [disabled]="page >= summaries.totalPages"
-                [class.disabled]="page >= summaries.totalPages">
-                Next
-            </button>
-        </div>
+    <button 
+        (click)="paginate(page + 1)" 
+        [disabled]="page >= (summaries.totalPages || 1)"
+        [class.disabled]="page >= (summaries.totalPages || 1)">
+        Next →
+    </button>
+</div>
 
     }
 

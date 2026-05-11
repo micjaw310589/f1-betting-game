@@ -7,6 +7,8 @@ using F1BettingApp.Infrastructure.OpenF1;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
@@ -26,9 +28,11 @@ builder.Services.AddSwaggerGen();
 // Register CORS for Angular frontend
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AngularApp", policy =>
+    options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app")
+        policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app/"
+        ,"http://localhost:4200" //TODO: DELETE THIS LATER PRBLY
+        )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -125,8 +129,13 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
 
+// Configure ASP.NET Core Identity for user management
+//builder.Services.AddIdentity<F1BettingApp.Domain.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>()
+//    .AddEntityFrameworkStores<AppDbContext>()
+//    .AddDefaultTokenProviders();
+
 // JWT Authentication Configuration
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var jwtSettings = builder.Configuration.GetSection("Jwt");
 builder.Services.Configure<JwtSettings>(jwtSettings);
 
 // Register JWT authentication handler
@@ -167,6 +176,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 // Register JWT authentication in the pipeline
 builder.Services.AddAuthorization();
 
@@ -186,8 +196,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment()) TODO: UNDO IT
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
 
@@ -209,11 +219,11 @@ if (app.Environment.IsDevelopment())
             logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
         }
     }
-}
+//}
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseCors("AngularApp");
+app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

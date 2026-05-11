@@ -1,0 +1,107 @@
+<div class="profile-container">
+  <h1>Your Profile</h1>
+
+  @if (isLoading) {
+    <div class="loader-overlay">Loading your dashboard...</div>
+  }
+
+  @if (hasError) {
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (!isLoading && !hasError) {
+    <section class="profile-card" aria-label="Profile summary">
+      <h2 class="profile-name">{{ profile?.username }}</h2>
+
+      <div class="profile-meta">
+        <div class="meta-row">
+          <span class="meta-label">Email</span>
+          <span class="meta-value">{{ profile?.email }}</span>
+        </div>
+
+        <div class="meta-row">
+          <span class="meta-label">Virtual Points</span>
+          <span class="meta-value points">{{ profile?.points | number:'1.2-2'}}</span>
+        </div>
+
+        <div class="meta-row">
+          <span class="meta-label">Member since</span>
+          <span class="meta-value">{{ profile?.createdAt | date: 'mediumDate' }}</span>
+        </div>
+      </div>
+    </section>
+
+<section class="bets-card" aria-label="Bet history">
+  <div class="bets-header">
+    <h2>Bet History</h2>
+
+    @if (bets.length > 0) {
+      <div class="pagination-controls compact">
+        <button
+          class="page-btn"
+          (click)="paginate(page - 1)"
+          [disabled]="!hasPreviousPage">
+          Previous
+        </button>
+
+        <span class="page-info">
+          Page {{ page }} of {{ totalPages }}
+        </span>
+
+        <button
+          class="page-btn"
+          (click)="paginate(page + 1)"
+          [disabled]="!hasNextPage">
+          Next
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (bets.length === 0) {
+    <div class="empty-state">
+      No bets yet. Start your race journey!
+    </div>
+  } @else {
+    <div class="bets-list">
+      @for (bet of bets; track bet.id) {
+      <div class="bet-row" [class]="getBetStatusClass(bet.status)">
+  <div class="bet-content"> <div class="bet-main">
+      <div class="bet-line">
+        <span class="bet-label">Race</span>
+        <span class="bet-value">{{ bet.raceName ? bet.raceName : ('Race #' + bet.raceId) }}</span>
+      </div>
+      <div class="bet-line">
+        <span class="bet-label">Type</span>
+        <span class="bet-value">{{ formatBetType(bet.betType) }}</span>
+      </div>
+      <div class="bet-line">
+        <span class="bet-label">Date</span>
+        <span class="bet-value">{{ bet.raceDate | date: 'mediumDate' }}</span>
+      </div>
+      <div class="bet-line">
+        <span class="bet-label">Stake</span>
+        <span class="bet-value">{{ formatMoney(bet.amount) }} pts</span>
+      </div>
+    </div>
+
+    <div class="bet-actions">
+      @if (bet.status === 'Pending') {
+        <button 
+          class="danger-button" 
+          type="button" 
+          (click)="cancelBet(bet.id)">
+          Cancel
+        </button>
+      }
+    </div>
+  </div>
+</div>
+      }
+    </div>
+  }
+</section>
+  }
+</div>

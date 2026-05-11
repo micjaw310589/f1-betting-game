@@ -27,7 +27,7 @@ public static class SeedData
         else
         {
             // Update existing admin user
-            adminUser.Username = "admin";
+            adminUser.UserName = "admin";
             adminUser.Email = "admin@f1bet.com";
             adminUser.PasswordHash = adminPassword;
             adminUser.IsActive = true;

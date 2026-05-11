@@ -24,8 +24,7 @@ namespace F1BettingApp.Application.Services
             IRaceRepositoryExtensions raceRepository,
             IRepository<Result> resultRepository,
             IRepository<Driver> driverRepository,
-            IOpenF1ApiClient openF1ApiClient,
-            AppDbContext dbContext)
+            IOpenF1ApiClient openF1ApiClient)
         {
             _raceRepository = raceRepository;
             _resultRepository = resultRepository;
@@ -504,6 +503,34 @@ namespace F1BettingApp.Application.Services
             // Delete the race
             await _raceRepository.DeleteAsync(raceId);
             await _raceRepository.SaveChangesAsync();
+public async Task<IEnumerable<DriverWithOddsDto>> GetDriversWithOddsForRaceAsync(int raceId)
+{
+    var race = await _raceRepository.GetByIdAsync(raceId);
+    if (race == null) return Enumerable.Empty<DriverWithOddsDto>();
+
+    // 1. Pobieramy kierowców do pamięci (.ToListAsync() lub .ToList())
+    var drivers = await _driverRepository.GetAllAsync();
+    var driversList = drivers.ToList(); 
+
+    // 2. Mapujemy w pamięci (już po pobraniu z bazy), wtedy C# bez problemu obsłuży GetOddsForDriver
+    return driversList.Select(d => new DriverWithOddsDto
+    {
+        DriverId = d.Id,
+        DriverName = d.Name,
+        Odds = GetOddsForDriver(race, d.Id) // Teraz to zadziała bezpiecznie
+    });
+}
+
+        private decimal GetOddsForDriver(Race race, int driverId)
+        {
+            try
+            {
+                return race.OddsForDriver(driverId);
+            }
+            catch (NotImplementedException)
+            {
+                return 1.25m;
+            }
         }
     }
 }

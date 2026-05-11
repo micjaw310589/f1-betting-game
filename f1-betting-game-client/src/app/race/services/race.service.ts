@@ -8,6 +8,7 @@ import {
   RaceDto,
   PagedResult,
 } from '../models/race.models';
+import { DriverWithOdds } from '../bets/bet-placement/bet-placement.component';
 
 @Injectable({
   providedIn: 'root',
@@ -106,5 +107,10 @@ export class RaceService {
     }
     console.error(errorMessage);
     return throwError(() => new Error(errorMessage));
+  }
+
+  // W race.service.ts dodaj:
+getDriversWithOdds(raceId: number): Observable<DriverWithOdds[]> {
+    return this.http.get<DriverWithOdds[]>(`${this.API_URL}/${raceId}/drivers-with-odds`);
   }
 }

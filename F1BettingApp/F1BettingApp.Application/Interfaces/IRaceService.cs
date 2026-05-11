@@ -58,6 +58,13 @@ namespace F1BettingApp.Application.Interfaces
         Task<IEnumerable<RaceDto>> GetRacesByIdsAsync(IEnumerable<int> ids);
 
         /// <summary>
+        /// Gets race drivers with their odds for a given race
+        /// </summary>
+        /// <param name="raceId">The ID of the race</param>
+        /// <returns>Drivers with odds</returns>
+        Task<IEnumerable<DriverWithOddsDto>> GetDriversWithOddsForRaceAsync(int raceId);
+
+        /// <summary>
         /// Gets race results for a completed race
         /// </summary>
         /// <param name="raceId">The ID of the race</param>

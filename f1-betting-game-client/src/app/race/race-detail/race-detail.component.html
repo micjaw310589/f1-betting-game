@@ -17,12 +17,12 @@
             </div>
 
             @if (isLoggedIn$ | async) {
-                <button
+                <a
                     class="place-bet-button"
-                    type="button"
-                    title="Place bet">
-                    Place Bet
-                </button>
+                    [routerLink]="['/races', (data.details.id ?? data.details.id), 'bets', 'create']"
+                    title="Place a bet">
+                    Create Bet
+                </a>
             }
         </div>
 
@@ -92,9 +92,4 @@
             <h2>Loading race details...</h2>
         </div>
     }
-
-    <div class="betting-callout">
-        <h3>Ready to place your bets?</h3>
-        <p>The betting system is currently in preview mode. Full integration with user wallets is coming soon.</p>
-    </div>
 </div>

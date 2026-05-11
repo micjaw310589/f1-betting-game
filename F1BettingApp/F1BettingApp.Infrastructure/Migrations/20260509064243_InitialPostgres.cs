@@ -26,7 +26,8 @@ namespace F1BettingApp.Infrastructure.Migrations
                     OpenF1RaceId = table.Column<string>(type: "text", nullable: false),
                     Season = table.Column<int>(type: "integer", nullable: false),
                     TotalBets = table.Column<decimal>(type: "numeric", nullable: true),
-                    TotalAmount = table.Column<decimal>(type: "numeric", nullable: true)
+                    TotalAmount = table.Column<decimal>(type: "numeric", nullable: true),
+                    IsManuallyOverridden = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -193,7 +194,7 @@ namespace F1BettingApp.Infrastructure.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RaceId = table.Column<int>(type: "integer", nullable: false),
                     DriverId = table.Column<int>(type: "integer", nullable: false),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: true),
                     Position = table.Column<int>(type: "integer", nullable: false),
                     Points = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     FastestLap = table.Column<TimeSpan>(type: "interval", nullable: true),
@@ -219,7 +220,7 @@ namespace F1BettingApp.Infrastructure.Migrations
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateIndex(

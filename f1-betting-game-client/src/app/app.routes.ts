@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 
+import { AuthRoutes } from './auth/auth.routes';
 import { RaceRoutes } from './race/race.routes';
+import { AdminRoutes } from './admin/admin.routes';
 
 export const routes: Routes = [
   {
@@ -19,5 +21,9 @@ export const routes: Routes = [
   {
     path: 'profile',
     loadComponent: () => import('./profile/user-profile/user-profile.component').then(m => m.UserProfileComponent)
+  },
+  {
+    path: 'admin',
+    loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes)
   }
 ];

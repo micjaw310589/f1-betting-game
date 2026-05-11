@@ -8,5 +8,8 @@ namespace F1BettingApp.Application.DTOs
         public string Username { get; set; }
         public string Email { get; set; }
         public int Points { get; set; }
+        public bool IsAdmin { get; set; }
+        public bool IsActive { get; set; }
+        public string? ProfileImageUrl { get; set; }
     }
 }

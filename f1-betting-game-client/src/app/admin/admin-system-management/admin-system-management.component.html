@@ -1,0 +1,677 @@
+<div class="admin-system-management">
+    <h2>System & Bet Management</h2>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'sync'"
+            (click)="switchTab('sync')"
+        >
+            Sync
+        </button>
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'results'"
+            (click)="switchTab('results')"
+        >
+            Race Results
+        </button>
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'metadata'"
+            (click)="switchTab('metadata')"
+        >
+            Race Metadata
+        </button>
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'races'"
+            (click)="switchTab('races')"
+        >
+            Race Management
+        </button>
+    </div>
+
+    <!-- Sync Tab -->
+    @if (activeTab === 'sync') {
+        <div class="tab-content">
+            <div class="sync-section">
+                <h3>OpenF1 Data Synchronization</h3>
+                <p>
+                    Manually trigger synchronization of race data from the OpenF1 API.
+                    This will fetch the latest race information, results, and statistics.
+                    Races marked as manually overridden will be skipped.
+                </p>
+
+                <!-- Sync Button -->
+                <div class="sync-actions">
+                    <button
+                        class="btn-sync"
+                        [disabled]="isSyncing"
+                        (click)="triggerSync()"
+                    >
+                        @if (isSyncing) {
+                            <span class="spinner-small"></span>
+                            Syncing...
+                        } @else {
+                            🔄 Sync Now
+                        }
+                    </button>
+                </div>
+
+                <!-- Sync Result -->
+                @if (syncResult) {
+                    <div class="message success">
+                        ✅ Sync completed successfully! Processed {{ syncResult.racesProcessed }} races
+                        (Created: {{ syncResult.racesCreated }}, Updated: {{ syncResult.racesUpdated }}).
+                    </div>
+                }
+                @if (syncError) {
+                    <div class="message error">
+                        ❌ {{ syncError }}
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Race Results Tab -->
+    @if (activeTab === 'results') {
+        <div class="tab-content">
+            <!-- Race Selection -->
+            <div class="race-selection">
+                <h3>Select Race</h3>
+                @if (isLoadingRaces) {
+                    <div class="loading">Loading races...</div>
+                } @else {
+                    <select
+                        [(ngModel)]="selectedRaceId"
+                        (change)="onResultsRaceSelect()"
+                        class="race-select"
+                    >
+                        <option [ngValue]="null">-- Select a race --</option>
+                        @for (race of races; track race.id) {
+                            <option [ngValue]="race.id">
+                                {{ race.name }} ({{ race.circuit }}) - {{ race.status }}
+                            </option>
+                        }
+                    </select>
+                }
+            </div>
+
+            <!-- Results Override Form -->
+            @if (selectedRace) {
+                <div class="results-form">
+                    <h3>Override Race Results: {{ selectedRace.name }}</h3>
+
+                    @if (resultsSaveSuccess) {
+                        <div class="message success">
+                            ✅ Race results overridden successfully!
+                        </div>
+                    }
+                    @if (resultsSaveError) {
+                        <div class="message error">
+                            ❌ {{ resultsSaveError }}
+                        </div>
+                    }
+
+                    @if (raceResults) {
+                        <!-- Current Results Display -->
+                        <div class="results-header">
+                            <p>
+                                <strong>Circuit:</strong> {{ raceResults.circuit }}, {{ raceResults.country }}
+                                | <strong>Date:</strong> {{ formatDate(raceResults.raceDate) }}
+                            </p>
+                            @if (selectedRace.isManuallyOverridden) {
+                                <span class="override-badge">⚠️ Manually Overridden</span>
+                            }
+                        </div>
+                    }
+
+                    <!-- Fastest Lap Selection -->
+                    <div class="fastest-lap-section">
+                        <h4>Fastest Lap</h4>
+                        <select
+                            [(ngModel)]="fastestLapDriverId"
+                            (ngModelChange)="onFastestLapChange(fastestLapDriverId)"
+                            class="form-input"
+                            style="max-width: 300px;"
+                        >
+                            <option [ngValue]="null">-- No fastest lap --</option>
+                            @for (driver of getAvailableDrivers(); track driver.id) {
+                                <option [ngValue]="driver.id">
+                                    {{ driver.name }} ({{ driver.teamName }})
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Positions Table -->
+                    <div class="positions-table-container">
+                        <h4>Finishing Positions</h4>
+                        @if (currentPositions.length > 0) {
+                            <table class="positions-table">
+                                <thead>
+                                    <tr>
+                                        <th class="position-col">Position</th>
+                                        <th>Driver</th>
+                                        <th>Team</th>
+                                        <th>Points</th>
+                                        <th>Fastest Lap</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (position of currentPositions; track position.position; let i = $index) {
+                                        <tr [class.highlighted]="position.position === 1">
+                                            <td class="position-col">
+                                                <span class="position-number">{{ position.position }}</span>
+                                            </td>
+                                            <td>
+                                                <select
+                                                    [(ngModel)]="position.driverId"
+                                                    (ngModelChange)="onPositionChange(i, position.driverId)"
+                                                    class="driver-select"
+                                                >
+                                                    <option [ngValue]="null">-- Select Driver --</option>
+                                                    @for (driver of getAvailableDrivers(); track driver.id) {
+                                                        <option [ngValue]="driver.id">
+                                                            {{ driver.name }}
+                                                        </option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td>{{ position.teamName }}</td>
+                                            <td>{{ getPointsForPosition(position.position) }}</td>
+                                            <td>
+                                                @if (position.fastestLap) {
+                                                    <span class="fastest-lap-badge">⏱️ {{ position.fastestLap | date:'mm:ss.S' }}</span>
+                                                } @else {
+                                                    <span class="no-data">—</span>
+                                                }
+                                            </td>
+                                            <td class="actions-col">
+                                                <button
+                                                    class="btn-delete-row"
+                                                    (click)="removePosition(i)"
+                                                    title="Remove driver"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        } @else {
+                            <p class="no-positions-msg">No drivers added yet. Click "Add Driver" to start.</p>
+                        }
+                    </div>
+
+                    <!-- Add Driver Button -->
+                    <div class="add-driver-section">
+                        <button
+                            class="btn-add-driver"
+                            (click)="addPosition()"
+                        >
+                            ➕ Add Driver
+                        </button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="override-actions">
+                        <button
+                            class="btn-override"
+                            [disabled]="isSavingResults"
+                            (click)="openResultsConfirmModal()"
+                        >
+                            @if (isSavingResults) {
+                                <span class="spinner-small"></span>
+                                Saving...
+                            } @else {
+                                💾 Override Results
+                            }
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Metadata Tab -->
+    @if (activeTab === 'metadata') {
+        <div class="tab-content">
+            <!-- Race Selection -->
+            <div class="race-selection">
+                <h3>Select Race</h3>
+                @if (isLoadingRaces) {
+                    <div class="loading">Loading races...</div>
+                } @else {
+                    <select
+                        [(ngModel)]="selectedRaceId"
+                        (change)="onRaceSelect()"
+                        class="race-select"
+                    >
+                        <option [ngValue]="null">-- Select a race --</option>
+                        @for (race of races; track race.id) {
+                            <option [ngValue]="race.id">
+                                {{ race.name }} ({{ race.circuit }})
+                            </option>
+                        }
+                    </select>
+                }
+            </div>
+
+            <!-- Metadata Form -->
+            @if (selectedRace) {
+                <div class="metadata-form">
+                    <h3>Edit Race Metadata</h3>
+
+                    @if (metadataSaveSuccess) {
+                        <div class="message success">
+                            ✅ Race metadata updated successfully!
+                        </div>
+                    }
+                    @if (metadataSaveError) {
+                        <div class="message error">
+                            ❌ {{ metadataSaveError }}
+                        </div>
+                    }
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">Race Name *</label>
+                            <input
+                                id="name"
+                                type="text"
+                                [(ngModel)]="metadataForm.name"
+                                name="name"
+                                class="form-input"
+                                placeholder="Enter race name"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="date">Race Date</label>
+                            <input
+                                id="date"
+                                type="datetime-local"
+                                [(ngModel)]="metadataForm.date"
+                                name="date"
+                                class="form-input"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="circuit">Circuit *</label>
+                            <input
+                                id="circuit"
+                                type="text"
+                                [(ngModel)]="metadataForm.circuit"
+                                name="circuit"
+                                class="form-input"
+                                placeholder="Enter circuit name"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="country">Country *</label>
+                            <input
+                                id="country"
+                                type="text"
+                                [(ngModel)]="metadataForm.country"
+                                name="country"
+                                class="form-input"
+                                placeholder="Enter country"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select
+                                id="status"
+                                [(ngModel)]="metadataForm.status"
+                                name="status"
+                                class="form-input"
+                            >
+                                @for (option of getRaceStatusOptions(); track option.value) {
+                                    <option [ngValue]="option.value">
+                                        {{ option.label }}
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="override-actions">
+                        <button
+                            class="btn-override"
+                            [disabled]="isSavingMetadata"
+                            (click)="openMetadataConfirmModal()"
+                        >
+                            @if (isSavingMetadata) {
+                                <span class="spinner-small"></span>
+                                Saving...
+                            } @else {
+                                💾 Save Changes
+                            }
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Results Confirmation Modal -->
+    @if (showResultsConfirmModal) {
+        <div class="modal-overlay" (click)="closeResultsConfirmModal()">
+            <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Results Override</h3>
+                    <button class="modal-close" (click)="closeResultsConfirmModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to override the results for
+                        <strong>{{ selectedRace?.name }}</strong>?
+                    </p>
+                    <p class="warning-text">
+                        ⚠️ This will mark the race as manually overridden and prevent future
+                        automatic syncs from overwriting these results.
+                    </p>
+                    <div class="override-summary">
+                        <h4>Summary ({{ currentPositions.length }} positions)</h4>
+                        <table class="summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Pos</th>
+                                    <th>Driver</th>
+                                    <th>Team</th>
+                                    <th>Pts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (position of currentPositions; track position.driverId) {
+                                    <tr [class.highlighted]="position.position === 1">
+                                        <td>{{ position.position }}</td>
+                                        <td>{{ getDriverName(position.driverId) }}</td>
+                                        <td>{{ getTeamName(position.driverId) }}</td>
+                                        <td>{{ getPointsForPosition(position.position) }}</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (fastestLapDriverId) {
+                            <p class="fastest-lap-summary">
+                                <strong>Fastest Lap:</strong> {{ getDriverName(fastestLapDriverId) }}
+                            </p>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeResultsConfirmModal()">
+                        Cancel
+                    </button>
+                    <button class="btn-confirm" (click)="confirmResultsOverride()">
+                        Confirm Override
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Metadata Confirmation Modal -->
+    @if (showMetadataConfirmModal) {
+        <div class="modal-overlay" (click)="closeMetadataConfirmModal()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Metadata Update</h3>
+                    <button class="modal-close" (click)="closeMetadataConfirmModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to update the metadata for
+                        <strong>{{ selectedRace?.name }}</strong>?
+                    </p>
+                    <div class="override-summary">
+                        <p>
+                            <strong>Name:</strong> {{ metadataForm.name }}
+                        </p>
+                        <p>
+                            <strong>Circuit:</strong> {{ metadataForm.circuit }}
+                        </p>
+                        <p>
+                            <strong>Country:</strong> {{ metadataForm.country }}
+                        </p>
+                        @if (metadataForm.date) {
+                            <p>
+                                <strong>Date:</strong> {{ formatDate(metadataForm.date) }}
+                            </p>
+                        }
+                        @if (metadataForm.status) {
+                            <p>
+                                <strong>Status:</strong> {{ getStatusLabel(metadataForm.status) }}
+                            </p>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeMetadataConfirmModal()">
+                        Cancel
+                    </button>
+                    <button class="btn-confirm" (click)="confirmMetadataUpdate()">
+                        Confirm Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Race Management Tab -->
+    @if (activeTab === 'races') {
+        <div class="tab-content">
+            <h3>Race Management</h3>
+            <p>View all races, create new ones, or delete races with no bets.</p>
+
+            @if (createRaceSuccess) {
+                <div class="message success">
+                    ✅ Race created successfully!
+                </div>
+            }
+            @if (createRaceError) {
+                <div class="message error">
+                    ❌ {{ createRaceError }}
+                </div>
+            }
+
+            <!-- Create Race Button -->
+            <div class="override-actions" style="margin-bottom: 20px;">
+                <button class="btn-add-driver" (click)="openCreateRaceForm()">
+                    ➕ Create New Race
+                </button>
+            </div>
+
+            <!-- Create Race Form Modal -->
+            @if (showCreateRaceForm) {
+                <div class="modal-overlay" (click)="closeCreateRaceForm()">
+                    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+                        <div class="modal-header">
+                            <h3>Create New Race</h3>
+                            <button class="modal-close" (click)="closeCreateRaceForm()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="race-name">Race Name *</label>
+                                    <input
+                                        id="race-name"
+                                        type="text"
+                                        [(ngModel)]="createRaceForm.name"
+                                        class="form-input"
+                                        placeholder="e.g., Bahrain Grand Prix"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="race-date">Race Date</label>
+                                    <input
+                                        id="race-date"
+                                        type="datetime-local"
+                                        [(ngModel)]="createRaceForm.date"
+                                        class="form-input"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="race-circuit">Circuit *</label>
+                                    <input
+                                        id="race-circuit"
+                                        type="text"
+                                        [(ngModel)]="createRaceForm.circuit"
+                                        class="form-input"
+                                        placeholder="e.g., Bahrain International Circuit"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="race-country">Country *</label>
+                                    <input
+                                        id="race-country"
+                                        type="text"
+                                        [(ngModel)]="createRaceForm.country"
+                                        class="form-input"
+                                        placeholder="e.g., Bahrain"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="race-season">Season</label>
+                                    <input
+                                        id="race-season"
+                                        type="number"
+                                        [(ngModel)]="createRaceForm.season"
+                                        class="form-input"
+                                        min="2000"
+                                        max="2100"
+                                    />
+                                </div>
+                            </div>
+                            @if (createRaceError) {
+                                <div class="message error" style="margin-top: 12px;">
+                                    ❌ {{ createRaceError }}
+                                </div>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-cancel" (click)="closeCreateRaceForm()">
+                                Cancel
+                            </button>
+                            <button
+                                class="btn-confirm"
+                                [disabled]="isCreatingRace"
+                                (click)="createRace()"
+                            >
+                                @if (isCreatingRace) {
+                                    <span class="spinner-small" style="border-top-color: #fff;"></span>
+                                    Creating...
+                                } @else {
+                                    Create Race
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Races List -->
+            <div class="races-list">
+                <h4>All Races ({{ races.length }})</h4>
+                @if (isLoadingRaces) {
+                    <div class="loading">Loading races...</div>
+                } @else if (races.length === 0) {
+                    <div class="message info">No races found. Create one to get started.</div>
+                } @else {
+                    <table class="races-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Race Name</th>
+                                <th>Circuit</th>
+                                <th>Country</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (race of races; track race.id) {
+                                <tr>
+                                    <td>{{ formatDate(race.raceDate) }}</td>
+                                    <td><strong>{{ race.name }}</strong></td>
+                                    <td>{{ race.circuit }}</td>
+                                    <td>{{ race.country }}</td>
+                                    <td>
+                                        <span class="status-badge {{ getStatusClass(race.status) }}">
+                                            {{ getStatusLabel(race.status) }}
+                                        </span>
+                                        @if (race.isManuallyOverridden) {
+                                            <span class="override-badge" style="margin-left: 4px;">⚠️ Override</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button
+                                            class="btn-delete-row"
+                                            (click)="openDeleteConfirm(race.id)"
+                                            title="Delete race"
+                                        >
+                                            🗑️ Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Delete Confirmation Modal -->
+    @if (showDeleteConfirm) {
+        <div class="modal-overlay" (click)="closeDeleteConfirm()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Race Deletion</h3>
+                    <button class="modal-close" (click)="closeDeleteConfirm()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to delete this race?
+                    </p>
+                    @if (deleteRaceError) {
+                        <div class="message error">
+                            ❌ {{ deleteRaceError }}
+                        </div>
+                    }
+                    <p class="warning-text">
+                        ⚠️ This action cannot be undone. Any associated results will also be deleted.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeDeleteConfirm()">
+                        Cancel
+                    </button>
+                    <button
+                        class="btn-confirm"
+                        [disabled]="isDeletingRace"
+                        (click)="deleteRace()"
+                    >
+                        @if (isDeletingRace) {
+                            <span class="spinner-small" style="border-top-color: #fff;"></span>
+                            Deleting...
+                        } @else {
+                            Delete Race
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>

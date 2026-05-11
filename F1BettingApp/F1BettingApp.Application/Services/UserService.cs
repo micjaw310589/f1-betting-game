@@ -46,7 +46,7 @@ namespace F1BettingApp.Application.Services
             return new UserDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
                 Points = user.Points,
                 IsAdmin = user.IsAdmin,
@@ -58,13 +58,13 @@ namespace F1BettingApp.Application.Services
         public async Task<UserDto> GetUserByUsernameAsync(string username)
         {
             var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == username);
+            var user = users.FirstOrDefault(u => u.UserName == username);
             if (user == null) return null;
 
             return new UserDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
                 Points = user.Points,
                 IsAdmin = user.IsAdmin,
@@ -87,6 +87,10 @@ namespace F1BettingApp.Application.Services
             if (string.IsNullOrWhiteSpace(dto.Password)) throw new ArgumentException("Password is required");
             if (dto.Password.Length < 8) throw new ArgumentException("Password must be at least 8 characters");
 
+            // Check if user already exists
+            var existingUsers = await _userRepository.GetAllAsync();
+            if (existingUsers.Any(u => u.UserName == dto.Username)) throw new InvalidOperationException("Username already exists");
+            if (existingUsers.Any(u => u.Email == dto.Email)) throw new InvalidOperationException("Email already exists");
             // Znacznie lepsze podejście - pytamy bazę tylko o to, co nas interesuje
             var users = await _userRepository.GetAllAsync(); 
 
@@ -120,7 +124,7 @@ namespace F1BettingApp.Application.Services
                 User = new UserDto
                 {
                     Id = user.Id,
-                    Username = user.Username,
+                    Username = user.UserName,
                     Email = user.Email,
                     Points = 0,
                     IsAdmin = user.IsAdmin,
@@ -133,7 +137,7 @@ namespace F1BettingApp.Application.Services
         public async Task<AuthResponseDto> AuthenticateUserAsync(LoginDto dto)
         {
             var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == dto.UsernameOrEmail || u.Email == dto.UsernameOrEmail);
+            var user = users.FirstOrDefault(u => u.UserName == dto.UsernameOrEmail || u.Email == dto.UsernameOrEmail);
 
             if (user == null)
                 return new AuthResponseDto
@@ -168,7 +172,7 @@ namespace F1BettingApp.Application.Services
                 User = new UserDto
                 {
                     Id = user.Id,
-                    Username = user.Username,
+                    Username = user.UserName,
                     Email = user.Email,
                     Points = user.Points,
                     IsAdmin = user.IsAdmin,
@@ -255,7 +259,7 @@ namespace F1BettingApp.Application.Services
                 User = new UserDto
                 {
                     Id = user.Id,
-                    Username = user.Username,
+                    Username = user.UserName,
                     Email = user.Email,
                     Points = user.Points,
                     IsAdmin = user.IsAdmin,
@@ -268,7 +272,7 @@ namespace F1BettingApp.Application.Services
         public async Task<bool> ValidateUserAsync(string username, string password)
         {
             var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username == username);
+            var user = users.FirstOrDefault(u => u.UserName == username);
             if (user == null) return false;
 
             return BCryptNet.Verify(password, user.PasswordHash);
@@ -297,7 +301,7 @@ namespace F1BettingApp.Application.Services
             return new UserStatisticsDto
             {
                 UserId = userId,
-                Username = user.Username,
+                Username = user.UserName,
                 TotalBets = totalBets,
                 WinningBets = winningBets,
                 WinRate = totalBets > 0 ? (decimal)winningBets / totalBets * 100 : 0,
@@ -326,7 +330,7 @@ namespace F1BettingApp.Application.Services
             return new UserProfileDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
                 Points = user.Points,
                 CreatedAt = user.CreatedAt,
@@ -341,7 +345,7 @@ namespace F1BettingApp.Application.Services
 
             // Update fields if provided
             if (!string.IsNullOrWhiteSpace(dto.Username))
-                user.Username = dto.Username;
+                user.UserName = dto.Username;
             if (!string.IsNullOrWhiteSpace(dto.Email))
                 user.Email = dto.Email;
 
@@ -351,7 +355,7 @@ namespace F1BettingApp.Application.Services
             return new UserProfileDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Email = user.Email,
                 Points = user.Points,
                 CreatedAt = user.CreatedAt,

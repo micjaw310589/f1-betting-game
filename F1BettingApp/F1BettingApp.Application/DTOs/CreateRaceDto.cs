@@ -9,6 +9,6 @@ namespace F1BettingApp.Application.DTOs
         public DateTime? Date { get; set; }
         public string Circuit { get; set; } = string.Empty;
         public string Country { get; set; } = string.Empty;
-        public int Season { get; set; } = 2025;
+        public int Season { get; set; } = 2026;
     }
 }

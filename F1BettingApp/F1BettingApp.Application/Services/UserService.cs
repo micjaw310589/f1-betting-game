@@ -51,7 +51,7 @@ namespace F1BettingApp.Application.Services
                 Points = user.Points,
                 IsAdmin = user.IsAdmin,
                 IsActive = user.IsActive,
-                ProfileImageUrl = user.ProfileImageUrl
+                // ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
@@ -69,7 +69,7 @@ namespace F1BettingApp.Application.Services
                 Points = user.Points,
                 IsAdmin = user.IsAdmin,
                 IsActive = user.IsActive,
-                ProfileImageUrl = user.ProfileImageUrl
+                // ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
@@ -125,7 +125,7 @@ namespace F1BettingApp.Application.Services
                     Points = 0,
                     IsAdmin = user.IsAdmin,
                     IsActive = user.IsActive,
-                    ProfileImageUrl = user.ProfileImageUrl
+                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -173,7 +173,7 @@ namespace F1BettingApp.Application.Services
                     Points = user.Points,
                     IsAdmin = user.IsAdmin,
                     IsActive = user.IsActive,
-                    ProfileImageUrl = user.ProfileImageUrl
+                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -260,7 +260,7 @@ namespace F1BettingApp.Application.Services
                     Points = user.Points,
                     IsAdmin = user.IsAdmin,
                     IsActive = user.IsActive,
-                    ProfileImageUrl = user.ProfileImageUrl
+                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -414,6 +414,12 @@ namespace F1BettingApp.Application.Services
             var token = new JwtSecurityToken(
                 issuer: _issuer,
                 audience: _audience,
+                // claims: new[]
+                // {
+                //     new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                //     new Claim(JwtRegisteredClaimNames.Name, user.Username),
+                //     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                // },
                 claims: claims.ToArray(),
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials

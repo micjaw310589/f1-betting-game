@@ -1,9 +1,7 @@
 using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Application.Services;
-using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
-using F1BettingApp.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -37,18 +35,14 @@ namespace F1BettingApp.API.Controllers
             public int ResultsExpirationMinutes { get; set; } = 30;
         }
 
-        private readonly IRepository<Driver> _driverRepository;
-
         public RacesController(
             IRaceService raceService,
             ILogger<RacesController> logger,
-            IOptions<RaceCacheOptions> cacheOptions,
-            IRepository<Driver> driverRepository)
+            IOptions<RaceCacheOptions> cacheOptions)
         {
             _raceService = raceService;
             _logger = logger;
             _cacheOptions = cacheOptions;
-            _driverRepository = driverRepository;
         }
 
         /// <summary>
@@ -504,48 +498,6 @@ namespace F1BettingApp.API.Controllers
         }
 
         /// <summary>
-        /// Get all drivers (for admin override dropdowns)
-        /// </summary>
-        /// <returns>List of all drivers</returns>
-        [HttpGet("drivers")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<DriverDto>>> GetAllDrivers()
-        {
-            _logger.LogInformation("Getting all drivers");
-
-            try
-            {
-                var drivers = await _driverRepository.GetAllAsync();
-                var driverList = drivers
-                    .Select(d => new DriverDto
-                    {
-                        Id = d.Id,
-                        Name = d.Name,
-                        Abbreviation = string.Empty,
-                        TeamId = d.TeamId,
-                        TeamName = d.Team != null ? d.Team.Name : "TBD"
-                    })
-                    .OrderBy(d => d.Id)
-                    .ToList();
-
-                _logger.LogInformation("Drivers retrieved: Count={Count}", driverList.Count);
-                return Ok(driverList);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving drivers");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorResponse
-                    {
-                        Error = "DRIVER_DATA_ERROR",
-                        Message = "An error occurred while retrieving drivers",
-                        Details = ex.Message
-                    });
-            }
-        }
-
-        /// <summary>
         /// Helper method to apply filters to races
         /// </summary>
         private static IEnumerable<RaceDto> ApplyFilters(
@@ -575,15 +527,12 @@ namespace F1BettingApp.API.Controllers
         }
 
         // W RacesController.cs
-[HttpGet("{raceId}/drivers-with-odds")]
-public async Task<ActionResult<IEnumerable<DriverWithOddsDto>>> GetDriversWithOdds(int raceId)
-{
-    _logger.LogInformation("Pobieranie kierowców z kursami dla wyścigu: {RaceId}", raceId);
-    var results = await _raceService.GetDriversWithOddsForRaceAsync(raceId);
-    return Ok(results);
-}
+        [HttpGet("{raceId}/drivers-with-odds")]
+        public async Task<ActionResult<IEnumerable<DriverWithOddsDto>>> GetDriversWithOdds(int raceId)
+        {
+            _logger.LogInformation("Pobieranie kierowców z kursami dla wyścigu: {RaceId}", raceId);
+            var results = await _raceService.GetDriversWithOddsForRaceAsync(raceId);
+            return Ok(results);
+        }
     }
-
-    
 }
-

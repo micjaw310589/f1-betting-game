@@ -22,7 +22,7 @@ builder.Services.AddControllers()
         // Serialize enums as strings for frontend compatibility
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         // Use camelCase property names to match frontend expectations
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -191,28 +191,28 @@ builder.Services.AddMemoryCache();
 var app = builder.Build();
 
 // Helper function for applying migrations and seeding data
-async Task ApplyMigrationsAndSeedAsync()
-{
-    using var scope = app.Services.CreateScope();
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<AppDbContext>();
-    var logger = services.GetRequiredService<ILogger<Program>>();
+// async Task ApplyMigrationsAndSeedAsync()
+// {
+//     using var scope = app.Services.CreateScope();
+//     var services = scope.ServiceProvider;
+//     var context = services.GetRequiredService<AppDbContext>();
+//     var logger = services.GetRequiredService<ILogger<Program>>();
 
-    try
-    {
-        await context.Database.MigrateAsync();
-    }
-    catch (InvalidOperationException ex) when (ex.Message.Contains("PendingModelChangesWarning"))
-    {
-        logger.LogWarning(ex, "Pending model changes detected - applying missing migration manually");
-        // Apply the IsManuallyOverridden column if it doesn't exist
-        await context.Database.ExecuteSqlRawAsync(
-            "ALTER TABLE \"Races\" ADD COLUMN IF NOT EXISTS \"IsManuallyOverridden\" boolean NOT NULL DEFAULT false");
-    }
+//     try
+//     {
+//         await context.Database.MigrateAsync();
+//     }
+//     catch (InvalidOperationException ex) when (ex.Message.Contains("PendingModelChangesWarning"))
+//     {
+//         logger.LogWarning(ex, "Pending model changes detected - applying missing migration manually");
+//         // Apply the IsManuallyOverridden column if it doesn't exist
+//         await context.Database.ExecuteSqlRawAsync(
+//             "ALTER TABLE \"Races\" ADD COLUMN IF NOT EXISTS \"IsManuallyOverridden\" boolean NOT NULL DEFAULT false");
+//     }
 
-    // Seed initial data (admin user, teams, etc.)
-    await SeedData.Initialize(context);
-}
+//     // Seed initial data (admin user, teams, etc.)
+//     await SeedData.Initialize(context);
+// }
 
 // Apply migrations and seed data at startup (always)
 using (var scope = app.Services.CreateScope())
@@ -222,14 +222,32 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+// if (app.Environment.IsDevelopment())
+// {
     app.UseSwagger();
     app.UseSwaggerUI();
 
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<AppDbContext>();
+            await context.Database.MigrateAsync();
+
+            // Seed initial data
+            await SeedData.Initialize(context);
+        }
+        catch (Exception ex)
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred while applying migrations or seeding data.");
+        }
+    }
+
     // Apply migrations and seed data in development
-    await ApplyMigrationsAndSeedAsync();
-}
+    // await ApplyMigrationsAndSeedAsync();
+// }
 
 app.UseHttpsRedirection();
 app.UseRouting();

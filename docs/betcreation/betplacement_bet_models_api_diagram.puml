@@ -1,0 +1,33 @@
+@startuml BetCreation_APIContractsDiagram
+!theme blueprint
+title Bet Creation - API Contracts (Client DTOs ↔ Endpoints)
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+actor "Angular UI" as UI
+participant "BetService" as BetService
+
+participant "HTTP /bets/place" as PlaceBetApi
+participant "HTTP /bets/{betId}/cancel" as CancelBetApi
+participant "HTTP /bets" as MyBetsApi
+
+UI -> BetService : placeBet(dto: PlaceBetDto)
+BetService -> PlaceBetApi : POST /bets/place\nbody=PlaceBetDto
+PlaceBetApi --> BetService : BetResponseDto OR {message,userId,bet?,betResponse?}
+
+UI -> BetService : cancelBet(betId)
+BetService -> CancelBetApi : POST /bets/{betId}/cancel\nbody={}
+CancelBetApi --> BetService : CancelBetApiResponse (message, betId)
+
+UI -> BetService : getMyBets()
+BetService -> MyBetsApi : GET /bets
+MyBetsApi --> BetService : BetResponseDto[]
+
+note right of BetService
+DTO mapping is defensive:
+- placeBet() expects BetResponseDto OR PlaceBetApiResponse
+- CancelBetApiResponse is payload-only
+end note
+
+@enduml

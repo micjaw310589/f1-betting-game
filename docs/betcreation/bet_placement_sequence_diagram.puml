@@ -1,0 +1,66 @@
+@startuml BetCreation_SequenceDiagram
+!theme blueprint
+title Bet Placement Flow (Angular -> API)
+
+skinparam sequenceMessageAlign left
+
+actor User as User
+participant "BetPlacementComponent" as UI
+participant "ProfileService" as ProfileService
+participant "BetService" as BetService
+participant "RaceService" as RaceService
+participant "AuthService" as AuthService
+
+participant "GET /Races/{raceId}/drivers-with-odds" as DriversApi
+participant "GET /users/profile" as ProfileApi
+participant "GET /bets" as MyBetsApi
+participant "POST /bets/place" as PlaceBetApi
+participant "POST /bets/{betId}/cancel" as CancelBetApi
+
+== Load page ==
+User -> UI : Open /races/{raceId}/bets (create bet)
+UI -> RaceService : getDriversWithOdds(raceId)
+RaceService -> DriversApi : GET {baseUrl}/Races/{raceId}/drivers-with-odds
+DriversApi --> RaceService : DriverWithOdds[]
+
+UI -> BetService : getMyBets()
+BetService -> MyBetsApi : GET {baseUrl}/bets
+MyBetsApi --> BetService : BetResponseDto[]
+
+UI -> UI : filter Pending bets\nfor this race\nbuild pendingBets[]
+
+UI -> ProfileService : getProfile() (load points)
+ProfileService -> ProfileApi : GET {baseUrl}/users/profile
+ProfileApi --> ProfileService : UserProfileDto
+ProfileService --> UI : points
+
+== Place bet ==
+User -> UI : enter bet (betType, driverId, amount)\nclick "Place Bet"
+UI -> BetService : placeBet(PlaceBetDto)
+BetService -> PlaceBetApi : POST {baseUrl}/bets/place\nbody: {raceId, driverId, amount, betType}
+PlaceBetApi --> BetService : BetResponseDto or {message,userId}
+
+BetService --> UI : placed result
+UI -> ProfileService : getProfile() (refresh points)
+ProfileService -> ProfileApi : GET {baseUrl}/users/profile
+ProfileApi --> ProfileService : UserProfileDto
+ProfileService --> UI : updated points
+
+UI -> BetService : getMyBets() (refresh pending list)
+BetService -> MyBetsApi : GET {baseUrl}/bets
+MyBetsApi --> BetService : BetResponseDto[]
+UI -> UI : recompute pendingBets
+
+== Cancel bet ==
+User -> UI : click Cancel on pending bet
+UI -> BetService : cancelBet(betId)
+BetService -> CancelBetApi : POST {baseUrl}/bets/{betId}/cancel
+CancelBetApi --> BetService : CancelBetApiResponse
+
+BetService --> UI : cancel result
+UI -> BetService : getMyBets() (refresh)
+BetService -> MyBetsApi : GET {baseUrl}/bets
+MyBetsApi --> BetService : BetResponseDto[]
+UI -> UI : recompute pendingBets[]
+
+@enduml

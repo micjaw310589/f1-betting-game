@@ -1,0 +1,44 @@
+@startuml UserProfile_SequenceDiagram
+!theme blueprint
+title User Profile - Load Profile + Bet History + Enrich Race Details + Cancel
+
+skinparam sequenceMessageAlign left
+
+actor User as User
+participant "UserProfileComponent" as UI
+participant "ProfileService" as ProfileService
+participant "RaceService" as RaceService
+participant "BetService" as BetService
+
+participant "GET /users/profile" as ProfileApi
+participant "GET /users/bets?page&pageSize" as BetHistoryApi
+participant "GET /Races/{raceId}" as RaceDetailsApi
+participant "POST /bets/{betId}/cancel" as CancelBetApi
+
+== Initial load / pagination ==
+User -> UI : open /profile\nor /user-profile\n(or paginate)
+UI -> ProfileService : getProfileAndBets(page,pageSize)
+ProfileService -> ProfileApi : GET /users/profile
+ProfileService -> BetHistoryApi : GET /users/bets?page={page}&pageSize={pageSize}
+ProfileApi --> ProfileService : UserProfileDto
+BetHistoryApi --> ProfileService : BetHistoryResponseDto
+ProfileService --> UI : {profile, betHistory}
+
+UI -> UI : map betHistory.bets\n(pick bet fields for UI)
+
+== Enrich missing raceName/raceDate ==
+UI -> RaceService : for each bet where raceName missing\ngetRaceDetails(bet.raceId)
+RaceService -> RaceDetailsApi : GET /Races/{raceId}
+RaceDetailsApi --> RaceService : RaceDetailDto
+RaceService --> UI : race details (name,raceDate)
+UI -> UI : set bet.raceName, bet.raceDate
+
+== Cancel a pending bet ==
+User -> UI : click Cancel on pending bet (bet.id)
+UI -> BetService : cancelBet(betId)
+BetService -> CancelBetApi : POST /bets/{betId}/cancel
+CancelBetApi --> BetService : CancelBetApiResponse
+BetService --> UI : cancel result
+UI -> ProfileService : getProfileAndBets(page,pageSize)\n(refresh profile + bet history)
+
+@enduml

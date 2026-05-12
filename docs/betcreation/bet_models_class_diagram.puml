@@ -1,0 +1,72 @@
+@startuml BetCreation_BetModels_Diagram
+!theme blueprint
+
+title Bet Placement - DTO/Model Shapes (TypeScript)
+
+skinparam classAttributeIconSize 0
+
+package "bet.models.ts" {
+
+  enum BetType {
+    RaceWinner
+    PodiumFinish
+    Top10Finish
+    FastestLap
+    FastestPitStop
+    DNFCount
+    DriverVsDriver
+    TeamVsTeam
+  }
+
+  enum BetStatus {
+    Pending
+    Won
+    Lost
+    Canceled
+    Resolved
+  }
+
+  class BetResponseDto {
+    + id: number
+    + userId: number
+    + raceId: number
+    + driverId: number
+    + driverName?: string|null
+    + amount: number
+    + betType: BetType
+    + status: BetStatus
+    + winnings?: number|null
+    + createdAt: string
+    + resolvedAt?: string|null
+    + prediction?: number|null
+    + predictionResult?: boolean|null
+  }
+
+  class PlaceBetDto {
+    + raceId: number
+    + driverId: number
+    + amount: number
+    + betType: BetType
+    + placePosition?: number|null
+  }
+
+  class PlaceBetApiResponse {
+    + message?: string
+    + userId?: number
+    + bet?: BetResponseDto
+    + betResponse?: BetResponseDto
+  }
+
+  class CancelBetApiResponse {
+    + message?: string
+    + betId?: number
+  }
+}
+
+BetResponseDto "1" --> "1" BetType : betType
+BetResponseDto "1" --> "1" BetStatus : status
+
+PlaceBetApiResponse --> BetResponseDto : optionally returns bet/betResponse
+CancelBetApiResponse ..> BetResponseDto : cancels by betId (payload only)
+
+@enduml

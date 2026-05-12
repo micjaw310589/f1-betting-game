@@ -1,0 +1,29 @@
+@startuml BetCreation_ComponentDiagram
+!theme blueprint
+title Bet Creation - Component/Service/Model Dependencies (Angular)
+
+skinparam classAttributeIconSize 0
+
+component "BetPlacementComponent\n(create bet UI)" as BetPlacementComponent
+
+component "BetService" as BetService
+component "RaceService" as RaceService
+component "ProfileService" as ProfileService
+component "AuthService" as AuthService
+
+collections "bet.models.ts (DTOs)" as BetModels
+collections "UI driver model\nDriverWithOdds" as DriverWithOdds
+
+database "Browser State\n(raceId, pendingBets, userPoints)" as BrowserState
+
+BetPlacementComponent --> BetService : uses placeBet(), cancelBet(), getMyBets()
+BetPlacementComponent --> RaceService : uses getDriversWithOdds(raceId)
+BetPlacementComponent --> ProfileService : uses getProfile() (loads points)
+BetPlacementComponent --> AuthService : injected (auth-related logic if used)
+
+BetPlacementComponent --> BetModels : types\nPlaceBetDto, BetResponseDto
+BetPlacementComponent --> DriverWithOdds : types\ndriversList[]
+
+BetPlacementComponent --> BrowserState : userPoints,\nselectedBetType,\namount,\npendingBets\n(and derived flags)
+
+@enduml

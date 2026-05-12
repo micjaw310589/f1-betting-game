@@ -85,10 +85,6 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
         PodiumFinish: 'Podium Finish',
         Top10Finish: 'Top 10 Finish',
         FastestLap: 'Fastest Lap',
-        FastestPitStop: 'Fastest Pit Stop',
-        DNFCount: 'DNF Count',
-        DriverVsDriver: 'Driver vs Driver',
-        TeamVsTeam: 'Team vs Team',
     };
 
     constructor(

@@ -70,11 +70,7 @@ export type BetType =
     | 'RaceWinner'
     | 'PodiumFinish'
     | 'Top10Finish'
-    | 'FastestLap'
-    | 'FastestPitStop'
-    | 'DNFCount'
-    | 'DriverVsDriver'
-    | 'TeamVsTeam';
+    | 'FastestLap';
 
 /**
  * Bet status enum (mirrors backend BetStatus enum).
@@ -146,10 +142,6 @@ export const BET_TYPES: { value: BetType; label: string }[] = [
     { value: 'PodiumFinish', label: 'Podium Finish' },
     { value: 'Top10Finish', label: 'Top 10 Finish' },
     { value: 'FastestLap', label: 'Fastest Lap' },
-    { value: 'FastestPitStop', label: 'Fastest Pit Stop' },
-    { value: 'DNFCount', label: 'DNF Count' },
-    { value: 'DriverVsDriver', label: 'Driver vs Driver' },
-    { value: 'TeamVsTeam', label: 'Team vs Team' },
 ] as const;
 
 /**

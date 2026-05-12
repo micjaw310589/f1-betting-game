@@ -8,7 +8,9 @@ using F1BettingApp.Application.Exceptions;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
+using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 namespace F1BettingApp.Application.Services
 {
     /// <summary>
@@ -16,12 +18,14 @@ namespace F1BettingApp.Application.Services
     /// </summary>
     public class BettingService : IBettingService
     {
-        private readonly IBetRepositoryExtensions _betRepository;
+private readonly IBetRepositoryExtensions _betRepository;
         private readonly IRepository<User> _userRepository;
         private readonly IRepository<Race> _raceRepository;
         private readonly IRepository<Driver> _driverRepository;
         private readonly IUserService _userService;
         private readonly IRaceService _raceService;
+        private readonly INotificationService _notificationService;
+        private readonly AppDbContext _dbContext;
 
         /// <summary>
         /// Constructor for BettingService
@@ -32,7 +36,9 @@ namespace F1BettingApp.Application.Services
             IRaceRepositoryExtensions raceRepository,
             IRepository<Driver> driverRepository,
             IUserService userService,
-            IRaceService raceService)
+            IRaceService raceService,
+            INotificationService notificationService,
+            AppDbContext dbContext)
         {
             _betRepository = betRepository;
             _userRepository = userRepository;
@@ -40,6 +46,8 @@ namespace F1BettingApp.Application.Services
             _driverRepository = driverRepository;
             _userService = userService;
             _raceService = raceService;
+            _notificationService = notificationService;
+            _dbContext = dbContext;
         }
 
         /// <summary>
@@ -209,117 +217,228 @@ namespace F1BettingApp.Application.Services
             return MapBetToDto(bet);
         }
 
-        /// <summary>
+/// <summary>
         /// Processes race results and updates bet statuses
+        /// Ensures idempotency: running this method multiple times for the same race
+        /// will not credit points twice or cause duplicate side effects.
         /// </summary>
         /// <param name="raceId">Race identifier</param>
         public async Task ProcessRaceResultsAsync(int raceId)
         {
-            // Get the race using RaceService for comprehensive validation
-            var race = await _raceService.GetRaceByIdAsync(raceId);
-            if (race == null)
+            // Use database context for transactional operations
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            try
             {
-                throw new RaceNotFoundException(raceId);
-            }
-
-            // Verify race is finished
-            if (race.Status != RaceStatus.Finished)
-            {
-                throw new InvalidOperationException("Race must be completed before processing results");
-            }
-
-            // Get all bets for this race
-            var bets = await _betRepository.GetByRaceIdAsync(raceId);
-
-            // Get race results - assuming this returns a list of (DriverId, Position) pairs
-            var results = await _raceService.GetResultsAsync(raceId);
-
-            // Update each bet
-            foreach (var bet in bets)
-            {
-                // Find the bet's position in race results
-                var position = results.FirstOrDefault(r => r.DriverId == bet.DriverId)?.Position;
-
-                if (position != null)
+                // Get the race directly from the database
+                var race = await _dbContext.Races.FindAsync(raceId);
+                if (race == null)
                 {
-                    // Calculate winnings
-                    decimal winnings = 0;
-                    BetStatus newStatus;
+                    throw new RaceNotFoundException(raceId);
+                }
 
-                    if (bet.BetType == BetType.RaceWinner)
+                // Idempotency check: if already processed, do nothing
+                if (race.Status == RaceStatus.ResultsProcessed)
+                {
+                    // Already processed - return without doing anything
+                    return;
+                }
+
+                // Verify race is finished (not just scheduled or in progress)
+                if (race.Status != RaceStatus.Finished)
+                {
+                    throw new InvalidOperationException("Race must be completed before processing results");
+                }
+
+                // Get all pending bets for this race from the database
+                var pendingBets = await _dbContext.Bets
+                    .Where(b => b.RaceId == raceId && b.Status == BetStatus.Pending)
+                    .ToListAsync();
+
+                // Get race results from the database
+                var results = await _dbContext.Results
+                    .Where(r => r.RaceId == raceId)
+                    .ToListAsync();
+
+                // If no results exist, we can't process
+                if (!results.Any())
+                {
+                    throw new InvalidOperationException($"No race results found for race ID {raceId}");
+                }
+
+// Track which users have been notified to avoid duplicate notifications
+                var notifiedUsers = new HashSet<int>();
+                var totalWinningsByUser = new Dictionary<int, decimal>();
+
+                // Process each pending bet
+                foreach (var bet in pendingBets)
+                {
+                    var betResult = EvaluateBet(bet, results);
+
+                    // Update bet in the database
+                    bet.Status = betResult.NewStatus;
+                    bet.Winnings = betResult.Winnings;
+                    bet.ResolvedAt = DateTime.UtcNow;
+                    _dbContext.Bets.Update(bet);
+
+                    // Accumulate winnings per user
+                    if (betResult.Winnings > 0)
                     {
-                        // Winner bet - only wins if first place
-                        if (position == 1)
-                        {
-                            winnings = bet.Amount * bet.Odds;
-                            newStatus = BetStatus.Won;
-                        }
-                        else
-                        {
-                            newStatus = BetStatus.Lost;
-                        }
+                        totalWinningsByUser[bet.UserId] = totalWinningsByUser.GetValueOrDefault(bet.UserId) + betResult.Winnings;
                     }
-                    else if (bet.BetType == BetType.PodiumFinish)
+
+                    // Credit user balance if won
+                    if (betResult.Winnings > 0)
                     {
-                        // Podium finish bet - wins if position is 1, 2, or 3
-                        if (position <= 3)
-                        {
-                            winnings = bet.Amount * bet.Odds;
-                            newStatus = BetStatus.Won;
-                        }
-                        else
-                        {
-                            newStatus = BetStatus.Lost;
-                        }
+                        // Use raw SQL to avoid state management conflicts
+                        await _dbContext.Database.ExecuteSqlRawAsync(
+                            $"UPDATE \"Users\" SET \"Points\" = \"Points\" + {betResult.Winnings} WHERE \"Id\" = {bet.UserId}");
                     }
-                    else if (bet.BetType == BetType.Top10Finish)
+                }
+
+                // Send notifications after processing all bets
+                foreach (var userId in totalWinningsByUser.Keys)
+                {
+                    // Get the first winning bet for this user to extract driver name
+                    var winningBet = pendingBets.FirstOrDefault(b => b.UserId == userId && totalWinningsByUser[userId] > 0);
+                    if (winningBet != null)
                     {
-                        // Top 10 bet - wins if position is 1-10
-                        if (position <= 10)
-                        {
-                            winnings = bet.Amount * bet.Odds;
-                            newStatus = BetStatus.Won;
-                        }
-                        else
-                        {
-                            newStatus = BetStatus.Lost;
-                        }
+                        var driver = await _dbContext.Drivers.FindAsync(winningBet.DriverId);
+                        await _notificationService.CreateNotificationAsync(
+                            userId,
+                            "🏁 Race Results - You Won!",
+                            $"Congratulations! Your bet on {driver?.Name ?? "Driver"} has won! Total winnings: {totalWinningsByUser[userId]} points"
+                        );
                     }
-                    else if (bet.BetType == BetType.FastestLap)
+                    notifiedUsers.Add(userId);
+                }
+
+                // Send loss notifications for users who didn't win anything
+                var losingBetters = pendingBets
+                    .Where(b => !totalWinningsByUser.ContainsKey(b.UserId) && !notifiedUsers.Contains(b.UserId))
+                    .GroupBy(b => b.UserId)
+                    .Select(g => g.First())
+                    .ToList();
+
+                foreach (var losingBet in losingBetters)
+                {
+                    var driver = await _dbContext.Drivers.FindAsync(losingBet.DriverId);
+                    await _notificationService.CreateNotificationAsync(
+                        losingBet.UserId,
+                        "🏁 Race Results",
+                        $"The race has finished! Your bet on {driver?.Name ?? "Driver"} did not win."
+                    );
+                    notifiedUsers.Add(losingBet.UserId);
+                }
+
+                // Update race status to ResultsProcessed
+                race.Status = RaceStatus.ResultsProcessed;
+                _dbContext.Races.Update(race);
+
+                // Save all changes
+                await _dbContext.SaveChangesAsync();
+                
+                // Commit the transaction
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                // Rollback the transaction on any error
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Evaluates a single bet against race results and returns the evaluation result.
+        /// This method is pure logic that can be tested in isolation.
+        /// </summary>
+        internal BetResult EvaluateBet(Bet bet, IEnumerable<Result> results)
+        {
+            if (bet == null) throw new ArgumentNullException(nameof(bet));
+            if (results == null) throw new ArgumentNullException(nameof(results));
+
+            // Find the driver's finishing position
+            var result = results.FirstOrDefault(r => r.DriverId == bet.DriverId);
+            
+            // If driver didn't finish or has no position, it's a loss
+            if (result == null || result.Position == null)
+            {
+                return new BetResult(BetStatus.Lost, 0m);
+            }
+
+            var position = result.Position;
+            decimal winnings = 0;
+            BetStatus newStatus;
+
+            switch (bet.BetType)
+            {
+                case BetType.RaceWinner:
+                    // Race Winner: driver must finish in position 1
+                    if (position == 1)
                     {
-                        // Fastest lap bet - wins if position is 0 (fastest)
-                        if (position == 0)
-                        {
-                            winnings = bet.Amount * bet.Odds;
-                            newStatus = BetStatus.Won;
-                        }
-                        else
-                        {
-                            newStatus = BetStatus.Lost;
-                        }
+                        winnings = bet.Amount * bet.Odds;
+                        newStatus = BetStatus.Won;
                     }
                     else
                     {
-                        // Default: treat as lost for other bet types
                         newStatus = BetStatus.Lost;
                     }
+                    break;
 
-                    // Update bet
-                    bet.Status = newStatus;
-                    bet.PotentialWinnings = winnings;
-                    bet.Winnings = winnings;
-                    await _betRepository.UpdateAsync(bet);
-
-                    // Add winnings to user balance
-                    var user = await _userRepository.GetByIdAsync(bet.UserId);
-                    if (user != null)
+                case BetType.PodiumFinish:
+                    // TOP 3 Finish: driver must finish in position 1, 2, or 3
+                    if (position <= 3)
                     {
-                        user.Points = (int)((decimal)user.Points + winnings);
-                        await _userRepository.UpdateAsync(user);
+                        winnings = bet.Amount * bet.Odds;
+                        newStatus = BetStatus.Won;
                     }
-                }
+                    else
+                    {
+                        newStatus = BetStatus.Lost;
+                    }
+                    break;
+
+                case BetType.Top10Finish:
+                    // TOP 10 Finish: driver must finish in position 1-10
+                    if (position <= 10)
+                    {
+                        winnings = bet.Amount * bet.Odds;
+                        newStatus = BetStatus.Won;
+                    }
+                    else
+                    {
+                        newStatus = BetStatus.Lost;
+                    }
+                    break;
+
+                case BetType.FastestLap:
+                    // Fastest Lap: driver must have set the fastest lap in the race
+                    var fastestLapResult = results.FirstOrDefault(r => r.FastestLap.HasValue);
+                    if (fastestLapResult != null && fastestLapResult.DriverId == bet.DriverId)
+                    {
+                        winnings = bet.Amount * bet.Odds;
+                        newStatus = BetStatus.Won;
+                    }
+                    else
+                    {
+                        newStatus = BetStatus.Lost;
+                    }
+                    break;
+
+                default:
+                    // Unsupported bet types throw an exception
+                    throw new NotSupportedException(
+                        $"Bet type '{bet.BetType}' is not supported for automatic bet resolution. " +
+                        "Only RaceWinner, PodiumFinish, Top10Finish, and FastestLap bet types are supported.");
             }
+
+            return new BetResult(newStatus, winnings);
         }
+
+        /// <summary>
+        /// Represents the result of evaluating a bet.
+        /// </summary>
+        internal record BetResult(BetStatus NewStatus, decimal Winnings);
 
         /// <summary>
         /// Calculates winnings for a bet based on race results

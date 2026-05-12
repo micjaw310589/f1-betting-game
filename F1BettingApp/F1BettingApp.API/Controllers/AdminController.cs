@@ -17,14 +17,17 @@ namespace F1BettingApp.API.Controllers
     [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
-        private readonly IRaceService _raceService;
+private readonly IRaceService _raceService;
+        private readonly IBettingService _bettingService;
         private readonly ILogger<AdminController> _logger;
 
-        public AdminController(
+public AdminController(
             IRaceService raceService,
+            IBettingService bettingService,
             ILogger<AdminController> logger)
         {
             _raceService = raceService;
+            _bettingService = bettingService;
             _logger = logger;
         }
 
@@ -345,6 +348,66 @@ namespace F1BettingApp.API.Controllers
                 {
                     Error = "RACE_CREATION_FAILED",
                     Message = "Failed to create race",
+                    Details = ex.Message
+                });
+            }
+        }
+
+/// <summary>
+        /// Processes race results for a finished race (triggers bet resolution).
+        /// This is also done automatically by the background worker, but can be
+        /// triggered manually for testing or immediate processing.
+        /// </summary>
+        /// <param name="raceId">The ID of the finished race to process.</param>
+        [HttpPost("races/{raceId}/process-results")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult> ProcessRaceResults(int raceId)
+        {
+            _logger.LogInformation("Admin manually triggering race result processing: RaceId={RaceId}", raceId);
+
+            try
+            {
+                await _bettingService.ProcessRaceResultsAsync(raceId);
+
+                _logger.LogInformation("Race results processed successfully: RaceId={RaceId}", raceId);
+
+                return Ok(new
+                {
+                    message = "Race results processed successfully",
+                    raceId = raceId
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Admin race result processing failed: Race not found, RaceId={RaceId}", raceId);
+                return NotFound(new ErrorResponse
+                {
+                    Error = "RACE_NOT_FOUND",
+                    Message = $"Race with ID {raceId} not found",
+                    Details = ex.Message
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Admin race result processing failed: Invalid operation, RaceId={RaceId}", raceId);
+                return BadRequest(new ErrorResponse
+                {
+                    Error = "INVALID_OPERATION",
+                    Message = ex.Message,
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing race results: RaceId={RaceId}", raceId);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "PROCESS_RESULTS_FAILED",
+                    Message = "Failed to process race results",
                     Details = ex.Message
                 });
             }

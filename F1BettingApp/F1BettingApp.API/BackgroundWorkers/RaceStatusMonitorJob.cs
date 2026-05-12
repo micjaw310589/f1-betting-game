@@ -30,8 +30,8 @@ public class RaceStatusMonitorJob : BackgroundService
         _serviceScopeFactory = serviceScopeFactory;
         _configuration = configuration;
 
-        // Read check interval from configuration (in minutes, default 60 minutes)
-        var intervalMinutes = configuration.GetValue<int>("BackgroundWorkers:RaceStatusMonitor:CheckIntervalMinutes", 60);
+        // Read check interval from configuration (in minutes, default 5 minutes)
+        var intervalMinutes = configuration.GetValue<int>("BackgroundWorkers:RaceStatusMonitor:CheckIntervalMinutes", 5);
         _checkInterval = TimeSpan.FromMinutes(intervalMinutes);
     }
 

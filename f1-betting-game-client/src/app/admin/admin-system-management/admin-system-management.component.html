@@ -1,7 +1,6 @@
 <div class="admin-system-management">
     <h2>System & Bet Management</h2>
 
-    <!-- Tab Navigation -->
     <div class="tab-navigation">
         <button
             class="tab-button"
@@ -40,7 +39,6 @@
         </button>
     </div>
 
-    <!-- Sync Tab -->
     @if (activeTab === 'sync') {
         <div class="tab-content">
             <div class="sync-section">
@@ -51,7 +49,6 @@
                     Races marked as manually overridden will be skipped.
                 </p>
 
-                <!-- Sync Button -->
                 <div class="sync-actions">
                     <button
                         class="btn-sync"
@@ -60,33 +57,30 @@
                     >
                         @if (isSyncing) {
                             <span class="spinner-small"></span>
-                            Syncing...
+                            <span>Syncing...</span>
                         } @else {
-                            🔄 Sync Now
+                            <span>Sync Now</span>
                         }
                     </button>
                 </div>
 
-                <!-- Sync Result -->
                 @if (syncResult) {
                     <div class="message success">
-                        ✅ Sync completed successfully! Processed {{ syncResult.racesProcessed }} races
+                        Sync completed successfully! Processed {{ syncResult.racesProcessed }} races
                         (Created: {{ syncResult.racesCreated }}, Updated: {{ syncResult.racesUpdated }}).
                     </div>
                 }
                 @if (syncError) {
                     <div class="message error">
-                        ❌ {{ syncError }}
+                        {{ syncError }}
                     </div>
                 }
             </div>
         </div>
     }
 
-    <!-- Race Results Tab -->
     @if (activeTab === 'results') {
         <div class="tab-content">
-            <!-- Race Selection -->
             <div class="race-selection">
                 <h3>Select Race</h3>
                 @if (isLoadingRaces) {
@@ -107,36 +101,33 @@
                 }
             </div>
 
-            <!-- Results Override Form -->
             @if (selectedRace) {
                 <div class="results-form">
                     <h3>Override Race Results: {{ selectedRace.name }}</h3>
 
                     @if (resultsSaveSuccess) {
                         <div class="message success">
-                            ✅ Race results overridden successfully!
+                            Race results overridden successfully!
                         </div>
                     }
                     @if (resultsSaveError) {
                         <div class="message error">
-                            ❌ {{ resultsSaveError }}
+                            {{ resultsSaveError }}
                         </div>
                     }
 
                     @if (raceResults) {
-                        <!-- Current Results Display -->
                         <div class="results-header">
                             <p>
                                 <strong>Circuit:</strong> {{ raceResults.circuit }}, {{ raceResults.country }}
                                 | <strong>Date:</strong> {{ formatDate(raceResults.raceDate) }}
                             </p>
                             @if (selectedRace.isManuallyOverridden) {
-                                <span class="override-badge">⚠️ Manually Overridden</span>
+                                <span class="override-badge">Manual Override Active</span>
                             }
                         </div>
                     }
 
-                    <!-- Fastest Lap Selection -->
                     <div class="fastest-lap-section">
                         <h4>Fastest Lap</h4>
                         <select
@@ -154,7 +145,6 @@
                         </select>
                     </div>
 
-                    <!-- Positions Table -->
                     <div class="positions-table-container">
                         <h4>Finishing Positions</h4>
                         @if (currentPositions.length > 0) {
@@ -166,7 +156,7 @@
                                         <th>Team</th>
                                         <th>Points</th>
                                         <th>Fastest Lap</th>
-                                        <th></th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -193,7 +183,7 @@
                                             <td>{{ getPointsForPosition(position.position) }}</td>
                                             <td>
                                                 @if (position.fastestLap) {
-                                                    <span class="fastest-lap-badge">⏱️ {{ position.fastestLap | date:'mm:ss.S' }}</span>
+                                                    <span class="fastest-lap-badge">Time: {{ position.fastestLap | date:'mm:ss.S' }}</span>
                                                 } @else {
                                                     <span class="no-data">—</span>
                                                 }
@@ -202,9 +192,8 @@
                                                 <button
                                                     class="btn-delete-row"
                                                     (click)="removePosition(i)"
-                                                    title="Remove driver"
                                                 >
-                                                    🗑️
+                                                    <span>Remove</span>
                                                 </button>
                                             </td>
                                         </tr>
@@ -216,17 +205,12 @@
                         }
                     </div>
 
-                    <!-- Add Driver Button -->
                     <div class="add-driver-section">
-                        <button
-                            class="btn-add-driver"
-                            (click)="addPosition()"
-                        >
-                            ➕ Add Driver
+                        <button class="btn-add-driver" (click)="addPosition()">
+                            <span>Add Driver</span>
                         </button>
                     </div>
 
-                    <!-- Action Buttons -->
                     <div class="override-actions">
                         <button
                             class="btn-override"
@@ -235,9 +219,9 @@
                         >
                             @if (isSavingResults) {
                                 <span class="spinner-small"></span>
-                                Saving...
+                                <span>Saving...</span>
                             } @else {
-                                💾 Override Results
+                                <span>Save Results</span>
                             }
                         </button>
                     </div>
@@ -246,10 +230,8 @@
         </div>
     }
 
-    <!-- Metadata Tab -->
     @if (activeTab === 'metadata') {
         <div class="tab-content">
-            <!-- Race Selection -->
             <div class="race-selection">
                 <h3>Select Race</h3>
                 @if (isLoadingRaces) {
@@ -270,19 +252,18 @@
                 }
             </div>
 
-            <!-- Metadata Form -->
             @if (selectedRace) {
                 <div class="metadata-form">
                     <h3>Edit Race Metadata</h3>
 
                     @if (metadataSaveSuccess) {
                         <div class="message success">
-                            ✅ Race metadata updated successfully!
+                            Race metadata updated successfully!
                         </div>
                     }
                     @if (metadataSaveError) {
                         <div class="message error">
-                            ❌ {{ metadataSaveError }}
+                            {{ metadataSaveError }}
                         </div>
                     }
 
@@ -351,7 +332,6 @@
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
                     <div class="override-actions">
                         <button
                             class="btn-override"
@@ -360,9 +340,9 @@
                         >
                             @if (isSavingMetadata) {
                                 <span class="spinner-small"></span>
-                                Saving...
+                                <span>Saving...</span>
                             } @else {
-                                💾 Save Changes
+                                <span>Save Changes</span>
                             }
                         </button>
                     </div>
@@ -371,112 +351,6 @@
         </div>
     }
 
-    <!-- Results Confirmation Modal -->
-    @if (showResultsConfirmModal) {
-        <div class="modal-overlay" (click)="closeResultsConfirmModal()">
-            <div class="modal-content modal-large" (click)="$event.stopPropagation()">
-                <div class="modal-header">
-                    <h3>Confirm Results Override</h3>
-                    <button class="modal-close" (click)="closeResultsConfirmModal()">✕</button>
-                </div>
-                <div class="modal-body">
-                    <p>
-                        Are you sure you want to override the results for
-                        <strong>{{ selectedRace?.name }}</strong>?
-                    </p>
-                    <p class="warning-text">
-                        ⚠️ This will mark the race as manually overridden and prevent future
-                        automatic syncs from overwriting these results.
-                    </p>
-                    <div class="override-summary">
-                        <h4>Summary ({{ currentPositions.length }} positions)</h4>
-                        <table class="summary-table">
-                            <thead>
-                                <tr>
-                                    <th>Pos</th>
-                                    <th>Driver</th>
-                                    <th>Team</th>
-                                    <th>Pts</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @for (position of currentPositions; track position.driverId) {
-                                    <tr [class.highlighted]="position.position === 1">
-                                        <td>{{ position.position }}</td>
-                                        <td>{{ getDriverName(position.driverId) }}</td>
-                                        <td>{{ getTeamName(position.driverId) }}</td>
-                                        <td>{{ getPointsForPosition(position.position) }}</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                        @if (fastestLapDriverId) {
-                            <p class="fastest-lap-summary">
-                                <strong>Fastest Lap:</strong> {{ getDriverName(fastestLapDriverId) }}
-                            </p>
-                        }
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-cancel" (click)="closeResultsConfirmModal()">
-                        Cancel
-                    </button>
-                    <button class="btn-confirm" (click)="confirmResultsOverride()">
-                        Confirm Override
-                    </button>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- Metadata Confirmation Modal -->
-    @if (showMetadataConfirmModal) {
-        <div class="modal-overlay" (click)="closeMetadataConfirmModal()">
-            <div class="modal-content" (click)="$event.stopPropagation()">
-                <div class="modal-header">
-                    <h3>Confirm Metadata Update</h3>
-                    <button class="modal-close" (click)="closeMetadataConfirmModal()">✕</button>
-                </div>
-                <div class="modal-body">
-                    <p>
-                        Are you sure you want to update the metadata for
-                        <strong>{{ selectedRace?.name }}</strong>?
-                    </p>
-                    <div class="override-summary">
-                        <p>
-                            <strong>Name:</strong> {{ metadataForm.name }}
-                        </p>
-                        <p>
-                            <strong>Circuit:</strong> {{ metadataForm.circuit }}
-                        </p>
-                        <p>
-                            <strong>Country:</strong> {{ metadataForm.country }}
-                        </p>
-                        @if (metadataForm.date) {
-                            <p>
-                                <strong>Date:</strong> {{ formatDate(metadataForm.date) }}
-                            </p>
-                        }
-                        @if (metadataForm.status) {
-                            <p>
-                                <strong>Status:</strong> {{ getStatusLabel(metadataForm.status) }}
-                            </p>
-                        }
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-cancel" (click)="closeMetadataConfirmModal()">
-                        Cancel
-                    </button>
-                    <button class="btn-confirm" (click)="confirmMetadataUpdate()">
-                        Confirm Update
-                    </button>
-                </div>
-            </div>
-        </div>
-    }
-
-    <!-- Race Management Tab -->
     @if (activeTab === 'races') {
         <div class="tab-content">
             <h3>Race Management</h3>
@@ -484,29 +358,26 @@
 
             @if (createRaceSuccess) {
                 <div class="message success">
-                    ✅ Race created successfully!
+                    Race created successfully!
                 </div>
             }
             @if (createRaceError) {
                 <div class="message error">
-                    ❌ {{ createRaceError }}
+                    {{ createRaceError }}
                 </div>
             }
 
-            <!-- Create Race Button -->
             <div class="override-actions" style="margin-bottom: 20px;">
                 <button class="btn-add-driver" (click)="openCreateRaceForm()">
-                    ➕ Create New Race
+                    <span>Create New Race</span>
                 </button>
             </div>
 
-            <!-- Create Race Form Modal -->
             @if (showCreateRaceForm) {
                 <div class="modal-overlay" (click)="closeCreateRaceForm()">
                     <div class="modal-content modal-large" (click)="$event.stopPropagation()">
                         <div class="modal-header">
                             <h3>Create New Race</h3>
-                            <button class="modal-close" (click)="closeCreateRaceForm()">✕</button>
                         </div>
                         <div class="modal-body">
                             <div class="form-grid">
@@ -556,20 +427,15 @@
                                         type="number"
                                         [(ngModel)]="createRaceForm.season"
                                         class="form-input"
-                                        min="2000"
+                                        min="2020"
                                         max="2100"
                                     />
                                 </div>
                             </div>
-                            @if (createRaceError) {
-                                <div class="message error" style="margin-top: 12px;">
-                                    ❌ {{ createRaceError }}
-                                </div>
-                            }
                         </div>
                         <div class="modal-footer">
                             <button class="btn-cancel" (click)="closeCreateRaceForm()">
-                                Cancel
+                                <span>Cancel</span>
                             </button>
                             <button
                                 class="btn-confirm"
@@ -577,10 +443,10 @@
                                 (click)="createRace()"
                             >
                                 @if (isCreatingRace) {
-                                    <span class="spinner-small" style="border-top-color: #fff;"></span>
-                                    Creating...
+                                    <span class="spinner-small"></span>
+                                    <span>Creating...</span>
                                 } @else {
-                                    Create Race
+                                    <span>Create Race</span>
                                 }
                             </button>
                         </div>
@@ -588,7 +454,6 @@
                 </div>
             }
 
-            <!-- Races List -->
             <div class="races-list">
                 <h4>All Races ({{ races.length }})</h4>
                 @if (isLoadingRaces) {
@@ -618,17 +483,13 @@
                                         <span class="status-badge {{ getStatusClass(race.status) }}">
                                             {{ getStatusLabel(race.status) }}
                                         </span>
-                                        @if (race.isManuallyOverridden) {
-                                            <span class="override-badge" style="margin-left: 4px;">⚠️ Override</span>
-                                        }
                                     </td>
                                     <td>
                                         <button
                                             class="btn-delete-row"
                                             (click)="openDeleteConfirm(race.id)"
-                                            title="Delete race"
                                         >
-                                            🗑️ Delete
+                                            <span>Remove</span>
                                         </button>
                                     </td>
                                 </tr>
@@ -689,3 +550,4 @@
         </div>
     }
 </div>
+    </div>

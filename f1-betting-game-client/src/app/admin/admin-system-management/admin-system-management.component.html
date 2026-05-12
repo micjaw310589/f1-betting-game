@@ -30,6 +30,13 @@
         >
             Race Management
         </button>
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'bets'"
+            (click)="switchTab('bets')"
+        >
+            Bets
+        </button>
     </div>
 
     @if (activeTab === 'sync') {
@@ -494,4 +501,53 @@
         </div>
     }
 
+    <!-- Delete Confirmation Modal -->
+    @if (showDeleteConfirm) {
+        <div class="modal-overlay" (click)="closeDeleteConfirm()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Race Deletion</h3>
+                    <button class="modal-close" (click)="closeDeleteConfirm()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to delete this race?
+                    </p>
+                    @if (deleteRaceError) {
+                        <div class="message error">
+                            ❌ {{ deleteRaceError }}
+                        </div>
+                    }
+                    <p class="warning-text">
+                        ⚠️ This action cannot be undone. Any associated results will also be deleted.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeDeleteConfirm()">
+                        Cancel
+                    </button>
+                    <button
+                        class="btn-confirm"
+                        [disabled]="isDeletingRace"
+                        (click)="deleteRace()"
+                    >
+                        @if (isDeletingRace) {
+                            <span class="spinner-small" style="border-top-color: #fff;"></span>
+                            Deleting...
+                        } @else {
+                            Delete Race
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Bets Tab -->
+    @if (activeTab === 'bets') {
+        <div class="tab-content">
+            <app-admin-bet-management></app-admin-bet-management>
+        </div>
+    }
+</div>
     </div>

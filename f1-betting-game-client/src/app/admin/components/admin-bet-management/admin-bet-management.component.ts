@@ -30,7 +30,7 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
 
     // Pagination
     page = 1;
-    pageSize = 20;
+    pageSize = 500;
     totalItems = 0;
     totalPages = 0;
 
@@ -97,17 +97,19 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        this.loadBets();
+        this.loadBetsInternal();
         this.loadOptions();
     }
 
-    ngOnDestroy(): void {}
-
-    // ========================
-    // Data Loading
-    // ========================
-
+    /**
+     * Loads bets and options. Call this when the bets tab becomes active.
+     */
     loadBets(): void {
+        this.loadBetsInternal();
+        this.loadOptions();
+    }
+
+    private loadBetsInternal(): void {
         this.isLoading = true;
         this.hasError = false;
 
@@ -124,15 +126,19 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
                     this.totalItems = result.totalItems;
                     this.totalPages = result.totalPages;
                     this.isLoading = false;
+                    this.cdr.markForCheck();
                 },
                 error: (error: any) => {
                     console.error('Error loading bets:', error);
                     this.hasError = true;
                     this.errorMessage = error.message || 'Failed to load bets';
                     this.isLoading = false;
+                    this.cdr.markForCheck();
                 },
             });
     }
+
+    ngOnDestroy(): void {}
 
     loadOptions(): void {
         this.isLoadingOptions = true;
@@ -144,8 +150,12 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
                     id: r.id,
                     name: r.name,
                 }));
+                this.cdr.markForCheck();
             },
-            error: (err: any) => console.error('Error loading races:', err),
+            error: (err: any) => {
+                console.error('Error loading races:', err);
+                this.cdr.markForCheck();
+            },
         });
 
         // Load drivers for dropdown
@@ -157,10 +167,12 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
                     teamName: d.teamName,
                 }));
                 this.isLoadingOptions = false;
+                this.cdr.markForCheck();
             },
             error: (err: any) => {
                 console.error('Error loading drivers:', err);
                 this.isLoadingOptions = false;
+                this.cdr.markForCheck();
             },
         });
     }
@@ -286,13 +298,16 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
                 this.createSuccess = true;
                 this.closeCreateModal();
                 this.loadBets();
+                this.cdr.markForCheck();
                 setTimeout(() => {
                     this.createSuccess = false;
+                    this.cdr.markForCheck();
                 }, 5000);
             },
             error: (error: any) => {
                 this.isCreating = false;
                 this.createError = error.message || 'Failed to create bet';
+                this.cdr.markForCheck();
             },
         });
     }
@@ -356,13 +371,16 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
                 this.editSuccess = true;
                 this.closeEditModal();
                 this.loadBets();
+                this.cdr.markForCheck();
                 setTimeout(() => {
                     this.editSuccess = false;
+                    this.cdr.markForCheck();
                 }, 5000);
             },
             error: (error: any) => {
                 this.isEditing = false;
                 this.editError = error.message || 'Failed to update bet';
+                this.cdr.markForCheck();
             },
         });
     }
@@ -394,10 +412,12 @@ export class AdminBetManagementComponent implements OnInit, OnDestroy {
                 this.showDeleteConfirm = false;
                 this.deletingBetId = null;
                 this.loadBets();
+                this.cdr.markForCheck();
             },
             error: (error: any) => {
                 this.isDeleting = false;
                 this.deleteError = error.message || 'Failed to delete bet';
+                this.cdr.markForCheck();
             },
         });
     }

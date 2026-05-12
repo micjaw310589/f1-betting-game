@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { AdminBetManagementComponent } from '../components/admin-bet-management/admin-bet-management.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +22,7 @@ import {
 })
 export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // --- Tab Navigation ---
-    activeTab: 'sync' | 'results' | 'metadata' | 'races' | 'bets' = 'sync';
+    activeTab: 'sync' | 'results' | 'metadata' | 'races' | 'bets' = 'bets';
 
     // --- Sync Section ---
     isSyncing = false;
@@ -73,6 +73,9 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     deleteRaceError = '';
 
     private syncTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    @ViewChild(AdminBetManagementComponent)
+    private betManagementComponent!: AdminBetManagementComponent;
 
     constructor(
         private adminService: AdminService,

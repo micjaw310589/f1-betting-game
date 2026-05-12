@@ -39,6 +39,8 @@ This document outlines the steps required to resolve a set of user interface and
 - **Component Boundaries:** The bet management tab is a separate child component injected into the parent system management component. When standardizing styles, we must ensure that the CSS changes in the child component do not unintentionally bleed out. Alternatively, shared styles (like the modal CSS and styled button classes) could be promoted to a global admin stylesheet to prevent duplication.
 - **State Management:** The parent component orchestrates multiple forms and tabs. Modifying the tab switch handler to reset modal states is a crucial integrity point to prevent orphaned dialogues that could lead to unintended data mutations (e.g., confirming a deletion for a race while viewing an entirely different tab).
 - **Data Integrity:** Ensuring that confirmation modals actually display before submitting data prevents accidental overwrites of race results or metadata, protecting the core database records.
+- **Notification Idempotency (Task 6):** If notifications are polled from the database, the frontend must immediately mark them as "read" the moment they are fetched and displayed. If this is deferred until user dismissal, refreshing the page or polling twice before dismissal could cause duplicate database reads and infinite popups.
+- **Polling vs Push Architecture (Task 6):** The existing application architecture lacks SignalR/WebSockets. Implementing polling must balance near real-time responsiveness with server load; intervals must be cleared correctly on component destruction to prevent memory leaks.
 
 ## Task Breakdown
 
@@ -81,3 +83,19 @@ The implementation plan is broken down into the following discrete tasks. Each t
 - Open the Admin Panel and assign drivers to finishing positions for a Scheduled race.
 - Click **Save**. Verify the success modal appears.
 - Reload the page and click **Results** on the same race. The assigned drivers MUST be populated in the modal grid, proving successful database persistence and correct JSON mapping.
+
+### Task 6: Implement On-Screen Notifications (Bet Conclusion & Race Updates)
+**Objective:** Complete the backend-to-frontend pipeline for user notifications regarding bet resolutions and race status updates, as requested in Phase 3 Task 04.
+**Scope:**
+- **Backend Controller (`NotificationsController.cs`):** 
+  - Create a new API controller to expose `NotificationService`.
+  - Add `GET /api/notifications/unread` returning unread notifications for the currently authenticated user (`GetUnreadNotificationsAsync`).
+  - Add `PUT /api/notifications/{id}/read` to mark a specific notification as read (`MarkNotificationAsReadAsync`).
+- **Frontend Notification Flow (`bet-result-notification.component.ts`):**
+  - Implement an interval timer inside `ngOnInit` to periodically execute `fetchAndDisplayNotifications()` (e.g., every 15 seconds).
+  - Crucially, modify `fetchAndDisplayNotifications()` to send a request to `PUT /api/notifications/{id}/read` immediately after calling `showNotificationInternal()`. This clears the notification from the unread queue and prevents the same notification from appearing repeatedly in subsequent polls.
+  - Ensure the polling interval is cleared in `ngOnDestroy` to prevent memory leaks.
+**Verification:**
+- Simulate a race finishing and triggering the background worker (or manual admin override).
+- Observe the notification pop-up automatically appearing on the frontend within 15 seconds.
+- Refresh the page and ensure the notification does *not* reappear (verifying the idempotency/read-flagging).

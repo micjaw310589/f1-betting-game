@@ -186,6 +186,7 @@ export class BetResultNotificationComponent implements OnInit, OnDestroy {
   notification: BetResultNotification | null = null;
   private subscription: Subscription | null = null;
   private progressTimeout: number | null = null;
+  private pollingIntervalId: any = null;
 
   constructor(
     private http: HttpClient,
@@ -194,6 +195,14 @@ export class BetResultNotificationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.listenForBetResults();
+    
+    // Start polling for notifications every 15 seconds
+    this.fetchAndDisplayNotifications();
+    this.pollingIntervalId = setInterval(() => {
+      this.ngZone.run(() => {
+        this.fetchAndDisplayNotifications();
+      });
+    }, 15000);
   }
 
   ngOnDestroy(): void {
@@ -202,6 +211,9 @@ export class BetResultNotificationComponent implements OnInit, OnDestroy {
     }
     if (this.progressTimeout) {
       clearTimeout(this.progressTimeout);
+    }
+    if (this.pollingIntervalId) {
+      clearInterval(this.pollingIntervalId);
     }
   }
 
@@ -266,6 +278,13 @@ this.subscription = new Subscription(() => {
               isRead: latest.isRead || false,
               createdAt: latest.createdAt,
               type: notificationType
+            });
+
+            // Mark as read immediately to avoid idempotency issues and duplicate popups
+            this.http.put(`/api/notifications/${latest.id}/read`, {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            }).subscribe({
+              error: (err) => console.error('Failed to mark notification as read:', err)
             });
           }
         }

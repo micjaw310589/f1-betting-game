@@ -266,6 +266,10 @@ namespace F1BettingApp.Application.Services
             // Delete all existing results for this race
             var existingResults = _dbContext.Results.Where(r => r.RaceId == raceId).ToList();
             _dbContext.Results.RemoveRange(existingResults);
+            
+            // Save changes to flush deletions before inserting new results
+            // This prevents unique constraint violations on (RaceId, DriverId)
+            await _dbContext.SaveChangesAsync();
 
             // Create and add new results
             var newResults = new List<Result>();

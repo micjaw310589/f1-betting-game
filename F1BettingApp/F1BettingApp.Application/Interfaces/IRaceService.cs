@@ -109,11 +109,5 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="raceId">The ID of the race to delete.</param>
         /// <returns>Task representing the asynchronous operation.</returns>
         Task DeleteRaceAsync(int raceId);
-
-        /// <summary>
-        /// Gets all drivers with their team information.
-        /// </summary>
-        /// <returns>Collection of all driver DTOs.</returns>
-        Task<IEnumerable<DriverDto>> GetAllDriversAsync();
     }
 }

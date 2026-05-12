@@ -14,10 +14,6 @@ import {
     RaceResultDto,
     OverrideRaceResultDto,
     DriverDto,
-    AdminBetResponseDto,
-    CreateBetDto,
-    UpdateBetDto,
-    BetStatus,
 } from '../models/admin.models';
 
 @Injectable({
@@ -173,65 +169,6 @@ export class AdminService {
     deleteRace(raceId: number): Observable<void> {
         return this.http
             .delete<void>(`${this.ADMIN_API_URL}/races/${raceId}`)
-            .pipe(catchError(this.handleError));
-    }
-
-    // ========================
-    // Bet Management Methods
-    // ========================
-
-    /**
-     * Gets all bets with pagination and optional filtering (admin only).
-     */
-    getAllBets(
-        page: number = 1,
-        pageSize: number = 20,
-        filterStatus?: BetStatus | null,
-        searchTerm?: string
-    ): Observable<PagedResult<AdminBetResponseDto>> {
-        let params = new HttpParams()
-            .set('page', page.toString())
-            .set('pageSize', pageSize.toString());
-
-        if (filterStatus) {
-            params = params.set('filterStatus', filterStatus);
-        }
-        if (searchTerm) {
-            params = params.set('searchTerm', searchTerm);
-        }
-
-        return this.http
-            .get<PagedResult<AdminBetResponseDto>>(`${this.ADMIN_API_URL}/bets`, { params })
-            .pipe(catchError(this.handleError));
-    }
-
-    /**
-     * Creates a new bet on behalf of a user (admin only).
-     */
-    createBet(dto: CreateBetDto): Observable<AdminBetResponseDto> {
-        return this.http
-            .post<AdminBetResponseDto>(`${this.ADMIN_API_URL}/bets`, dto)
-            .pipe(catchError(this.handleError));
-    }
-
-    /**
-     * Updates an existing bet (admin only). Supports partial updates.
-     */
-    updateBet(
-        betId: number,
-        dto: UpdateBetDto
-    ): Observable<AdminBetResponseDto> {
-        return this.http
-            .put<AdminBetResponseDto>(`${this.ADMIN_API_URL}/bets/${betId}`, dto)
-            .pipe(catchError(this.handleError));
-    }
-
-    /**
-     * Deletes (cancels) a bet (admin only). Only works on pending bets.
-     */
-    deleteBet(betId: number): Observable<void> {
-        return this.http
-            .delete<void>(`${this.ADMIN_API_URL}/bets/${betId}`)
             .pipe(catchError(this.handleError));
     }
 

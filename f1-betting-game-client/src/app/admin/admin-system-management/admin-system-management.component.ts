@@ -1,5 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
-import { AdminBetManagementComponent } from '../components/admin-bet-management/admin-bet-management.component';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../services/admin.service';
@@ -16,13 +15,13 @@ import {
 @Component({
     selector: 'app-admin-system-management',
     standalone: true,
-    imports: [CommonModule, FormsModule, AdminBetManagementComponent],
+    imports: [CommonModule, FormsModule],
     templateUrl: './admin-system-management.component.html',
     styleUrl: './admin-system-management.component.css',
 })
 export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // --- Tab Navigation ---
-    activeTab: 'sync' | 'results' | 'metadata' | 'races' | 'bets' = 'bets';
+    activeTab: 'sync' | 'results' | 'metadata' | 'races' = 'sync';
 
     // --- Sync Section ---
     isSyncing = false;
@@ -74,9 +73,6 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     private syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    @ViewChild(AdminBetManagementComponent)
-    private betManagementComponent!: AdminBetManagementComponent;
-
     constructor(
         private adminService: AdminService,
         private cdr: ChangeDetectorRef
@@ -97,7 +93,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // Tab Navigation
     // ========================
 
-    switchTab(tab: 'sync' | 'results' | 'metadata' | 'races' | 'bets'): void {
+    switchTab(tab: 'sync' | 'results' | 'metadata' | 'races'): void {
         this.activeTab = tab;
     }
 
@@ -451,18 +447,6 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
             this.resultsSaveError = 'At least one position is required.';
             return;
         }
-
-        // Check for duplicate drivers
-        const driverIds = this.currentPositions
-            .filter((p) => p.driverId != null)
-            .map((p) => p.driverId as number);
-        const duplicates = driverIds.filter((id, index) => driverIds.indexOf(id) !== index);
-        if (duplicates.length > 0) {
-            const uniqueDuplicates = [...new Set(duplicates)];
-            this.resultsSaveError = `The following drivers are assigned to multiple positions: ${uniqueDuplicates.join(', ')}. Each driver can only occupy one position.`;
-            return;
-        }
-
         this.showResultsConfirmModal = true;
     }
 

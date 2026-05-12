@@ -114,12 +114,12 @@ namespace F1BettingApp.Application.DTOs
         /// <summary>
         /// Indicates if the refresh was successful
         /// </summary>
-        public new bool IsSuccess { get; set; }
+        public bool IsSuccess { get; set; }
 
         /// <summary>
         /// Error message if refresh failed
         /// </summary>
-        public new string? ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 
     /// <summary>
@@ -130,12 +130,12 @@ namespace F1BettingApp.Application.DTOs
         /// <summary>
         /// Indicates if login was successful
         /// </summary>
-        public new bool IsSuccess { get; set; }
+        public bool IsSuccess { get; set; }
 
         /// <summary>
         /// Error message if login failed
         /// </summary>
-        public new string? ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 
     /// <summary>

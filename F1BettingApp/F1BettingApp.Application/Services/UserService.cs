@@ -154,14 +154,6 @@ namespace F1BettingApp.Application.Services
                     ErrorMessage = "Invalid credentials"
                 };
 
-            // Check if user account is active (not suspended)
-            if (!user.IsActive)
-                return new AuthResponseDto
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Account suspended"
-                };
-
             // Generate tokens
             var accessToken = GenerateJwtToken(user);
             var refreshToken = GenerateRefreshToken();
@@ -219,16 +211,6 @@ namespace F1BettingApp.Application.Services
                 {
                     IsSuccess = false,
                     ErrorMessage = "Invalid or expired refresh token"
-                };
-            }
-
-            // Check if user account is active (not suspended)
-            if (!user.IsActive)
-            {
-                return new AuthResponseDto
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Account suspended"
                 };
             }
 

@@ -172,30 +172,6 @@ namespace F1BettingApp.Tests
         }
 
         [Fact]
-        public async Task Login_SuspendedAccount_ReturnsUnauthorized()
-        {
-            // Arrange
-            var loginDto = new LoginDto { UsernameOrEmail = "test@ex.com", Password = "Password123!" };
-            var authResponse = new AuthResponseDto
-            {
-                IsSuccess = false,
-                ErrorMessage = "Account suspended"
-            };
-
-            _mockUserService.Setup(x => x.AuthenticateUserAsync(It.IsAny<LoginDto>()))
-                .ReturnsAsync(authResponse);
-
-            // Act
-            var result = await _controller.Login(loginDto);
-
-            // Assert
-            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result.Result);
-            var returnValue = Assert.IsType<AuthResponseDto>(unauthorizedResult.Value);
-            Assert.False(returnValue.IsSuccess);
-            Assert.Equal("Account suspended", returnValue.ErrorMessage);
-        }
-
-        [Fact]
         public async Task Login_InvalidModelState_ReturnsBadRequest()
         {
             // Arrange
@@ -226,24 +202,6 @@ namespace F1BettingApp.Tests
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var returnValue = Assert.IsType<AuthResponseDto>(okResult.Value);
             Assert.True(returnValue.IsSuccess);
-        }
-
-        [Fact]
-        public async Task RefreshToken_SuspendedAccount_ReturnsUnauthorized()
-        {
-            // Arrange
-            var dto = new RefreshTokenDto { Token = "old", RefreshToken = "valid" };
-            var response = new AuthResponseDto { IsSuccess = false, ErrorMessage = "Account suspended" };
-            _mockUserService.Setup(x => x.RefreshTokenAsync(It.IsAny<RefreshTokenDto>())).ReturnsAsync(response);
-
-            // Act
-            var result = await _controller.RefreshToken(dto);
-
-            // Assert
-            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result.Result);
-            var returnValue = Assert.IsType<AuthResponseDto>(unauthorizedResult.Value);
-            Assert.False(returnValue.IsSuccess);
-            Assert.Equal("Account suspended", returnValue.ErrorMessage);
         }
 
         [Fact]

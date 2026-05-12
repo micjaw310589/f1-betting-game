@@ -228,7 +228,7 @@ namespace F1BettingApp.Application.Services
                 throw new ArgumentException("At least one position entry is required.");
             }
 
-            // Validate that all driver IDs are positive and positions are valid
+            // Validate that all driver IDs are positive
             foreach (var positionEntry in dto.Positions)
             {
                 if (positionEntry.DriverId <= 0)
@@ -239,15 +239,6 @@ namespace F1BettingApp.Application.Services
                 {
                     throw new ArgumentException($"Position must be at least 1.");
                 }
-            }
-
-            // Validate that no driver appears more than once
-            var driverIds = dto.Positions.Select(p => p.DriverId).ToList();
-            var duplicates = driverIds.GroupBy(d => d).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
-            if (duplicates.Any())
-            {
-                var duplicateList = string.Join(", ", duplicates);
-                throw new ArgumentException($"The following drivers are assigned to multiple positions: {duplicateList}. Each driver can only occupy one position.");
             }
 
             if (dto.FastestLapDriverId.HasValue && dto.FastestLapDriverId.Value <= 0)
@@ -513,19 +504,6 @@ namespace F1BettingApp.Application.Services
             // Delete the race
             await _raceRepository.DeleteAsync(raceId);
             await _raceRepository.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<DriverDto>> GetAllDriversAsync()
-        {
-            var driversList = (await _driverRepository.GetAllAsync()).ToList();
-            return driversList.Select(d => new DriverDto
-            {
-                Id = d.Id,
-                Name = d.Name,
-                Abbreviation = d.OpenF1DriverId,
-                TeamId = d.TeamId,
-                TeamName = d.Team?.Name ?? string.Empty
-            });
         }
 
         public async Task<IEnumerable<DriverWithOddsDto>> GetDriversWithOddsForRaceAsync(int raceId)

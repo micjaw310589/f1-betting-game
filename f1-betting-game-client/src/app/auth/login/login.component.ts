@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
@@ -23,8 +23,7 @@ export class LoginComponent implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
+    private router: Router
   ) {
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
@@ -55,13 +54,11 @@ export class LoginComponent implements OnInit {
         } else {
           this.errorMessage = response.errorMessage || 'Login failed';
           this.isLoading = false;
-          this.cdr.markForCheck();
         }
       },
       error: (error) => {
         this.errorMessage = error.message || 'Login failed';
         this.isLoading = false;
-        this.cdr.markForCheck();
       }
     });
   }

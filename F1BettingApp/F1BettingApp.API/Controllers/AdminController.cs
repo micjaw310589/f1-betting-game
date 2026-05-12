@@ -1,11 +1,9 @@
 using F1BettingApp.Application.DTOs;
-using F1BettingApp.Application.Exceptions;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System.Security.Claims;
 
 namespace F1BettingApp.API.Controllers
 {
@@ -20,24 +18,15 @@ namespace F1BettingApp.API.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IRaceService _raceService;
-        private readonly IBettingService _bettingService;
         private readonly ILogger<AdminController> _logger;
 
         public AdminController(
             IRaceService raceService,
-            IBettingService bettingService,
             ILogger<AdminController> logger)
         {
             _raceService = raceService;
-            _bettingService = bettingService;
             _logger = logger;
         }
-
-        /// <summary>
-        /// Gets the authenticated admin's user ID.
-        /// </summary>
-        private int AdminUserId =>
-            int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
         /// <summary>
         /// Manually triggers OpenF1 data synchronization.
@@ -410,266 +399,6 @@ namespace F1BettingApp.API.Controllers
                 {
                     Error = "RACE_DELETION_FAILED",
                     Message = "Failed to delete race",
-                    Details = ex.Message
-                });
-            }
-        }
-
-        // ========================
-        // Bet Management Endpoints
-        // ========================
-
-        /// <summary>
-        /// Gets all bets with pagination and optional filtering (admin only).
-        /// </summary>
-        /// <param name="page">Page number (default: 1)</param>
-        /// <param name="pageSize">Items per page (default: 20)</param>
-        /// <param name="filterStatus">Optional filter by bet status</param>
-        /// <param name="searchTerm">Optional search by username or race name</param>
-        [HttpGet("bets")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<ActionResult<PagedResult<AdminBetResponseDto>>> GetAllBets(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20,
-            [FromQuery] BetStatus? filterStatus = null,
-            [FromQuery] string? searchTerm = null)
-        {
-            _logger.LogInformation("Admin fetching all bets: Page={Page}, PageSize={PageSize}, FilterStatus={FilterStatus}, SearchTerm={SearchTerm}",
-                page, pageSize, filterStatus, searchTerm);
-
-            try
-            {
-                var result = await _bettingService.GetAllBetsAsync(page, pageSize, filterStatus, searchTerm);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching admin bets");
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
-                {
-                    Error = "BET_DATA_ERROR",
-                    Message = "An error occurred while retrieving bets",
-                    Details = ex.Message
-                });
-            }
-        }
-
-        /// <summary>
-        /// Creates a new bet on behalf of a user (admin only).
-        /// </summary>
-        [HttpPost("bets")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<AdminBetResponseDto>> CreateBet([FromBody] CreateBetDto dto)
-        {
-            _logger.LogInformation("Admin creating bet: UserId={UserId}, RaceId={RaceId}, DriverId={DriverId}, Amount={Amount}, Type={BetType}",
-                dto.UserId, dto.RaceId, dto.DriverId, dto.Amount, dto.BetType);
-
-            try
-            {
-                var bet = await _bettingService.CreateBetAsync(dto, AdminUserId);
-
-                _logger.LogInformation("Bet created successfully: BetId={BetId}", bet.Id);
-
-                return CreatedAtAction(nameof(GetAllBets), new { }, bet);
-            }
-            catch (UserNotFoundException)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Error = "USER_NOT_FOUND",
-                    Message = "User not found",
-                    Details = "The specified user does not exist."
-                });
-            }
-            catch (RaceNotFoundException)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Error = "RACE_NOT_FOUND",
-                    Message = "Race not found",
-                    Details = "The specified race does not exist."
-                });
-            }
-            catch (DriverNotFoundException)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Error = "DRIVER_NOT_FOUND",
-                    Message = "Driver not found",
-                    Details = "The specified driver does not exist."
-                });
-            }
-            catch (InsufficientFundsException ex)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Error = "INSUFFICIENT_FUNDS",
-                    Message = ex.Message,
-                    Details = ex.Message
-                });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Error = "INVALID_INPUT",
-                    Message = ex.Message,
-                    Details = ex.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating bet");
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
-                {
-                    Error = "BET_CREATION_FAILED",
-                    Message = "Failed to create bet",
-                    Details = ex.Message
-                });
-            }
-        }
-
-        /// <summary>
-        /// Updates a bet (admin only). Supports partial updates.
-        /// </summary>
-        [HttpPut("bets/{betId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<AdminBetResponseDto>> UpdateBet(
-            [FromRoute] int betId,
-            [FromBody] UpdateBetDto dto)
-        {
-            _logger.LogInformation("Admin updating bet: BetId={BetId}", betId);
-
-            try
-            {
-                var bet = await _bettingService.UpdateBetAsync(betId, dto, AdminUserId);
-
-                _logger.LogInformation("Bet updated successfully: BetId={BetId}", betId);
-
-                return Ok(bet);
-            }
-            catch (BetNotFoundException)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Error = "BET_NOT_FOUND",
-                    Message = $"Bet with ID {betId} not found",
-                    Details = $"Bet with ID {betId} does not exist."
-                });
-            }
-            catch (UserNotFoundException)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Error = "USER_NOT_FOUND",
-                    Message = "User not found",
-                    Details = "The user associated with this bet does not exist."
-                });
-            }
-            catch (DriverNotFoundException)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Error = "DRIVER_NOT_FOUND",
-                    Message = "Driver not found",
-                    Details = "The specified driver does not exist."
-                });
-            }
-            catch (InsufficientFundsException ex)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Error = "INSUFFICIENT_FUNDS",
-                    Message = ex.Message,
-                    Details = ex.Message
-                });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Error = "INVALID_INPUT",
-                    Message = ex.Message,
-                    Details = ex.Message
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Error = "INVALID_OPERATION",
-                    Message = ex.Message,
-                    Details = ex.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating bet: BetId={BetId}", betId);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
-                {
-                    Error = "BET_UPDATE_FAILED",
-                    Message = "Failed to update bet",
-                    Details = ex.Message
-                });
-            }
-        }
-
-        /// <summary>
-        /// Deletes (cancels) a bet (admin only). Only works on pending bets.
-        /// Refunds the bet amount to the user's balance.
-        /// </summary>
-        [HttpDelete("bets/{betId}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult> DeleteBet([FromRoute] int betId)
-        {
-            _logger.LogInformation("Admin deleting bet: BetId={BetId}", betId);
-
-            try
-            {
-                await _bettingService.DeleteBetAsync(betId, AdminUserId);
-
-                _logger.LogInformation("Bet deleted successfully: BetId={BetId}", betId);
-
-                return NoContent();
-            }
-            catch (BetNotFoundException)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Error = "BET_NOT_FOUND",
-                    Message = $"Bet with ID {betId} not found",
-                    Details = $"Bet with ID {betId} does not exist."
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Error = "INVALID_OPERATION",
-                    Message = ex.Message,
-                    Details = ex.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting bet: BetId={BetId}", betId);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
-                {
-                    Error = "BET_DELETION_FAILED",
-                    Message = "Failed to delete bet",
                     Details = ex.Message
                 });
             }

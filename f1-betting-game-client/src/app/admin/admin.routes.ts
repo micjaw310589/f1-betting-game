@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AdminUserManagementComponent } from './admin-user-management/admin-user-management.component';
 import { AdminSystemManagementComponent } from './admin-system-management/admin-system-management.component';
+import { AdminBetManagementComponent } from './components/admin-bet-management/admin-bet-management.component';
 import { adminGuard } from './guards/admin.guard';
 
 export const AdminRoutes: Routes = [
@@ -27,6 +28,11 @@ export const AdminRoutes: Routes = [
                 path: 'system/metadata',
                 component: AdminSystemManagementComponent,
                 data: { description: 'Update race metadata' },
+            },
+            {
+                path: 'bets',
+                component: AdminBetManagementComponent,
+                data: { description: 'Manage platform bets' },
             },
             {
                 path: '',

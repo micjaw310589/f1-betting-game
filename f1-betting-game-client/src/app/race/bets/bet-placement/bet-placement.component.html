@@ -8,9 +8,9 @@
   <section class="panel">
     <h2>Place a new bet</h2>
 
-    <div class="user-balance-info">
-      Available balance: <strong>{{ userPoints | number:'1.2-2' }} pts</strong>
-    </div>
+<div class="user-balance-info">
+  Available balance: <strong>{{ userPoints | number:'1.0-0' }} pts</strong>
+</div>
 
 <div class="form-row">
   <label for="betType">Bet type</label>
@@ -38,13 +38,15 @@
 
     <div class="form-row">
       <label for="amount">Stake amount</label>
-      <input
-        id="amount"
-        type="number"
-        min="0.1"
-        step="0.1"
-        [(ngModel)]="amount"
-        placeholder="e.g. 100" [class.input-error]="hasInsufficientFunds" />
+<input
+  id="amount"
+  type="text"
+  inputmode="decimal"
+  [(ngModel)]="amount"
+  (beforeinput)="validateBetInput($event)"
+  (blur)="finalizeAmount()"
+  placeholder="e.g. 100.50"
+  [class.input-error]="hasInsufficientFunds" />
 
       @if (hasInsufficientFunds) {
         <div class="error-message-inline">

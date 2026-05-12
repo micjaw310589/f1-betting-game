@@ -506,6 +506,19 @@ namespace F1BettingApp.Application.Services
             await _raceRepository.SaveChangesAsync();
         }
 
+        public async Task<IEnumerable<DriverDto>> GetAllDriversAsync()
+        {
+            var driversList = (await _driverRepository.GetAllAsync()).ToList();
+            return driversList.Select(d => new DriverDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Abbreviation = d.OpenF1DriverId,
+                TeamId = d.TeamId,
+                TeamName = d.Team?.Name ?? string.Empty
+            });
+        }
+
         public async Task<IEnumerable<DriverWithOddsDto>> GetDriversWithOddsForRaceAsync(int raceId)
         {
             var race = await _raceRepository.GetByIdAsync(raceId);

@@ -543,6 +543,67 @@
         </div>
     }
 
+    <!-- Metadata Confirmation Modal -->
+    @if (showMetadataConfirmModal) {
+        <div class="modal-overlay" (click)="closeMetadataConfirmModal()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Metadata Update</h3>
+                    <button class="modal-close" (click)="closeMetadataConfirmModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to save these changes to the race metadata?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeMetadataConfirmModal()">Cancel</button>
+                    <button
+                        class="btn-confirm"
+                        [disabled]="isSavingMetadata"
+                        (click)="confirmMetadataUpdate()"
+                    >
+                        @if (isSavingMetadata) {
+                            <span class="spinner-small" style="border-top-color: #fff;"></span>
+                            Saving...
+                        } @else {
+                            Save Changes
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Results Confirmation Modal -->
+    @if (showResultsConfirmModal) {
+        <div class="modal-overlay" (click)="closeResultsConfirmModal()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Results Override</h3>
+                    <button class="modal-close" (click)="closeResultsConfirmModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to save these race results?</p>
+                    <p class="warning-text">⚠️ This action will trigger result processing and bet evaluation.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeResultsConfirmModal()">Cancel</button>
+                    <button
+                        class="btn-confirm"
+                        [disabled]="isSavingResults"
+                        (click)="confirmResultsOverride()"
+                    >
+                        @if (isSavingResults) {
+                            <span class="spinner-small" style="border-top-color: #fff;"></span>
+                            Saving...
+                        } @else {
+                            Save Results
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Bets Tab -->
     @if (activeTab === 'bets') {
         <div class="tab-content">
@@ -550,4 +611,3 @@
         </div>
     }
 </div>
-    </div>

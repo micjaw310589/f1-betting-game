@@ -333,6 +333,36 @@ public class AdminControllerTests
     }
 
     [Fact]
+    public async Task OverrideRaceResults_DuplicateDriver_ShouldReturnBadRequest()
+    {
+        // Arrange
+        var raceId = 1;
+        var dto = new OverrideRaceResultDto
+        {
+            Positions = new List<PositionEntryDto>
+            {
+                new PositionEntryDto { Position = 1, DriverId = 1 },
+                new PositionEntryDto { Position = 2, DriverId = 1 }, // Same driver twice
+                new PositionEntryDto { Position = 3, DriverId = 63 }
+            }
+        };
+
+        _mockRaceService
+            .Setup(s => s.OverrideRaceResultAsync(raceId, dto))
+            .ThrowsAsync(new ArgumentException("The following drivers are assigned to multiple positions: 1. Each driver can only occupy one position."));
+
+        // Act
+        var response = await _controller.OverrideRaceResults(raceId, dto);
+
+        // Assert
+        var objResult = GetObjectResult(response);
+        Assert.Equal(400, objResult.StatusCode);
+        var errorResponse = Assert.IsType<ErrorResponse>(objResult.Value);
+        Assert.Equal("INVALID_INPUT", errorResponse.Error);
+        Assert.Contains("multiple positions", errorResponse.Message);
+    }
+
+    [Fact]
     public async Task OverrideRaceResults_InvalidOperationException_ShouldReturnBadRequest()
     {
         // Arrange

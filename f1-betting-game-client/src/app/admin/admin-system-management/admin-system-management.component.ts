@@ -451,6 +451,18 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
             this.resultsSaveError = 'At least one position is required.';
             return;
         }
+
+        // Check for duplicate drivers
+        const driverIds = this.currentPositions
+            .filter((p) => p.driverId != null)
+            .map((p) => p.driverId as number);
+        const duplicates = driverIds.filter((id, index) => driverIds.indexOf(id) !== index);
+        if (duplicates.length > 0) {
+            const uniqueDuplicates = [...new Set(duplicates)];
+            this.resultsSaveError = `The following drivers are assigned to multiple positions: ${uniqueDuplicates.join(', ')}. Each driver can only occupy one position.`;
+            return;
+        }
+
         this.showResultsConfirmModal = true;
     }
 

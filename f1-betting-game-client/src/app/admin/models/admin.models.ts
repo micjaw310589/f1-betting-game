@@ -60,6 +60,110 @@ export interface PagedResult<T> {
 }
 
 // ========================
+// Bet Management Models
+// ========================
+
+/**
+ * Bet type enum (mirrors backend BetType enum).
+ */
+export type BetType =
+    | 'RaceWinner'
+    | 'PodiumFinish'
+    | 'Top10Finish'
+    | 'FastestLap'
+    | 'FastestPitStop'
+    | 'DNFCount'
+    | 'DriverVsDriver'
+    | 'TeamVsTeam';
+
+/**
+ * Bet status enum (mirrors backend BetStatus enum).
+ */
+export type BetStatus = 'Pending' | 'Won' | 'Lost' | 'Canceled' | 'Resolved';
+
+/**
+ * Admin view of a bet, includes user and race context.
+ * Corresponds to F1BettingApp.Application.DTOs.AdminBetResponseDto
+ */
+export interface AdminBetResponseDto {
+    id: number;
+    userId: number;
+    username: string;
+    raceId: number;
+    raceName: string;
+    driverId: number;
+    driverName: string;
+    amount: number;
+    odds: number;
+    betType: BetType;
+    status: BetStatus;
+    winnings: number | null;
+    potentialWinnings: number | null;
+    createdAt: string;
+    resolvedAt: string | null;
+}
+
+/**
+ * DTO for creating a bet as an admin.
+ * Corresponds to F1BettingApp.Application.DTOs.CreateBetDto
+ */
+export interface CreateBetDto {
+    userId: number;
+    raceId: number;
+    driverId: number;
+    amount: number;
+    betType: BetType;
+}
+
+/**
+ * DTO for updating a bet as an admin.
+ * Corresponds to F1BettingApp.Application.DTOs.UpdateBetDto
+ */
+export interface UpdateBetDto {
+    driverId?: number;
+    amount?: number;
+    betType?: BetType;
+    status?: BetStatus;
+    winnings?: number;
+}
+
+/**
+ * Available bet statuses for admin filtering.
+ */
+export const BET_STATUSES: { value: BetStatus; label: string }[] = [
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Won', label: 'Won' },
+    { value: 'Lost', label: 'Lost' },
+    { value: 'Canceled', label: 'Canceled' },
+    { value: 'Resolved', label: 'Resolved' },
+] as const;
+
+/**
+ * Available bet types for admin forms.
+ */
+export const BET_TYPES: { value: BetType; label: string }[] = [
+    { value: 'RaceWinner', label: 'Race Winner' },
+    { value: 'PodiumFinish', label: 'Podium Finish' },
+    { value: 'Top10Finish', label: 'Top 10 Finish' },
+    { value: 'FastestLap', label: 'Fastest Lap' },
+    { value: 'FastestPitStop', label: 'Fastest Pit Stop' },
+    { value: 'DNFCount', label: 'DNF Count' },
+    { value: 'DriverVsDriver', label: 'Driver vs Driver' },
+    { value: 'TeamVsTeam', label: 'Team vs Team' },
+] as const;
+
+/**
+ * Status badge styling mapping.
+ */
+export const BET_STATUS_CLASSES: Record<BetStatus, string> = {
+    Pending: 'status-pending',
+    Won: 'status-won',
+    Lost: 'status-lost',
+    Canceled: 'status-canceled',
+    Resolved: 'status-resolved',
+};
+
+// ========================
 // System Management Models
 // ========================
 

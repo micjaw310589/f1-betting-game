@@ -1,5 +1,6 @@
 using F1BettingApp.Application.DTOs;
 using F1BettingApp.Domain.Entities;
+using F1BettingApp.Domain.Enums;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -79,6 +80,42 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="userId">The user ID for authorization</param>
         /// <returns>List of available races with betting information</returns>
         Task<IEnumerable<RaceDetailDto>> GetAvailableRacesAsync(int userId);
+
+        /// <summary>
+        /// Gets all bets with pagination and optional filtering (admin only).
+        /// </summary>
+        /// <param name="page">Page number (default: 1)</param>
+        /// <param name="pageSize">Items per page (default: 20)</param>
+        /// <param name="filterStatus">Optional filter by bet status</param>
+        /// <param name="searchTerm">Optional search by username or race name</param>
+        /// <returns>Paginated list of admin bet response DTOs</returns>
+        Task<PagedResult<AdminBetResponseDto>> GetAllBetsAsync(int page = 1, int pageSize = 20, BetStatus? filterStatus = null, string? searchTerm = null);
+
+        /// <summary>
+        /// Creates a new bet on behalf of a user (admin only).
+        /// </summary>
+        /// <param name="dto">The bet creation data</param>
+        /// <param name="adminUserId">The ID of the admin performing the action</param>
+        /// <returns>The created bet as admin DTO</returns>
+        Task<AdminBetResponseDto> CreateBetAsync(CreateBetDto dto, int adminUserId);
+
+        /// <summary>
+        /// Updates a bet (admin only). Supports partial updates.
+        /// </summary>
+        /// <param name="betId">The ID of the bet to update</param>
+        /// <param name="dto">The bet update data</param>
+        /// <param name="adminUserId">The ID of the admin performing the action</param>
+        /// <returns>The updated bet as admin DTO</returns>
+        Task<AdminBetResponseDto> UpdateBetAsync(int betId, UpdateBetDto dto, int adminUserId);
+
+        /// <summary>
+        /// Deletes (cancels) a bet (admin only). Only works on pending bets.
+        /// Refunds the bet amount to the user's balance.
+        /// </summary>
+        /// <param name="betId">The ID of the bet to delete</param>
+        /// <param name="adminUserId">The ID of the admin performing the action</param>
+        /// <returns>Task representing the asynchronous operation</returns>
+        Task DeleteBetAsync(int betId, int adminUserId);
     }
 
     /// <summary>

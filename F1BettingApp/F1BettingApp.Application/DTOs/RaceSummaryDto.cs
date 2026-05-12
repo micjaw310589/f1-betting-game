@@ -19,23 +19,6 @@ public class RaceSummaryDto
 }
 
 /// <summary>
-/// Generic pagination result wrapper
-/// </summary>
-public class PagedResult<T>
-{
-    public IEnumerable<T> Items { get; set; } = Enumerable.Empty<T>();
-    public int Page { get; set; }
-    public int PageSize { get; set; }
-    public int TotalItems { get; set; }
-    public int TotalPages { get; set; }
-
-    /// <summary>
-    /// Gets the total number of pages (1-indexed)
-    /// </summary>
-    public int Count => TotalPages;
-}
-
-/// <summary>
 /// Standardized error response format for API errors
 /// </summary>
 public class ErrorResponse

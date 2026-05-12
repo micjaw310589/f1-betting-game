@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { AdminBetManagementComponent } from '../components/admin-bet-management/admin-bet-management.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../services/admin.service';
@@ -15,13 +16,13 @@ import {
 @Component({
     selector: 'app-admin-system-management',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, AdminBetManagementComponent],
     templateUrl: './admin-system-management.component.html',
     styleUrl: './admin-system-management.component.css',
 })
 export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // --- Tab Navigation ---
-    activeTab: 'sync' | 'results' | 'metadata' | 'races' = 'sync';
+    activeTab: 'sync' | 'results' | 'metadata' | 'races' | 'bets' = 'sync';
 
     // --- Sync Section ---
     isSyncing = false;
@@ -93,7 +94,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // Tab Navigation
     // ========================
 
-    switchTab(tab: 'sync' | 'results' | 'metadata' | 'races'): void {
+    switchTab(tab: 'sync' | 'results' | 'metadata' | 'races' | 'bets'): void {
         this.activeTab = tab;
     }
 

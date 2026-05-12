@@ -100,13 +100,9 @@
                             <td class="actions-cell">
                                 @if (!user.isAdmin) {
                                     <div class="action-buttons">
-                                        <button
-                                            class="btn-adjust"
-                                            (click)="openAdjustPointsModal(user)"
-                                            title="Adjust points"
-                                        >
-                                            💰 Adjust Points
-                                        </button>
+<button class="btn-adjust" (click)="openAdjustPointsModal(user)">
+    <span>💰 Adjust Points</span>
+</button>
                                         <button
                                             class="btn-suspend"
                                             [class.btn-reactivate]="user.isActive"

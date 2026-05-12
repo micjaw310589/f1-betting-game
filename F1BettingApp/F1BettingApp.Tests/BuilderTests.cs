@@ -24,7 +24,7 @@ namespace F1BettingApp.Tests
             // Assert
             Assert.NotNull(user);
             Assert.Equal(1, user.Id);
-            Assert.Equal("testuser", user.Username);
+            Assert.Equal("testuser", user.UserName);
             Assert.Equal("test@example.com", user.Email);
             Assert.Equal(1000, user.Points);
             Assert.True(user.IsActive);

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using F1BettingApp.Application.DTOs;
 
 namespace F1BettingApp.Application.Services
 {
@@ -26,5 +27,10 @@ namespace F1BettingApp.Application.Services
         /// Processes race results against user bets and updates leaderboards.
         /// </summary>
         Task SyncRaceResultsAsync(string raceId);
+
+        /// <summary>
+        /// Synchronizes all OpenF1 data and returns a result DTO.
+        /// </summary>
+        Task<SyncResultDto> SyncAllAsync(int season);
     }
 }

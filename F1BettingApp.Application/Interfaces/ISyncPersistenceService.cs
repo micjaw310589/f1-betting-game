@@ -1,4 +1,4 @@
-using F1BettingApp.Application.Interfaces;
+using F1BettingApp.Application.DTOs;
 using System.Threading.Tasks;
 
 namespace F1BettingApp.Application.Interfaces
@@ -11,7 +11,7 @@ namespace F1BettingApp.Application.Interfaces
         /// <summary>
         /// Persists race calendar entries.
         /// </summary>
-        Task SyncRaceCalendar(List<RaceDto> races, int season);
+        Task<SyncRaceCalendarResult> SyncRaceCalendar(List<RaceDto> races, int season);
 
         /// <summary>
         /// Persists championship standings.

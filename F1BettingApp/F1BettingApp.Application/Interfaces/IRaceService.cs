@@ -7,107 +7,78 @@ using System.Threading.Tasks;
 namespace F1BettingApp.Application.Interfaces
 {
     /// <summary>
-    /// Interface for race-related operations
+    /// Service interface for managing race data operations.
     /// </summary>
     public interface IRaceService
     {
         /// <summary>
-        /// Gets a race by its ID
+        /// Retrieves a race by its ID.
         /// </summary>
-        /// <param name="id">The ID of the race</param>
-        /// <returns>Race DTO</returns>
-        Task<RaceDto> GetRaceByIdAsync(int id);
+        Task<DTOs.RaceDto> GetRaceByIdAsync(int id);
 
         /// <summary>
-        /// Gets all races
+        /// Retrieves all races.
         /// </summary>
-        /// <returns>Collection of all race DTOs</returns>
-        Task<IEnumerable<RaceDto>> GetAllRacesAsync();
+        Task<IEnumerable<DTOs.RaceDto>> GetAllRacesAsync();
 
         /// <summary>
-        /// Gets upcoming races
+        /// Retrieves upcoming scheduled races.
         /// </summary>
-        /// <returns>Collection of upcoming race DTOs</returns>
-        Task<IEnumerable<RaceDto>> GetUpcomingRacesAsync();
+        Task<IEnumerable<DTOs.RaceDto>> GetUpcomingRacesAsync();
 
         /// <summary>
-        /// Synchronizes race data from OpenF1 API
+        /// Retrieves upcoming races with betting odds.
         /// </summary>
-        /// <returns>Task representing the asynchronous operation</returns>
+        Task<IEnumerable<DTOs.RaceDto>> GetUpcomingRacesWithOddsAsync();
+
+        /// <summary>
+        /// Retrieves races by their IDs.
+        /// </summary>
+        Task<IEnumerable<DTOs.RaceDto>> GetRacesByIdsAsync(IEnumerable<int> ids);
+
+        /// <summary>
+        /// Synchronizes race data from the OpenF1 API.
+        /// </summary>
         Task<SyncResultDto> SyncRaceDataFromOpenF1Async();
 
         /// <summary>
-        /// Gets upcoming races with odds information
+        /// Updates the status of a race.
         /// </summary>
-        /// <returns>Collection of race DTOs with odds</returns>
-        Task<IEnumerable<RaceDto>> GetUpcomingRacesWithOddsAsync();
-
-        /// <summary>
-        /// Updates the status of a race
-        /// </summary>
-        /// <param name="raceId">The ID of the race to update</param>
-        /// <param name="newStatus">The new status of the race</param>
-        /// <returns>Task representing the asynchronous operation</returns>
         Task UpdateRaceStatusAsync(int raceId, RaceStatus newStatus);
 
         /// <summary>
-        /// Gets multiple races by their IDs efficiently (batch operation)
+        /// Retrieves results for a specific race.
         /// </summary>
-        /// <param name="ids">Collection of race IDs to retrieve</param>
-        /// <returns>Collection of race DTOs matching the provided IDs</returns>
-        Task<IEnumerable<RaceDto>> GetRacesByIdsAsync(IEnumerable<int> ids);
-
-        /// <summary>
-        /// Gets race drivers with their odds for a given race
-        /// </summary>
-        /// <param name="raceId">The ID of the race</param>
-        /// <returns>Drivers with odds</returns>
-        Task<IEnumerable<DriverWithOddsDto>> GetDriversWithOddsForRaceAsync(int raceId);
-
-        /// <summary>
-        /// Gets race results for a completed race
-        /// </summary>
-        /// <param name="raceId">The ID of the race</param>
-        /// <returns>Collection of results for the race</returns>
         Task<IEnumerable<Result>> GetResultsAsync(int raceId);
 
         /// <summary>
-        /// Manually overrides race results (admin only).
-        /// Sets IsManuallyOverridden to prevent future auto-sync from reverting.
+        /// Overrides race results with custom data.
         /// </summary>
-        /// <param name="raceId">The ID of the race to override.</param>
-        /// <param name="dto">The override data with positions.</param>
-        /// <returns>Task representing the asynchronous operation.</returns>
         Task OverrideRaceResultAsync(int raceId, OverrideRaceResultDto dto);
 
         /// <summary>
-        /// Gets race results with driver details for display (admin).
+        /// Retrieves detailed race results as a DTO.
         /// </summary>
-        /// <param name="raceId">The ID of the race.</param>
-        /// <returns>Race result DTO with filled-in data.</returns>
-        Task<RaceResultDto> GetRaceResultDtoAsync(int raceId);
+        Task<DTOs.RaceResultDto> GetRaceResultDtoAsync(int raceId);
 
         /// <summary>
-        /// Updates race metadata (name, date, status, circuit, country) - admin only.
-        /// Sets IsManuallyOverridden to prevent future auto-sync from reverting.
+        /// Updates race metadata (name, date, circuit, country, status).
         /// </summary>
-        /// <param name="raceId">The ID of the race to update.</param>
-        /// <param name="dto">The metadata to update.</param>
-        /// <returns>Task representing the asynchronous operation.</returns>
         Task UpdateRaceMetadataAsync(int raceId, UpdateRaceMetadataDto dto);
 
         /// <summary>
-        /// Creates a new race (admin only).
+        /// Creates a new race.
         /// </summary>
-        /// <param name="dto">The race creation data.</param>
-        /// <returns>The created race DTO.</returns>
-        Task<RaceDto> CreateRaceAsync(CreateRaceDto dto);
+        Task<DTOs.RaceDto> CreateRaceAsync(CreateRaceDto dto);
 
         /// <summary>
-        /// Deletes a race (admin only). Only allowed if the race has no bets.
+        /// Deletes a race by its ID.
         /// </summary>
-        /// <param name="raceId">The ID of the race to delete.</param>
-        /// <returns>Task representing the asynchronous operation.</returns>
         Task DeleteRaceAsync(int raceId);
+
+        /// <summary>
+        /// Retrieves drivers with their betting odds for a specific race.
+        /// </summary>
+        Task<IEnumerable<DriverWithOddsDto>> GetDriversWithOddsForRaceAsync(int raceId);
     }
 }

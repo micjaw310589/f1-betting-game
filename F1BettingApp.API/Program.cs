@@ -2,8 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using F1BettingApp.Infrastructure.OpenF1;
-using F1BettingApp.Application.Interfaces;
+using F1BettingApp.Domain.OpenF1;
 using F1BettingApp.Infrastructure.BackgroundJobs;
 using F1BettingApp.Application.Services;
 using F1BettingApp.Infrastructure.Services;
@@ -15,15 +16,23 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 1. Configure OpenF1 API Client
-// Use a HttpClient configured with the base URL
-builder.Services.AddHttpClient<IOpenF1ApiClient, OpenF1Client>();
+// 1. Configure OpenF1 API Client settings
+builder.Services.Configure<OpenF1Settings>(configuration => builder.Configuration.GetSection("OpenF1"));
 
-// 2. Register Sync Services (Application layer coordination)
+// 2. Register the OpenF1 HTTP client with the configured settings
+builder.Services.AddHttpClient("OpenF1", client =>
+{
+    client.BaseAddress = new Uri("https://api.openf1.org/v1");
+});
+
+// 3. Register the OpenF1 client implementation (resolved via IHttpClientFactory)
+builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
+
+// 4. Register Sync Services (Application layer coordination)
 builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddScoped<ISyncPersistenceService, SyncPersistenceService>();
 
-// 3. Register Background Services (Synchronization Jobs)
+// 5. Register Background Services (Synchronization Jobs)
 // Use the background service pattern provided by IHostedService
 builder.Services.AddHostedService<RaceCalendarSyncJob>();
 builder.Services.AddHostedService<StandingsSyncJob>();

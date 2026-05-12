@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using F1BettingApp.Application.Interfaces;
+using F1BettingApp.Domain.OpenF1;
 
 namespace F1BettingApp.Infrastructure.BackgroundJobs
 {

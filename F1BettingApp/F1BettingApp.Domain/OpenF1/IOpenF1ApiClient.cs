@@ -1,8 +1,12 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace F1BettingApp.Application.Interfaces
+namespace F1BettingApp.Domain.OpenF1
 {
+    /// <summary>
+    /// Client interface for interacting with the OpenF1 API.
+    /// Defined in Domain layer so both Application and Infrastructure can reference it.
+    /// </summary>
     public interface IOpenF1ApiClient
     {
         /// <summary>
@@ -41,7 +45,9 @@ namespace F1BettingApp.Application.Interfaces
         Task<List<RaceResultDto>> GetRaceResultsAsync(string raceId);
     }
 
-    // DTOs for API responses (simplified for task structure)
+    /// <summary>
+    /// Data transfer object for race information from OpenF1 API.
+    /// </summary>
     public class RaceDto
     {
         public string RaceId { get; set; }
@@ -52,6 +58,9 @@ namespace F1BettingApp.Application.Interfaces
         public int Season { get; set; }
     }
 
+    /// <summary>
+    /// Data transfer object for driver championship standings from OpenF1 API.
+    /// </summary>
     public class DriverStandingsDto
     {
         public string DriverId { get; set; }
@@ -60,6 +69,9 @@ namespace F1BettingApp.Application.Interfaces
         public int Position { get; set; }
     }
 
+    /// <summary>
+    /// Data transfer object for driver information from OpenF1 API.
+    /// </summary>
     public class DriverDto
     {
         public string DriverId { get; set; }
@@ -68,6 +80,9 @@ namespace F1BettingApp.Application.Interfaces
         public string OpenF1DriverId { get; set; }
     }
 
+    /// <summary>
+    /// Data transfer object for team information from OpenF1 API.
+    /// </summary>
     public class TeamDto
     {
         public string TeamId { get; set; }
@@ -75,6 +90,9 @@ namespace F1BettingApp.Application.Interfaces
         public string OpenF1TeamId { get; set; }
     }
     
+    /// <summary>
+    /// Data transfer object for race results from OpenF1 API.
+    /// </summary>
     public class RaceResultDto
     {
         public string DriverId { get; set; }

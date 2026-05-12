@@ -1,4 +1,6 @@
+using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Interfaces;
+using F1BettingApp.Domain.OpenF1;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -74,6 +76,56 @@ namespace F1BettingApp.Application.Services
                 _logger.LogError(ex, "Failed to sync race results.");
                 throw;
             }
+        }
+
+        public async Task<SyncResultDto> SyncAllAsync(int season)
+        {
+            var result = new SyncResultDto
+            {
+                Success = false,
+                SyncedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                // 1. Sync Race Calendar
+                var races = await _openF1ApiClient.GetRaceCalendarAsync(season);
+                var syncResult = await _syncPersistenceService.SyncRaceCalendar(races, season);
+                result.RacesProcessed = syncResult.TotalCount;
+                result.RacesCreated = syncResult.CreatedCount;
+                result.RacesUpdated = syncResult.UpdatedCount;
+
+                // 2. Sync Standings
+                try
+                {
+                    var standings = await _openF1ApiClient.GetStandingsAsync(season);
+                    await _syncPersistenceService.SyncStandings(standings, season);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to sync standings (non-fatal for full sync).");
+                }
+
+                // 3. Sync Master Data
+                try
+                {
+                    var (drivers, teams) = await _openF1ApiClient.GetDriverAndTeamInfoAsync(season);
+                    await _syncPersistenceService.SyncMasterData(drivers, teams, season);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to sync master data (non-fatal for full sync).");
+                }
+
+                result.Success = true;
+            }
+            catch (Exception ex)
+            {
+                result.ErrorMessage = ex.Message;
+                _logger.LogError(ex, "Failed to perform full sync.");
+            }
+
+            return result;
         }
     }
 }

@@ -1,25 +1,28 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System.Linq;
-using Microsoft.Extensions.Options;
+using F1BettingApp.Domain.OpenF1;
 
 namespace F1BettingApp.Infrastructure.OpenF1
 {
+    /// <summary>
+    /// HTTP client implementation for the OpenF1 API.
+    /// Implements the IOpenF1ApiClient interface from the Domain layer.
+    /// </summary>
     public class OpenF1Client : IOpenF1ApiClient
     {
         private readonly HttpClient _httpClient;
-        private readonly OpenF1Settings _settings;
 
-        public OpenF1Client(IHttpClientFactory httpClientFactory, IOptions<OpenF1Settings> options)
+        public OpenF1Client(IHttpClientFactory httpClientFactory)
         {
-            _settings = options.Value;
             _httpClient = httpClientFactory.CreateClient("OpenF1");
             if (_httpClient.BaseAddress == null)
             {
-                _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
+                _httpClient.BaseAddress = new Uri("https://api.openf1.org/v1");
             }
         }
 
@@ -34,9 +37,10 @@ namespace F1BettingApp.Infrastructure.OpenF1
                     if (response.IsSuccessStatusCode)
                     {
                         var json = await response.Content.ReadAsStringAsync();
-                        return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? throw new InvalidOperationException("API returned null");
+                        return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
+                            ?? throw new InvalidOperationException("API returned null");
                     }
-                    else if ((int)response.StatusCode == 429) // Rate Limit
+                    else if ((int)response.StatusCode == (int)HttpStatusCode.TooManyRequests)
                     {
                         if (response.Headers.TryGetValues("Retry-After", out var values) && values.Any())
                         {
@@ -51,7 +55,8 @@ namespace F1BettingApp.Infrastructure.OpenF1
                     else
                     {
                         var errorContent = await response.Content.ReadAsStringAsync();
-                        throw new HttpRequestException($"API call to {endpoint} failed: {response.StatusCode}. Details: {errorContent}");
+                        throw new HttpRequestException(
+                            $"API call to {endpoint} failed: {response.StatusCode}. Details: {errorContent}");
                     }
                 }
                 catch (HttpRequestException) when (attempt < maxRetries - 1)
@@ -62,58 +67,7 @@ namespace F1BettingApp.Infrastructure.OpenF1
             throw new InvalidOperationException($"Failed to execute API call to {endpoint} after {maxRetries} retries.");
         }
 
-        public async Task<IEnumerable<OpenF1Race>> GetRacesAsync()
-        {
-            var response = await ExecuteApiCallAsync<List<OpenF1RaceResponse>>("races");
-            return response.Select(r => new OpenF1Race
-            {
-                Id = r.race_id?.ToString() ?? string.Empty,
-                Name = r.name ?? r.circuit_name ?? "Unknown Race",
-                Date = r.date_utc ?? DateTime.UtcNow,
-                Circuit = r.circuit_name ?? "Unknown Circuit",
-                Country = r.country_name ?? "Unknown",
-                Season = r.year ?? DateTime.UtcNow.Year
-            });
-        }
-
-        public async Task<OpenF1Race?> GetRaceByIdAsync(string raceId)
-        {
-            var response = await ExecuteApiCallAsync<List<OpenF1RaceResponse>>($"races?race_id={raceId}");
-            var race = response.FirstOrDefault();
-            if (race == null) return null;
-
-            return new OpenF1Race
-            {
-                Id = race.race_id?.ToString() ?? string.Empty,
-                Name = race.name ?? race.circuit_name ?? "Unknown Race",
-                Date = race.date_utc ?? DateTime.UtcNow,
-                Circuit = race.circuit_name ?? "Unknown Circuit",
-                Country = race.country_name ?? "Unknown",
-                Season = race.year ?? DateTime.UtcNow.Year
-            };
-        }
-
-        public async Task<IEnumerable<OpenF1DriverSessionData>> GetDriversAsync(string raceId)
-        {
-            var response = await ExecuteApiCallAsync<List<OpenF1DriverSessionResponse>>($"drivers?race_id={raceId}");
-            return response.Select(s => new OpenF1DriverSessionData
-            {
-                RaceId = s.race_id ?? 0,
-                DriverId = s.driver_id ?? 0,
-                DriverName = s.driver_name ?? "Unknown Driver",
-                TeamName = s.team_name ?? "Unknown Team",
-                Date = s.date ?? DateTime.UtcNow
-            });
-        }
-
-        public async Task<OpenF1Race?> GetLatestRaceAsync()
-        {
-            var races = await GetRacesAsync();
-            return races.OrderByDescending(r => r.Date).FirstOrDefault();
-        }
-
-        // Implementation for TASK-02 Sync Methods
-        
+        /// <inheritdoc />
         public async Task<List<RaceDto>> GetRaceCalendarAsync(int season)
         {
             var response = await ExecuteApiCallAsync<List<OpenF1RaceResponse>>($"races?year={season}");
@@ -128,59 +82,73 @@ namespace F1BettingApp.Infrastructure.OpenF1
             }).ToList();
         }
 
+        /// <inheritdoc />
+        public async Task<RaceDto> GetRaceDetailsAsync(string raceId)
+        {
+            var response = await ExecuteApiCallAsync<List<OpenF1RaceResponse>>($"races?race_id={raceId}");
+            var race = response.FirstOrDefault();
+            if (race == null) return null;
+
+            return new RaceDto
+            {
+                RaceId = race.race_id?.ToString() ?? string.Empty,
+                Name = race.name ?? race.circuit_name ?? "Unknown Race",
+                Circuit = race.circuit_name ?? "Unknown Circuit",
+                Date = race.date_utc ?? DateTime.UtcNow,
+                Status = race.date_utc < DateTime.UtcNow ? "Finished" : "Scheduled",
+                Season = race.year ?? DateTime.UtcNow.Year
+            };
+        }
+
+        /// <inheritdoc />
         public async Task<List<DriverStandingsDto>> GetStandingsAsync(int season)
         {
-            // OpenF1 doesn't have a direct 'standings' endpoint in the same way as Ergast.
-            // Typically you calculate from results or use another source.
-            // For now, we fetch drivers from the season as a proxy or use a specific session if known.
-            // Placeholder: Returning empty or simulated if endpoint not directly available.
-            // Based on OpenF1 docs, we might need to aggregate from session_results.
+            // OpenF1 doesn't have a direct 'standings' endpoint.
+            // Standings must be aggregated from session results over the season.
             return new List<DriverStandingsDto>();
         }
 
+        /// <inheritdoc />
         public async Task<(List<DriverDto> Drivers, List<TeamDto> Teams)> GetDriverAndTeamInfoAsync(int season)
         {
             var response = await ExecuteApiCallAsync<List<OpenF1DriverSessionResponse>>($"drivers?year={season}");
             
-            var drivers = response.GroupBy(d => d.driver_id).Select(g => {
-                var first = g.First();
-                return new DriverDto {
-                    DriverId = first.driver_id?.ToString() ?? string.Empty,
-                    Name = first.driver_name ?? "Unknown",
-                    TeamId = first.team_name ?? "Unknown",
-                    OpenF1DriverId = first.driver_id?.ToString() ?? string.Empty
-                };
-            }).ToList();
+            var drivers = response
+                .GroupBy(d => d.driver_id)
+                .Select(g => {
+                    var first = g.First();
+                    return new DriverDto {
+                        DriverId = first.driver_id?.ToString() ?? string.Empty,
+                        Name = first.driver_name ?? "Unknown",
+                        TeamId = first.team_name ?? "Unknown",
+                        OpenF1DriverId = first.driver_id?.ToString() ?? string.Empty
+                    };
+                })
+                .ToList();
 
-            var teams = response.GroupBy(d => d.team_name).Select(g => {
-                var first = g.First();
-                return new TeamDto {
-                    TeamId = first.team_name ?? string.Empty,
-                    Name = first.team_name ?? "Unknown Team",
-                    OpenF1TeamId = first.team_name ?? string.Empty
-                };
-            }).ToList();
+            var teams = response
+                .GroupBy(d => d.team_name)
+                .Select(g => {
+                    var first = g.First();
+                    return new TeamDto {
+                        TeamId = first.team_name ?? string.Empty,
+                        Name = first.team_name ?? "Unknown Team",
+                        OpenF1TeamId = first.team_name ?? string.Empty
+                    };
+                })
+                .ToList();
 
             return (drivers, teams);
         }
 
+        /// <inheritdoc />
         public async Task<List<RaceResultDto>> GetRaceResultsAsync(string raceId)
         {
-            // Fetch results for a specific race session
-            // We'd need the session_key for the race.
             return new List<RaceResultDto>();
         }
 
-        // Internal settings class
-        public class OpenF1Settings
-        {
-            public string BaseUrl { get; set; } = "https://api.openf1.org/v1";
-            public int TimeoutSeconds { get; set; } = 30;
-            public int RetryCount { get; set; } = 3;
-            public int RetryDelaySeconds { get; set; } = 5;
-        }
+        // == Internal DTOs for deserializing OpenF1 API responses ==
 
-        // Internal DTO for deserializing OpenF1 API responses
         private class OpenF1RaceResponse
         {
             public int? race_id { get; set; }

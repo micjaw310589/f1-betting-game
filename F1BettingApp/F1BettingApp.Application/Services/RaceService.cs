@@ -67,7 +67,7 @@ namespace F1BettingApp.Application.Services
                 Season = r.Season,
                 Flag = string.Empty, // TODO: Implement flag logic
                 Odds = new Dictionary<int, decimal>()
-            });
+            }).OrderBy(r => r.RaceDate);
         }
 
         public async Task<IEnumerable<RaceDto>> GetUpcomingRacesAsync()

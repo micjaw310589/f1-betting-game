@@ -109,8 +109,6 @@
   min-width: 160px;
   padding: 4px 0;
   z-index: 2000;
-  /* KLUCZOWE: */
-  overflow: hidden; 
 }
 
 .admin-dropdown.open .admin-dropdown-menu {
@@ -126,13 +124,12 @@
   font-weight: 800;
   text-transform: uppercase;
   transition: var(--transition-nav);
-  /* USUNIĘTO: transform: skewX(var(--skew-x)); */
+  transform: skewX(var(--skew-x));
   border: none;
   background: none;
   cursor: pointer;
   width: 100%;
   text-align: left;
-  font-style: italic;
 }
 
 .dropdown-link:hover,

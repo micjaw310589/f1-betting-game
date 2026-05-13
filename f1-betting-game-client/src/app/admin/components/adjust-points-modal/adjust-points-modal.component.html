@@ -11,11 +11,11 @@
             </p>
 
             @if (errorMessage) {
-                <div class="error-banner">{{ errorMessage }}</div>
+                <div class="alert alert-error">{{ errorMessage }}</div>
             }
 
             @if (successMessage) {
-                <div class="success-banner">{{ successMessage }}</div>
+                <div class="alert alert-success">{{ successMessage }}</div>
             }
 
             <div class="form-group">
@@ -24,7 +24,7 @@
                     id="points"
                     type="number"
                     [(ngModel)]="points"
-                    placeholder="e.g. 500 or -500"
+                    placeholder="Enter positive to add, negative to remove"
                     [disabled]="isLoading"
                 />
                 <span class="form-hint">
@@ -46,12 +46,14 @@
 
         <div class="modal-footer">
             <button class="btn btn-secondary" (click)="onCancel()" [disabled]="isLoading">
-                <span>Cancel</span>
+                Cancel
             </button>
             <button class="btn btn-primary" (click)="submit()" [disabled]="isLoading">
-                <span>
-                    @if (isLoading) { Processing... } @else { Confirm Adjustment }
-                </span>
+                @if (isLoading) {
+                    <span class="spinner-small"></span> Processing...
+                } @else {
+                    Confirm Adjustment
+                }
             </button>
         </div>
     </div>

@@ -32,7 +32,7 @@
 
         <div class="modal-footer">
             <button class="btn btn-secondary" (click)="onCancel()" [disabled]="isLoading">
-                <span>Cancel</span>
+                Cancel
             </button>
             <button
                 class="btn"
@@ -40,13 +40,11 @@
                 (click)="submit()"
                 [disabled]="isLoading"
             >
-                <span>
-                    @if (isLoading) {
-                        <span class="spinner-small"></span> Processing...
-                    } @else {
-                        Confirm {{ actionText }}
-                    }
-                </span>
+                @if (isLoading) {
+                    <span class="spinner-small"></span> Processing...
+                } @else {
+                    Confirm {{ actionText }}
+                }
             </button>
         </div>
     </div>

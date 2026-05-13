@@ -48,7 +48,7 @@ export class AdminUserManagementComponent implements OnInit {
     loadUsers(): void {
         this.isLoading = true;
         this.hasError = false;
-        this.cdr.detectChanges();
+
         this.adminService
             .getAllUsers(this.page, this.pageSize, this.filterIsActive !== null ? this.filterIsActive : undefined, this.searchTerm || undefined)
             .subscribe({

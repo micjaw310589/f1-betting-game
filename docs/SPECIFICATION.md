@@ -107,6 +107,10 @@ The `f1-betting-game` is a web-based database application that allows users to b
   - Podium finishers (1st, 2nd, 3rd)
   - Top 10 finishers
   - Fastest lap
+  - Team with fastest pit stop
+  - Number of drivers who won't finish (DNF)
+  - Driver vs driver (head-to-head)
+  - Team vs team
 - Bet placement with point allocation
 - Bet cancellation before race start
 - Bet history with filtering and sorting
@@ -126,7 +130,7 @@ The `f1-betting-game` is a web-based database application that allows users to b
 - Automatic result processing after race completion via background jobs
 - Point calculation based on bet outcomes (exact and partial matches)
 - Leaderboard updates with historical tracking
-- Notification system for bet results (pop-ups)
+- Notification system for bet results
 - Historical data storage and retrieval
 
 #### 4.1.5 Competition Features

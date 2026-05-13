@@ -7,15 +7,12 @@ Automatically evaluate pending bets when a race finishes, update user balances w
 - **Backend**:
   - Create a `RaceStatusMonitorJob` that checks for newly finished races.
   - Implement/re-enable `BettingService.ProcessRaceResultsAsync`:
-    - Fetch race results from database.
+    - Fetch official race results.
     - Evaluate all pending bets for the race.
     - Calculate winnings and update the status of each bet (`Won`/`Lost`).
     - Atomically credit user point balances.
     - Mark the race as `ResultsProcessed`.
   - Integrate the `NotificationService` to push or save a notification for the user about the bet outcome.
-
-- **Frontend**:
-  - Create a notification pop-up about user's bet resolvement.
 
 ## Testing (In Isolation)
 - **Backend Tests**:
@@ -25,6 +22,7 @@ Automatically evaluate pending bets when a race finishes, update user balances w
 
 ## Out of Scope (Do Not Modify)
 - **Bet Placement Controllers**: Do not modify how users place or cancel bets.
+- **Frontend App**: Do not modify any Angular components. This task is strictly a backend worker process.
 - **OpenF1 Client Models**: Do not alter how the raw API data is initially parsed, only consume the results.
 
 ## Reviewability

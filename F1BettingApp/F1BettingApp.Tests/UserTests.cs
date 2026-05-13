@@ -22,10 +22,10 @@ namespace F1BettingApp.Tests
         [InlineData(null)]
         [InlineData("")]
         [InlineData(" ")]
-        public void Constructor_InvalidUserName_ThrowsArgumentException(string invalidUserName)
+        public void Constructor_InvalidUsername_ThrowsArgumentException(string invalidUsername)
         {
             // Act & Assert
-            var ex = Record.Exception(() => new User(invalidUserName, "test@example.com", "passwordhash"));
+            var ex = Record.Exception(() => new User(invalidUsername, "test@example.com", "passwordhash"));
             Assert.IsType<ArgumentException>(ex);
         }
 

@@ -65,15 +65,12 @@
 }
 
 /* Panels with Carbon look */
-/* Zmieniony układ na 2 kolumny (60% / 40%) */
 .detail-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr;
     gap: 25px;
     margin-bottom: 40px;
 }
-
-/* Reszta styli pozostaje bez zmian, usunięte selektory dla .api-id i .secondary-info */
 
 .detail-panel {
     background: var(--color-card-bg-1);

@@ -45,7 +45,7 @@ export class BetPlacementComponent implements OnInit, OnDestroy {
   selectedBetType: BetType = 'RaceWinner';
   selectedDriverId?: number;
 
-  amount:any = 0;
+  amount = 0;
   isSubmitting = false;
 
   pendingBets: PendingBetView[] = [];
@@ -231,29 +231,6 @@ placeBet(): void {
  */
 isBetTypeTaken(type: BetType): boolean {
   return this.pendingBets.some(bet => bet.betType === type);
-}
-
-// 1. Fizyczna blokada wpisywania "złych" znaków i 3-ciej cyfry po przecinku
-validateBetInput(event: any): void {
-  const input = event.target as HTMLInputElement;
-  const nextValue = input.value.slice(0, input.selectionStart!) + 
-                    (event.data || '') + 
-                    input.value.slice(input.selectionEnd!);
-
-  // Regex: Pozwala tylko na cyfry i maksymalnie jedną kropkę z dwiema cyframi po niej
-  const regex = /^\d*\.?\d{0,2}$/;
-
-  if (!regex.test(nextValue) && event.data !== null) {
-    event.preventDefault(); // CAŁKOWITA BLOKADA - znak się nie pojawi
-  }
-}
-
-// 2. Sprzątanie po wyjściu z pola (zamiana stringa na liczbę dla modelu)
-finalizeAmount(): void {
-  if (this.amount) {
-    // Konwertujemy tekst na czystą liczbę, żeby reszta logiki (punkty) działała
-    this.amount = parseFloat(this.amount.toString());
-  }
 }
 
 

@@ -1,7 +1,6 @@
 using F1BettingApp.Domain.Enums;
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace F1BettingApp.Application.DTOs
 {
@@ -20,12 +19,8 @@ namespace F1BettingApp.Application.DTOs
         public int WinnerTeamId { get; set; }
         public string WinnerTeamName { get; set; }
         public int WinningMargin { get; set; }
-        [JsonPropertyName("fastestLapDriverId")]
-        public int? FastestLapDriverId { get; set; }
-        
-        [JsonPropertyName("fastestLapDriverName")]
+        public int FastestLapDriverId { get; set; }
         public string FastestLapDriverName { get; set; }
-        
         public int PolePositionDriverId { get; set; }
         public string PolePositionDriverName { get; set; }
         public int SafetyCar { get; set; }
@@ -52,7 +47,6 @@ namespace F1BettingApp.Application.DTOs
         /// <summary>
         /// All finishing positions for this race.
         /// </summary>
-        [JsonPropertyName("positions")]
         public List<PositionDto> Positions { get; set; } = new();
     }
 
@@ -61,24 +55,13 @@ namespace F1BettingApp.Application.DTOs
     /// </summary>
     public class PositionDto
     {
-        [JsonPropertyName("position")]
         public int Position { get; set; }
-        
-        [JsonPropertyName("driverId")]
         public int DriverId { get; set; }
-        
-        [JsonPropertyName("driverName")]
         public string DriverName { get; set; } = string.Empty;
-        
         public int TeamId { get; set; }
         public string TeamName { get; set; } = string.Empty;
-        
-        [JsonPropertyName("points")]
         public int Points { get; set; }
-        
-        [JsonPropertyName("fastestLap")]
         public TimeSpan? FastestLap { get; set; }
-        
         public TimeSpan? PitStopTime { get; set; }
     }
 }

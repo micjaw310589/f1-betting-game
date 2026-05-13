@@ -1,0 +1,291 @@
+@startuml admin-system-management
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam BoxPadding 10
+skinparam MaxMessageSize 300
+
+title Admin / System Management — Full Flow
+
+box "Frontend (Angular)"
+    participant "AdminSystemManagementComponent" as SysMgmt
+    participant "AdminService" as AdminSvc
+end box
+
+box "HTTP Layer"
+    participant "AuthInterceptor" as AuthInt
+end box
+
+box "Backend (C# API)"
+    participant "AdminController\n[Authorize Roles=Admin]" as AdminController
+end box
+
+box "Application Layer"
+    participant "IRaceService\nRaceService" as RaceService
+end box
+
+box "Domain Layer"
+    participant "Race\n(Entity)" as RaceEntity
+    participant "Result\n(Entity)" as ResultEntity
+    participant "Driver\n(Entity)" as DriverEntity
+end box
+
+box "Infrastructure Layer"
+    participant "IRaceRepositoryExtensions\nRaceRepository" as RaceRepo
+    participant "IRepository&lt;Result&gt;\nResultRepository" as ResultRepo
+    participant "IRepository&lt;Driver&gt;\nDriverRepository" as DriverRepo
+    participant "AppDbContext" as DbContext
+    participant "IOpenF1ApiClient\nOpenF1Client" as OpenF1Client
+end box
+
+== POST /api/admin/sync — Trigger OpenF1 Sync ==
+
+SysMgmt -> AdminSvc: triggerSync()
+AdminSvc -> AuthInt: HTTP POST /api/admin/sync
+AuthInt -> AdminController: POST /api/admin/sync\n[Bearer Token + JWT]
+activate AdminController
+ AdminController -> RaceService: SyncRaceDataFromOpenF1Async()
+ activate RaceService
+  RaceService -> OpenF1Client: GetRacesAsync()
+  activate OpenF1Client
+   OpenF1Client -> OpenF1Client: HTTP GET https://api.openf1.org/races
+   OpenF1Client --> RaceService: List<OpenF1Race>
+  deactivate OpenF1Client
+  RaceService -> RaceRepo: GetAllAsync()
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.AsQueryable()
+   DbContext --> RaceRepo: IQueryable<Race>
+  RaceRepo --> RaceService: List<Race>
+  deactivate RaceRepo
+  RaceService -> RaceService: using TransactionScope\nforeach (openF1Race in races) {\n  existing = FindByOpenF1RaceId()\n  if (existing == null) {\n    Create new Race\n    created++\n  } else if (!existing.IsManuallyOverridden) {\n    Update existing Race\n    updated++\n  } else {\n    SKIP — admin override\n  }\n}
+  RaceService -> RaceRepo: SaveChangesAsync()
+  activate RaceRepo
+   RaceRepo -> DbContext: SaveChangesAsync()
+   DbContext --> RaceRepo: persisted
+  RaceRepo --> RaceService: done
+  deactivate RaceRepo
+  RaceService -> RaceService: Complete transaction
+  RaceService -> RaceService: Build SyncResultDto\n{ Success, RacesProcessed,\n  RacesCreated, RacesUpdated, SyncedAt }
+  RaceService --> AdminController: SyncResultDto
+  deactivate RaceService
+ AdminController --> AuthInt: HTTP 200 OK (JSON)
+ deactivate AdminController
+ AuthInt --> AdminSvc: SyncResultDto
+ AdminSvc --> SysMgmt: SyncResultDto
+ SysMgmt -> SysMgmt: Show sync result\nauto-clear after 10s
+ SysMgmt -> AdminSvc: loadRaces() — refresh race list
+ AdminSvc -> AuthInt: HTTP GET /api/admin/races
+ AuthInt -> AdminController: GET /api/admin/races\n[Bearer Token + JWT]
+activate AdminController
+ AdminController -> RaceService: GetAllRacesAsync()
+ activate RaceService
+  RaceService -> RaceRepo: GetAllAsync()
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.AsQueryable()
+   DbContext --> RaceRepo: IQueryable<Race>
+  RaceRepo --> RaceService: List<Race>
+  deactivate RaceRepo
+  RaceService -> RaceService: Map to RaceDto[]
+  RaceService --> AdminController: RaceDto[]
+  deactivate RaceService
+ AdminController --> AuthInt: HTTP 200 OK (JSON)
+ deactivate AdminController
+ AuthInt --> AdminSvc: RaceDto[]
+ AdminSvc --> SysMgmt: AdminRaceDto[]
+ SysMgmt -> SysMgmt: Render race list
+
+== PUT /api/admin/races/{id}/results — Override Race Results ==
+
+SysMgmt -> SysMgmt: Admin selects race, edits positions\nassigns drivers to positions, sets fastest lap
+SysMgmt -> AdminSvc: overrideRaceResults(raceId, {positions, fastestLapDriverId})
+AdminSvc -> AuthInt: HTTP PUT /api/admin/races/{id}/results
+AuthInt -> AdminController: PUT /api/admin/races/{id}/results\n[Bearer Token + JWT]
+activate AdminController
+ AdminController -> AdminController: Validate:\n- positions not empty\n- driver IDs > 0\n- positions >= 1
+ AdminController -> RaceService: OverrideRaceResultAsync(raceId, dto)
+ activate RaceService
+  RaceService -> RaceRepo: GetByIdAsync(raceId)
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.FindAsync(id)
+   DbContext --> RaceRepo: Race entity
+  RaceRepo --> RaceService: Race
+  deactivate RaceRepo
+  RaceService -> DbContext: DbSet<Result>.Where(r => r.RaceId == id).ToList()
+  activate DbContext
+   DbContext --> RaceService: List<Result>
+  deactivate DbContext
+  RaceService -> DbContext: RemoveRange(existingResults)
+  RaceService -> RaceService: foreach (position in dto.Positions) {\n  points = CalculatePointsForPosition(pos)\n  Create new Result(\n    raceId, driverId, position,\n    points, fastestLap, pitStopTime\n  )\n  Add to DbContext\n}
+  activate RaceService
+   RaceService -> RaceService: F1 Points mapping:\n1=25, 2=18, 3=15, 4=12,\n5=10, 6=8, 7=6, 8=4,\n9=2, 10=1, rest=0
+  RaceService -> RaceService: Set fastestLap on winner
+  RaceService -> RaceEntity: race.IsManuallyOverridden = true
+  activate RaceEntity
+   RaceEntity -> RaceEntity: IsManuallyOverridden = true\nStatus = Finished (if not already)
+  RaceEntity --> RaceService: updated Race
+  deactivate RaceEntity
+  RaceService -> DbContext: SaveChangesAsync()
+  activate DbContext
+   DbContext --> RaceService: persisted
+  deactivate DbContext
+  RaceService --> AdminController: done
+  deactivate RaceService
+ AdminController --> AuthInt: HTTP 200 OK (JSON)\n{ message, raceId,\n  positionsCount,\n  isManuallyOverridden: true }
+ deactivate AdminController
+ AuthInt --> AdminSvc: Response
+ AdminSvc --> SysMgmt: Response
+ SysMgmt -> SysMgmt: Show success message\nreload race results + races
+
+== PUT /api/admin/races/{id}/metadata — Update Race Metadata ==
+
+SysMgmt -> SysMgmt: Admin edits race name/date/circuit/country/status
+SysMgmt -> AdminSvc: updateRaceMetadata(raceId, {name, date, circuit, country, status})
+AdminSvc -> AuthInt: HTTP PUT /api/admin/races/{id}/metadata
+AuthInt -> AdminController: PUT /api/admin/races/{id}/metadata\n[Bearer Token + JWT]
+activate AdminController
+ AdminController -> RaceService: UpdateRaceMetadataAsync(raceId, dto)
+ activate RaceService
+  RaceService -> RaceRepo: GetByIdAsync(raceId)
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.FindAsync(id)
+   DbContext --> RaceRepo: Race entity
+  RaceRepo --> RaceService: Race
+  deactivate RaceRepo
+  RaceService -> RaceService: Apply non-null fields:\n- Name, Date (convert to UTC),\n  Circuit, Country, Status
+  RaceService -> RaceEntity: race.IsManuallyOverridden = true
+  activate RaceEntity
+   RaceEntity -> RaceEntity: IsManuallyOverridden = true
+  RaceEntity --> RaceService: updated Race
+  deactivate RaceEntity
+  RaceService -> RaceRepo: UpdateAsync(race)
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.Update(race)
+   DbContext --> RaceRepo: done
+  RaceRepo --> RaceService: done
+  RaceService -> RaceRepo: SaveChangesAsync()
+  activate RaceRepo
+   RaceRepo -> DbContext: SaveChangesAsync()
+   DbContext --> RaceRepo: persisted
+  RaceRepo --> RaceService: done
+  deactivate RaceRepo
+  RaceService --> AdminController: done
+  deactivate RaceService
+ AdminController --> AuthInt: HTTP 200 OK (JSON)\n{ message, raceId,\n  isManuallyOverridden: true }
+ deactivate AdminController
+ AuthInt --> AdminSvc: Response
+ AdminSvc --> SysMgmt: Response
+ SysMgmt -> SysMgmt: Show success message\nreload races + refresh form
+
+== POST /api/admin/races — Create New Race ==
+
+SysMgmt -> SysMgmt: Admin fills create race form\n(name, date, circuit, country, season)
+SysMgmt -> AdminSvc: createRace({name, date, circuit, country, season})
+AdminSvc -> AuthInt: HTTP POST /api/admin/races
+AuthInt -> AdminController: POST /api/admin/races\n[Bearer Token + JWT]
+activate AdminController
+ AdminController -> AdminController: Validate:\n- name, circuit, country required\n- season > 0
+ AdminController -> RaceService: CreateRaceAsync(dto)
+ activate RaceService
+  RaceService -> RaceService: Generate OpenF1RaceId:\n"manual-" + timestamp
+  RaceService -> RaceService: Convert date to UTC
+  RaceService -> RaceService: new Race(name, date,\n  circuit, country,\n  openF1RaceId, season)
+  RaceService -> RaceRepo: AddAsync(race)
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.Add(race)
+   DbContext --> RaceRepo: done
+  RaceRepo --> RaceService: done
+  RaceService -> RaceRepo: SaveChangesAsync()
+  activate RaceRepo
+   RaceRepo -> DbContext: SaveChangesAsync()
+   DbContext --> RaceRepo: persisted
+  RaceRepo --> RaceService: done
+  deactivate RaceRepo
+  RaceService -> RaceService: Map to RaceDto
+  RaceService --> AdminController: RaceDto
+  deactivate RaceService
+ AdminController --> AuthInt: HTTP 201 Created (JSON)
+ deactivate AdminController
+ AuthInt --> AdminSvc: RaceDto
+ AdminSvc --> SysMgmt: RaceDto
+ SysMgmt -> SysMgmt: Show success\nreload race list
+
+== DELETE /api/admin/races/{id} — Delete Race ==
+
+SysMgmt -> SysMgmt: Admin selects race, confirms deletion
+SysMgmt -> AdminSvc: deleteRace(raceId)
+AdminSvc -> AuthInt: HTTP DELETE /api/admin/races/{id}
+AuthInt -> AdminController: DELETE /api/admin/races/{id}\n[Bearer Token + JWT]
+activate AdminController
+ AdminController -> RaceService: DeleteRaceAsync(raceId)
+ activate RaceService
+  RaceService -> RaceRepo: GetByIdAsync(raceId)
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.FindAsync(id)
+   DbContext --> RaceRepo: Race entity
+  RaceRepo --> RaceService: Race
+  deactivate RaceRepo
+  RaceService -> DbContext: DbSet<Bet>.Where(b => b.RaceId == id).ToList()
+  activate DbContext
+   DbContext --> RaceService: List<Bet>
+  deactivate DbContext
+  RaceService -> RaceService: if (bets.Any()) {\n  throw InvalidOperationException\n  "Cannot delete race with bets"\n}
+  RaceService -> DbContext: DbSet<Result>.Where(r => r.RaceId == id).ToList()
+  activate DbContext
+   DbContext --> RaceService: List<Result>
+  deactivate DbContext
+  RaceService -> DbContext: RemoveRange(results)
+  RaceService -> RaceRepo: DeleteAsync(raceId)
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.Remove(race)
+   DbContext --> RaceRepo: done
+  RaceRepo --> RaceService: done
+  RaceService -> RaceRepo: SaveChangesAsync()
+  activate RaceRepo
+   RaceRepo -> DbContext: SaveChangesAsync()
+   DbContext --> RaceRepo: persisted
+  RaceRepo --> RaceService: done
+  deactivate RaceRepo
+  RaceService --> AdminController: done
+  deactivate RaceService
+ AdminController --> AuthInt: HTTP 204 No Content
+ deactivate AdminController
+ AuthInt --> AdminSvc: No Content
+ AdminSvc --> SysMgmt: No Content
+ SysMgmt -> SysMgmt: reload race list
+
+== GET /api/admin/races/{id}/results — Get Race Results (for display) ==
+
+SysMgmt -> AdminSvc: getRaceResults(raceId)
+AdminSvc -> AuthInt: HTTP GET /api/admin/races/{id}/results
+AuthInt -> AdminController: GET /api/admin/races/{id}/results\n[Bearer Token + JWT]
+activate AdminController
+ AdminController -> RaceService: GetRaceResultDtoAsync(raceId)
+ activate RaceService
+  RaceService -> RaceRepo: GetByIdAsync(raceId)
+  activate RaceRepo
+   RaceRepo -> DbContext: DbSet<Race>.FindAsync(id)
+   DbContext --> RaceRepo: Race entity
+  RaceRepo --> RaceService: Race
+  deactivate RaceRepo
+  RaceService -> ResultRepo: GetAllAsync()
+  activate ResultRepo
+   ResultRepo -> DbContext: DbSet<Result>.AsQueryable()
+   DbContext --> ResultRepo: IQueryable<Result>
+  ResultRepo --> RaceService: List<Result>
+  deactivate ResultRepo
+  RaceService -> DriverRepo: GetAllAsync()
+  activate DriverRepo
+   DriverRepo -> DbContext: DbSet<Driver>.AsQueryable()
+   DbContext --> DriverRepo: IQueryable<Driver>
+  DriverRepo --> RaceService: List<Driver>
+  deactivate DriverRepo
+  RaceService -> RaceService: Build driver lookup dict\nFind winner (position 1)\nFind fastest lap driver\nMap all positions to PositionDto\n{ Position, DriverId, DriverName,\n  TeamId, TeamName, Points,\n  FastestLap, PitStopTime }
+  RaceService -> RaceService: Build RaceResultDto\n{ RaceId, RaceName, Circuit,\n  WinnerDriverId/Name/Team,\n  FastestLapDriverId/Name,\n  Positions[] }
+  RaceService --> AdminController: RaceResultDto
+  deactivate RaceService
+ AdminController --> AuthInt: HTTP 200 OK (JSON)
+ deactivate AdminController
+ AuthInt --> AdminSvc: RaceResultDto
+ AdminSvc --> SysMgmt: RaceResultDto
+ SysMgmt -> SysMgmt: Render results table\nwith editable position dropdowns
+
+@enduml

@@ -1,0 +1,148 @@
+@startuml admin-user-management
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam BoxPadding 10
+skinparam MaxMessageSize 300
+
+title Admin / User Management — Full Flow
+
+box "Frontend (Angular)"
+    participant "AdminUserManagementComponent" as UserMgmt
+    participant "AdjustPointsModalComponent" as AdjustModal
+    participant "SuspendUserModalComponent" as SuspendModal
+    participant "AdminService" as AdminSvc
+end box
+
+box "HTTP Layer"
+    participant "AuthInterceptor" as AuthInt
+end box
+
+box "Backend (C# API)"
+    participant "UsersController\n[Authorize Roles=Admin]" as UsersController
+end box
+
+box "Application Layer"
+    participant "IUserService\nUserService" as UserService
+end box
+
+box "Domain Layer"
+    participant "User\n(Entity)" as UserEntity
+end box
+
+box "Infrastructure Layer"
+    participant "IRepository&lt;User&gt;\nRepository&lt;User&gt;" as UserRepository
+    participant "AppDbContext" as DbContext
+end box
+
+== GET /api/Users/admin/users — Load User List ==
+
+UserMgmt -> AdminSvc: getAllUsers(page, pageSize, filter, search)
+AdminSvc -> AuthInt: HTTP GET /api/Users/admin/users
+AuthInt -> UsersController: GET /api/Users/admin/users\n[Bearer Token + JWT]
+activate UsersController
+ UsersController -> UserService: GetAllUsersAsync(page, pageSize, filterIsActive, searchTerm)
+ activate UserService
+  UserService -> UserRepository: GetAllAsync()
+  activate UserRepository
+   UserRepository -> DbContext: DbSet<User>.AsQueryable()
+   DbContext --> UserRepository: IQueryable<User>
+  UserRepository --> UserService: IQueryable<User>
+  deactivate UserRepository
+  UserService -> UserService: LINQ filtering\n.Where(u => u.IsActive == filter)\n.Where(u => u.UserName.Contains(search))\n.OrderByDescending(u => u.CreatedAt)\n.Skip().Take()
+  UserService -> UserService: Map to AdminUserDto[]
+  UserService --> UsersController: PagedResult<AdminUserDto>
+  deactivate UserService
+ UsersController --> AuthInt: HTTP 200 OK (JSON)
+ deactivate UsersController
+ AuthInt --> AdminSvc: PagedResult<AdminUserDto>
+ AdminSvc --> UserMgmt: PagedResult<AdminUserDto>
+ UserMgmt -> UserMgmt: Render user table with pagination
+
+== PATCH /api/Users/admin/users/{id}/points — Adjust Points ==
+
+UserMgmt -> AdjustModal: openAdjustPointsModal(user)\n(userId, username)
+AdjustModal -> AdjustModal: User enters points + reason\n(submit)
+AdjustModal -> AdminSvc: adjustUserPoints(userId, {points, reason})
+AdminSvc -> AuthInt: HTTP PATCH /api/Users/admin/users/{id}/points
+AuthInt -> UsersController: PATCH /api/Users/admin/users/{id}/points\n[Bearer Token + JWT]
+activate UsersController
+ UsersController -> UsersController: Validate:\n- points != 0\n- adminUserId from JWT claims
+ UsersController -> UserService: AdjustUserPointsAsync(userId, pointsDelta, reason, adminUserId)
+ activate UserService
+  UserService -> UserRepository: GetByIdAsync(userId)
+  activate UserRepository
+   UserRepository -> DbContext: DbSet<User>.FindAsync(id)
+   DbContext --> UserRepository: User entity
+  UserRepository --> UserService: User
+  deactivate UserRepository
+  UserService -> UserService: Validate:\n- user exists\n- newBalance >= 0
+  UserService -> UserEntity: user.AddPoints(pointsDelta)\nOR user.DeductPoints(Math.Abs(pointsDelta))
+  activate UserEntity
+   UserEntity -> UserEntity: Points += pointsDelta\n(throws if <= 0 or insufficient)
+  UserEntity --> UserService: updated User
+  deactivate UserEntity
+  UserService -> UserRepository: UpdateAsync(user)
+  activate UserRepository
+   UserRepository -> DbContext: DbSet<User>.Update(user)
+   DbContext --> UserRepository: done
+  UserRepository --> UserService: done
+  UserService -> UserRepository: SaveChangesAsync()
+  activate UserRepository
+   UserRepository -> DbContext: SaveChangesAsync()
+   DbContext --> UserRepository: persisted
+  UserRepository --> UserService: done
+  deactivate UserRepository
+  UserService -> UserService: Build AdjustPointsResultDto\n{ UserId, Username, NewBalance,\n  AdjustedBy, Reason, AdjustedAt }
+  UserService --> UsersController: AdjustPointsResultDto
+  deactivate UserService
+ UsersController --> AuthInt: HTTP 200 OK (JSON)
+ deactivate UsersController
+ AuthInt --> AdminSvc: AdjustPointsResultDto
+ AdminSvc --> AdjustModal: AdjustPointsResultDto
+ AdjustModal -> AdjustModal: Show success message\n"Added/Removed N points\nNew balance: X"
+ AdjustModal -> AdjustModal: emit success (1.5s delay)
+ AdjustModal --> UserMgmt: success event
+ UserMgmt -> UserMgmt: loadUsers() — refresh table
+
+== PATCH /api/Users/admin/users/{id}/status — Suspend/Reactivate ==
+
+UserMgmt -> SuspendModal: openSuspendUserModal(user)\n(userId, username, isActive)
+SuspendModal -> SuspendModal: User confirms action\n(submit)
+SuspendModal -> AdminSvc: changeUserStatus(userId, {isActive: !current, reason})
+AdminSvc -> AuthInt: HTTP PATCH /api/Users/admin/users/{id}/status
+AuthInt -> UsersController: PATCH /api/Users/admin/users/{id}/status\n[Bearer Token + JWT]
+activate UsersController
+ UsersController -> UsersController: Validate adminUserId from JWT
+ UsersController -> UserService: ChangeUserStatusAsync(userId, isActive, reason, adminUserId)
+ activate UserService
+  UserService -> UserRepository: GetByIdAsync(userId)
+  activate UserRepository
+   UserRepository -> DbContext: DbSet<User>.FindAsync(id)
+   DbContext --> UserRepository: User entity
+  UserRepository --> UserService: User
+  deactivate UserRepository
+  UserService -> UserService: user.IsActive = isActive
+  UserService -> UserRepository: UpdateAsync(user)
+  activate UserRepository
+   UserRepository -> DbContext: DbSet<User>.Update(user)
+   DbContext --> UserRepository: done
+  UserRepository --> UserService: done
+  UserService -> UserRepository: SaveChangesAsync()
+  activate UserRepository
+   UserRepository -> DbContext: SaveChangesAsync()
+   DbContext --> UserRepository: persisted
+  UserRepository --> UserService: done
+  deactivate UserRepository
+  UserService -> UserService: Build AdminUserDto from updated user
+  UserService --> UsersController: AdminUserDto
+  deactivate UserService
+ UsersController --> AuthInt: HTTP 200 OK (JSON)
+ deactivate UsersController
+ AuthInt --> AdminSvc: AdminUserDto
+ AdminSvc --> SuspendModal: AdminUserDto
+ SuspendModal -> SuspendModal: Show success message\n"User suspended/reactivated"
+ SuspendModal -> SuspendModal: emit success (1.5s delay)
+ SuspendModal --> UserMgmt: success event
+ UserMgmt -> UserMgmt: loadUsers() — refresh table
+
+@enduml

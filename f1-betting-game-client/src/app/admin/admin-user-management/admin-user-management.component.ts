@@ -57,14 +57,12 @@ export class AdminUserManagementComponent implements OnInit {
                     this.totalItems = result.totalItems;
                     this.totalPages = result.totalPages;
                     this.isLoading = false;
-                    this.cdr.markForCheck();
                 },
                 error: (error) => {
                     console.error('Error loading users:', error);
                     this.hasError = true;
                     this.errorMessage = error.message || 'Failed to load users';
                     this.isLoading = false;
-                    this.cdr.markForCheck();
                 },
             });
     }

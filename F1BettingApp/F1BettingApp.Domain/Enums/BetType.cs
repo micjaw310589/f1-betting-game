@@ -6,6 +6,10 @@ namespace F1BettingApp.Domain.Enums
         RaceWinner,
         PodiumFinish,
         Top10Finish,
-        FastestLap
+        FastestLap,
+        FastestPitStop,
+        DNFCount,
+        DriverVsDriver,
+        TeamVsTeam
     }
 }

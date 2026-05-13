@@ -9,7 +9,11 @@ export type BetType =
   | 'RaceWinner'
   | 'PodiumFinish'
   | 'Top10Finish'
-  | 'FastestLap';
+  | 'FastestLap'
+  | 'FastestPitStop'
+  | 'DNFCount'
+  | 'DriverVsDriver'
+  | 'TeamVsTeam';
 
 export interface BetResponseDto {
   id: number;

@@ -526,7 +526,36 @@ namespace F1BettingApp.API.Controllers
             return filtered;
         }
 
-        // W RacesController.cs
+        /// <summary>
+        /// Get all available drivers
+        /// </summary>
+        /// <returns>List of all drivers</returns>
+        [HttpGet("drivers")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<DriverDto>>> GetDrivers()
+        {
+            _logger.LogInformation("Getting all drivers");
+
+            try
+            {
+                var drivers = await _raceService.GetAllDriversAsync();
+                _logger.LogInformation("Drivers retrieved: Count={Count}", drivers.Count());
+                return Ok(drivers);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving drivers");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "DRIVER_DATA_ERROR",
+                        Message = "An error occurred while retrieving drivers",
+                        Details = ex.Message
+                    });
+            }
+        }
+
         [HttpGet("{raceId}/drivers-with-odds")]
         public async Task<ActionResult<IEnumerable<DriverWithOddsDto>>> GetDriversWithOdds(int raceId)
         {

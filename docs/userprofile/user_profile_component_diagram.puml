@@ -1,0 +1,28 @@
+@startuml UserProfile_ComponentDiagram
+!theme blueprint
+title User Profile - Component/Service/Model Dependencies (Angular)
+
+skinparam classAttributeIconSize 0
+
+component "UserProfileComponent\n(profile + bet history UI)" as UserProfileComponent
+
+component "ProfileService" as ProfileService
+component "RaceService" as RaceService
+component "BetService" as BetService
+
+collections "profile.models.ts (DTOs)" as ProfileModels
+
+collections "bet history view models" as BetHistoryView
+database "UI State\n(page, pageSize,\nprofile, betHistory,\nisLoading/hasError)" as UIState
+
+UserProfileComponent --> ProfileService : calls getProfileAndBets(page,pageSize)
+UserProfileComponent --> RaceService : calls getRaceDetails(bet.raceId) for enrichment
+UserProfileComponent --> BetService : calls cancelBet(betId) on Pending
+
+UserProfileComponent --> ProfileModels : uses UserProfileDto,\nBetHistoryResponseDto,\nBetHistoryDto
+
+UserProfileComponent --> BetHistoryView : reads bets[] and maps UI fields
+
+UserProfileComponent --> UIState : stores profile + betHistory\npagination + flags
+
+@enduml

@@ -1,0 +1,55 @@
+@startuml UserProfile_Models_Diagram
+!theme blueprint
+title User Profile - DTO/Model Shapes (TypeScript)
+
+skinparam classAttributeIconSize 0
+
+package "profile.models.ts" {
+
+  class UserProfileDto {
+    + id: number
+    + username: string
+    + email: string
+    + firstName?: string|null
+    + lastName?: string|null
+    + bio?: string|null
+    + points: number
+    + createdAt: Date
+    + lastLoginAt: Date
+  }
+
+  class BetHistoryDto {
+    + id: number
+    + userId: string
+    + raceId: number
+    + driverId: number
+    + driverName?: string|null
+    + amount: number
+    + betType: string
+    + status: string
+    + winnings?: number|null
+    + createdAt: Date
+    + resolvedAt?: Date|null
+    + prediction?: number|null
+    + predictionResult?: boolean|null
+    + raceName?: string|null
+    + raceDate?: Date|null
+    + returnPercentage?: number|null
+  }
+
+  class BetHistoryResponseDto {
+    + bets: BetHistoryDto[]
+    + totalCount: number
+    + pageNumber: number
+    + pageSize: number
+    + totalPages?: number
+    + hasNextPage?: boolean
+    + hasPreviousPage?: boolean
+  }
+
+}
+
+UserProfileDto "1" --> "0..*" BetHistoryDto : produces bet history view
+BetHistoryResponseDto --> BetHistoryDto : contains
+
+@enduml

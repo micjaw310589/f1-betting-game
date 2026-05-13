@@ -30,6 +30,13 @@
         >
             Race Management
         </button>
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'bets'"
+            (click)="switchTab('bets')"
+        >
+            Bets
+        </button>
     </div>
 
     @if (activeTab === 'sync') {

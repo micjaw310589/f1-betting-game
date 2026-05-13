@@ -13,7 +13,7 @@ namespace F1BettingApp.Tests
             var user = new User("TestUser", "test@example.com", "passwordhash");
 
             // Assert
-            Assert.Equal("TestUser", user.Username);
+            Assert.Equal("TestUser", user.UserName);
             Assert.Equal("test@example.com", user.Email);
             Assert.Equal("passwordhash", user.PasswordHash);
         }

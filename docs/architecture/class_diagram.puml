@@ -44,10 +44,83 @@ class User {
   + LastLogin : DateTime?
   + IsActive : boolean
   + IsAdmin : boolean
+  + RefreshToken : string?
+  + RefreshTokenExpiryTime : DateTime?
   --
   + AddPoints(points: int) : void
   + DeductPoints(points: int) : void
   + HasSufficientBalance(requiredPoints: int) : boolean
+  + SetRefreshToken(token: string, expiry: DateTime) : void
+  + RevokeRefreshToken() : void
+}
+
+class AuthController {
+  + Register(registerDto: RegisterDto) : AuthResponse
+  + Login(loginDto: LoginDto) : AuthResponse
+  + RefreshToken(refreshTokenDto: RefreshTokenDto) : AuthResponse
+  + RevokeToken() : ActionResult
+}
+
+class JWTService {
+  - _configuration : IConfiguration
+  - _userManager : UserManager<User>
+  --
+  + GenerateJwtToken(user: User) : string
+  + GenerateRefreshToken() : string
+  + ValidateToken(token: string) : ClaimsPrincipal
+  + GetUserIdFromToken(token: string) : string
+}
+
+class RefreshToken {
+  + Token : string
+  + Expires : DateTime
+  + Created : DateTime
+  + Revoked : DateTime?
+  + ReplacedByToken : string?
+  + IsExpired : boolean
+  + IsActive : boolean
+  --
+  + Revoke() : void
+}
+
+class AuthService {
+  + currentUser : BehaviorSubject<User>
+  + currentUser$ : Observable<User>
+  --
+  + login(email: string, password: string) : Observable<AuthResponse>
+  + register(userData: RegisterDto) : Observable<AuthResponse>
+  + logout() : void
+  + refreshToken() : Observable<AuthResponse>
+  + getToken() : string
+  + isLoggedIn() : boolean
+}
+
+class RegisterDto {
+  + Email : string
+  + Username : string
+  + Password : string
+  + ConfirmPassword : string
+}
+
+class LoginDto {
+  + Email : string
+  + Password : string
+  + RememberMe : boolean
+}
+
+class AuthResponse {
+  + AccessToken : string
+  + RefreshToken : string
+  + User : UserDto
+  + ExpiresIn : int
+}
+
+class UserDto {
+  + Id : string
+  + Username : string
+  + Email : string
+  + Points : int
+  + IsAdmin : boolean
 }
 
 class Race {
@@ -189,6 +262,17 @@ Race "1" -- "*" LeaderboardHistory : records >
 Team "1" -- "*" Driver : has >
 Driver "1" -- "*" Bet : selected in >
 Driver "1" -- "*" Result : achieved by >
+
+' === Authentication Relationships ===
+AuthController "1" -- "1" JWTService : uses >
+AuthController "1" -- "1" User : manages >
+JWTService "1" -- "1" RefreshToken : generates >
+AuthService "1" -- "1" AuthController : calls >
+AuthService "1" -- "1" UserDto : manages >
+RegisterDto "1" -- "1" AuthController : input >
+LoginDto "1" -- "1" AuthController : input >
+AuthController "1" -- "1" AuthResponse : returns >
+AuthResponse "1" -- "1" UserDto : contains >
 
 note right of Race
   Race captures a scheduled or completed

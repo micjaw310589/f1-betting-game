@@ -1,20 +1,58 @@
 @startuml
-title User Registration and Authentication Sequence
+title User Registration and Authentication Sequence with JWT
 
 actor User
 participant "Angular SPA" as SPA
+participant "AuthService" as AuthService
 participant "AuthController" as API
+participant "JWT Service" as JWTService
+participant "User Database" as DB
 
-User -> SPA : Submit registration request
-SPA -> API : POST /api/auth/register
+== User Registration ==
+User -> SPA : Submit registration form
+SPA -> AuthService : register(userData)
+AuthService -> API : POST /api/auth/register
 activate API
-API --> SPA : 200 OK (Auth register endpoint)
+API -> DB : Create user record
+API -> JWTService : Generate JWT tokens
+JWTService --> API : Return access & refresh tokens
+API --> AuthService : 200 OK with tokens
 deactivate API
+AuthService -> SPA : Store tokens in localStorage
+SPA --> User : Registration successful
 
-User -> SPA : Submit login request
-SPA -> API : POST /api/auth/login
+== User Login ==
+User -> SPA : Submit login form
+SPA -> AuthService : login(credentials)
+AuthService -> API : POST /api/auth/login
 activate API
-API --> SPA : 200 OK (Auth login endpoint)
+API -> DB : Validate credentials
+API -> JWTService : Generate JWT tokens
+JWTService --> API : Return access & refresh tokens
+API --> AuthService : 200 OK with tokens
 deactivate API
+AuthService -> SPA : Store tokens in localStorage
+SPA --> User : Login successful
+
+== Token Refresh ==
+SPA -> AuthService : Token expired, refresh needed
+AuthService -> API : POST /api/auth/refresh
+activate API
+API -> JWTService : Validate refresh token
+JWTService --> API : Return new access token
+API --> AuthService : 200 OK with new access token
+deactivate API
+AuthService -> SPA : Update access token
+SPA -> API : Continue with new token
+
+== Protected API Request ==
+SPA -> AuthService : Make authenticated request
+AuthService -> API : GET /api/protected (with Authorization header)
+activate API
+API -> API : Validate JWT token
+API --> AuthService : 200 OK with data
+deactivate API
+AuthService -> SPA : Return data
+SPA --> User : Display data
 
 @enduml

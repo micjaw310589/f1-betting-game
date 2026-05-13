@@ -28,11 +28,6 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddControllers()
-    .AddJsonOptions(o => o.AllowInputFormatterExceptionMessages = true);
-builder.Logging.AddConsole();
-
-
 // Register CORS for Angular frontend
 builder.Services.AddCors(options =>
 {

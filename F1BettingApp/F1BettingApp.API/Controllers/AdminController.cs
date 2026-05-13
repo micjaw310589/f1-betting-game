@@ -2,7 +2,6 @@ using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Exceptions;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Enums;
-using F1BettingApp.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -94,19 +93,6 @@ public AdminController(
                 });
             }
         }
-
-        [HttpGet("drivers")]
-        public async Task<ActionResult<IEnumerable<DriverDto>>> GetDrivers()
-        {
-            var drivers = await _driverRepository.GetAllAsync();
-            return Ok(drivers.Select(d => new DriverDto
-            {
-                Id = d.Id,
-                Name = d.Name,
-                TeamName = d.TeamName ?? ""
-            }));
-        }
-
 
         /// <summary>
         /// Gets the current results for a race (admin view).

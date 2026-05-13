@@ -8,13 +8,11 @@ services:
     environment:
       POSTGRES_USER: devuser
       POSTGRES_PASSWORD: devpassword
-      POSTGRES_DB: f1bettingdb
+      POSTGRES_DB: my_local_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - f1network
 
   pgadmin:
     image: dpage/pgadmin4
@@ -27,28 +25,6 @@ services:
       - "8080:80"
     depends_on:
       - db
-    networks:
-      - f1network
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: f1_betting_api
-    restart: always
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=f1bettingdb;Username=devuser;Password=devpassword;
-    ports:
-      - "5000:8080"
-    depends_on:
-      - db
-    networks:
-      - f1network
 
 volumes:
   postgres_data:
-
-networks:
-  f1network:
-    driver: bridge

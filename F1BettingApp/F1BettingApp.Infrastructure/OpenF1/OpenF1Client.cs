@@ -69,18 +69,53 @@ namespace F1BettingApp.Infrastructure.OpenF1
 
         /// <inheritdoc />
         public async Task<List<RaceDto>> GetRaceCalendarAsync(int season)
+{
+    var response = await ExecuteApiCallAsync<List<OpenF1RaceResponse>>($"races?year={season}");
+    var result = new List<RaceDto>();
+
+    foreach (var r in response)
+    {
+        // 1. Pomijamy rekordy bez race_id
+        if (r.race_id == null)
         {
-            var response = await ExecuteApiCallAsync<List<OpenF1RaceResponse>>($"races?year={season}");
-            return response.Select(r => new RaceDto
-            {
-                RaceId = r.race_id?.ToString() ?? string.Empty,
-                Name = r.name ?? r.circuit_name ?? "Unknown Race",
-                Circuit = r.circuit_name ?? "Unknown Circuit",
-                Date = r.date_utc ?? DateTime.UtcNow,
-                Status = r.date_utc < DateTime.UtcNow ? "Finished" : "Scheduled",
-                Season = r.year ?? season
-            }).ToList();
+            Console.WriteLine($"[OpenF1] Ignoring race with null race_id: {r.name}");
+            continue;
         }
+
+        // 2. Pomijamy rekordy bez daty (OpenF1 czasem zwraca takie śmieci)
+        if (!r.date_utc.HasValue)
+        {
+            Console.WriteLine($"[OpenF1] Ignoring race without date: {r.name} (race_id={r.race_id})");
+            continue;
+        }
+
+        // 3. Ustalanie statusu w sposób bezpieczny
+        if (!r.date_utc.HasValue)
+        {
+            Console.WriteLine($"[OpenF1] Ignoring race without date: {r.name}");
+            continue;
+        }
+
+        string status = r.date_utc.Value < DateTime.UtcNow
+            ? "Finished"
+            : "Scheduled";
+
+
+        // 4. Mapowanie do DTO
+        result.Add(new RaceDto
+        {
+            RaceId = r.race_id.Value.ToString(),
+            Name = r.name ?? r.circuit_name ?? "Unknown Race",
+            Circuit = r.circuit_name ?? "Unknown Circuit",
+            Date = r.date_utc.Value,
+            Status = status,
+            Season = r.year ?? season
+        });
+    }
+
+    return result;
+}
+
 
         /// <inheritdoc />
         public async Task<RaceDto> GetRaceDetailsAsync(string raceId)
@@ -88,6 +123,7 @@ namespace F1BettingApp.Infrastructure.OpenF1
             var response = await ExecuteApiCallAsync<List<OpenF1RaceResponse>>($"races?race_id={raceId}");
             var race = response.FirstOrDefault();
             if (race == null) return null;
+            
 
             return new RaceDto
             {

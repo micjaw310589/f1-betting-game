@@ -2,10 +2,12 @@ using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
+using F1BettingApp.Domain.OpenF1;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
 using F1BettingApp.Infrastructure.OpenF1;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Transactions;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,12 +36,12 @@ namespace F1BettingApp.Application.Services
             _dbContext = dbContext;
         }
 
-        public async Task<RaceDto> GetRaceByIdAsync(int id)
+        public async Task<DTOs.RaceDto> GetRaceByIdAsync(int id)
         {
             var race = await _raceRepository.GetByIdAsync(id);
             if (race == null) return null;
 
-            return new RaceDto
+            return new DTOs.RaceDto
             {
                 Id = race.Id,
                 Name = race.Name,
@@ -53,10 +55,10 @@ namespace F1BettingApp.Application.Services
             };
         }
 
-        public async Task<IEnumerable<RaceDto>> GetAllRacesAsync()
+        public async Task<IEnumerable<DTOs.RaceDto>> GetAllRacesAsync()
         {
             var races = await _raceRepository.GetAllAsync();
-            return races.Select(r => new RaceDto
+            return races.Select(r => new DTOs.RaceDto
             {
                 Id = r.Id,
                 Name = r.Name,
@@ -67,14 +69,14 @@ namespace F1BettingApp.Application.Services
                 Season = r.Season,
                 Flag = string.Empty, // TODO: Implement flag logic
                 Odds = new Dictionary<int, decimal>()
-            });
+            }).OrderBy(r => r.RaceDate);
         }
 
-        public async Task<IEnumerable<RaceDto>> GetUpcomingRacesAsync()
+        public async Task<IEnumerable<DTOs.RaceDto>> GetUpcomingRacesAsync()
         {
             var races = await _raceRepository.GetAllAsync();
             var upcoming = races.Where(r => r.Status == RaceStatus.Scheduled);
-            return upcoming.Select(r => new RaceDto
+            return upcoming.Select(r => new DTOs.RaceDto
             {
                 Id = r.Id,
                 Name = r.Name,
@@ -98,7 +100,8 @@ namespace F1BettingApp.Application.Services
 
             try
             {
-                var openF1Races = await _openF1ApiClient.GetRacesAsync();
+                var currentSeason = DateTime.UtcNow.Year;
+                var openF1Races = await _openF1ApiClient.GetRaceCalendarAsync(currentSeason);
                 var allRaces = await _raceRepository.GetAllAsync();
 
                 int created = 0;
@@ -111,7 +114,7 @@ namespace F1BettingApp.Application.Services
                         foreach (var openF1Race in openF1Races)
                         {
                             var existingRace = allRaces
-                                .FirstOrDefault(r => r.OpenF1RaceId == openF1Race.Id);
+                                .FirstOrDefault(r => r.OpenF1RaceId == openF1Race.RaceId);
 
                             if (existingRace == null)
                             {
@@ -119,8 +122,8 @@ namespace F1BettingApp.Application.Services
                                     openF1Race.Name,
                                     openF1Race.Date,
                                     openF1Race.Circuit,
-                                    openF1Race.Country,
-                                    openF1Race.Id,
+                                    string.Empty,
+                                    openF1Race.RaceId,
                                     openF1Race.Season
                                 );
 
@@ -133,7 +136,6 @@ namespace F1BettingApp.Application.Services
                                 existingRace.Name = openF1Race.Name;
                                 existingRace.Date = openF1Race.Date;
                                 existingRace.Circuit = openF1Race.Circuit;
-                                existingRace.Country = openF1Race.Country;
                                 existingRace.Season = openF1Race.Season;
 
                                 await _raceRepository.UpdateAsync(existingRace);
@@ -166,12 +168,12 @@ namespace F1BettingApp.Application.Services
             return result;
         }
 
-        public async Task<IEnumerable<RaceDto>> GetUpcomingRacesWithOddsAsync()
+        public async Task<IEnumerable<DTOs.RaceDto>> GetUpcomingRacesWithOddsAsync()
         {
             var races = await _raceRepository.GetAllAsync();
             var upcomingRaces = races.Where(r => r.Status == RaceStatus.Scheduled);
 
-            var racesWithOdds = upcomingRaces.Select(r => new RaceDto
+            var racesWithOdds = upcomingRaces.Select(r => new DTOs.RaceDto
             {
                 Id = r.Id,
                 Name = r.Name,
@@ -197,12 +199,12 @@ namespace F1BettingApp.Application.Services
             await _raceRepository.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<RaceDto>> GetRacesByIdsAsync(IEnumerable<int> ids)
+        public async Task<IEnumerable<DTOs.RaceDto>> GetRacesByIdsAsync(IEnumerable<int> ids)
         {
-            if (ids == null || !ids.Any()) return Enumerable.Empty<RaceDto>();
+            if (ids == null || !ids.Any()) return Enumerable.Empty<DTOs.RaceDto>();
 
             var races = await _raceRepository.GetByIdsAsync(ids.ToList());
-            return races.Select(r => new RaceDto
+            return races.Select(r => new DTOs.RaceDto
             {
                 Id = r.Id,
                 Name = r.Name,
@@ -257,6 +259,10 @@ namespace F1BettingApp.Application.Services
             // Delete all existing results for this race
             var existingResults = _dbContext.Results.Where(r => r.RaceId == raceId).ToList();
             _dbContext.Results.RemoveRange(existingResults);
+            
+            // Save changes to flush deletions before inserting new results
+            // This prevents unique constraint violations on (RaceId, DriverId)
+            await _dbContext.SaveChangesAsync();
 
             // Create and add new results
             var newResults = new List<Result>();
@@ -299,7 +305,7 @@ namespace F1BettingApp.Application.Services
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<RaceResultDto> GetRaceResultDtoAsync(int raceId)
+        public async Task<DTOs.RaceResultDto> GetRaceResultDtoAsync(int raceId)
         {
             var race = await _raceRepository.GetByIdAsync(raceId);
             if (race == null)
@@ -325,7 +331,7 @@ namespace F1BettingApp.Application.Services
                 ? driverLookup[fastestLapDriver.DriverId]
                 : null;
 
-            return new RaceResultDto
+            return new DTOs.RaceResultDto
             {
                 RaceId = race.Id,
                 RaceName = race.Name,
@@ -440,7 +446,7 @@ namespace F1BettingApp.Application.Services
             await _raceRepository.SaveChangesAsync();
         }
 
-        public async Task<RaceDto> CreateRaceAsync(CreateRaceDto dto)
+        public async Task<DTOs.RaceDto> CreateRaceAsync(CreateRaceDto dto)
         {
             // Validate inputs
             if (string.IsNullOrWhiteSpace(dto.Name))
@@ -472,7 +478,7 @@ namespace F1BettingApp.Application.Services
             await _raceRepository.AddAsync(race);
             await _raceRepository.SaveChangesAsync();
 
-            return new RaceDto
+            return new DTOs.RaceDto
             {
                 Id = race.Id,
                 Name = race.Name,

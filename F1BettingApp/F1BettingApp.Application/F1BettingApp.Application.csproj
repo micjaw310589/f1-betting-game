@@ -6,6 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Allow test project to access internal members -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="F1BettingApp.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\F1BettingApp.Domain\F1BettingApp.Domain.csproj" />
     <ProjectReference Include="..\F1BettingApp.Infrastructure\F1BettingApp.Infrastructure.csproj" />

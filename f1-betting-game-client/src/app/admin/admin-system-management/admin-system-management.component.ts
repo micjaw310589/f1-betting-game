@@ -95,6 +95,10 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     switchTab(tab: 'sync' | 'results' | 'metadata' | 'races'): void {
         this.activeTab = tab;
+        this.showDeleteConfirm = false;
+        this.showCreateRaceForm = false;
+        this.showMetadataConfirmModal = false;
+        this.showResultsConfirmModal = false;
     }
 
     // ========================

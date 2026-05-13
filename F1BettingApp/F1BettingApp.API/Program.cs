@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Application.Services;
+using F1BettingApp.API.BackgroundWorkers;
 using F1BettingApp.Infrastructure.OpenF1;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
@@ -26,6 +27,11 @@ builder.Services.AddControllers()
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.AllowInputFormatterExceptionMessages = true);
+builder.Logging.AddConsole();
+
 
 // Register CORS for Angular frontend
 builder.Services.AddCors(options =>
@@ -130,6 +136,9 @@ builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
+
+// Register background workers
+builder.Services.AddHostedService<RaceStatusMonitorJob>();
 
 // Configure ASP.NET Core Identity for user management
 //builder.Services.AddIdentity<F1BettingApp.Domain.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>()

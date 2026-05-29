@@ -32,7 +32,7 @@ namespace F1BettingApp.Application.Interfaces
         Task<QuestDto> UpdateQuestDefinitionAsync(int id, UpdateQuestDto dto);
 
         /// <summary>
-        /// Deletes a quest definition. Does not affect existing progress records.
+        /// Deletes a quest definition. Throws if there are active progress records.
         /// </summary>
         /// <param name="id">The quest definition ID.</param>
         /// <returns>Task representing the asynchronous operation.</returns>
@@ -45,5 +45,12 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="isActive">The new active status.</param>
         /// <returns>The updated quest DTO.</returns>
         Task<QuestDto> ToggleQuestActiveAsync(int id, bool isActive);
+
+        /// <summary>
+        /// Resets all weekly quest progress records for all users to the current week.
+        /// Sets IsClaimed = false and Progress = 0 for all active weekly quests.
+        /// </summary>
+        /// <returns>Number of records reset.</returns>
+        Task<int> ResetWeeklyQuestsAsync();
     }
 }

@@ -109,5 +109,31 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task<int> GetActiveProgressCountByQuestIdAsync(string questId)
+        {
+            return await _dbSet
+                .Where(p => p.QuestId == questId && !p.IsClaimed)
+                .CountAsync();
+        }
+
+        public async Task<int> ResetAllWeeksAsync(int weekNumber, int year)
+        {
+            var records = await _dbSet
+                .Where(p => p.WeekNumber == weekNumber && p.Year == year)
+                .ToListAsync();
+
+            foreach (var record in records)
+            {
+                record.Progress = 0;
+                record.IsCompleted = false;
+                record.PointsAwarded = 0;
+                record.IsClaimed = false;
+                record.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await SaveChangesAsync();
+            return records.Count;
+        }
     }
 }

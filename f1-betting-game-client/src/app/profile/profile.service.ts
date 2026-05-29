@@ -2,7 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin, map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { BetHistoryResponseDto, UserProfileDto } from './profile.models';
+import {
+  BetHistoryResponseDto,
+  DailyStreakResponse,
+  PointHistoryResponseDto,
+  QuestResponse,
+  UserProfileDto
+} from './profile.models';
 
 export interface ProfileAndBetsResponse {
   profile: UserProfileDto;
@@ -44,4 +50,29 @@ export class ProfileService {
     }))
   );
 }
+
+  /**
+   * Fetches the user's daily login streak information.
+   */
+  getDailyStreak(): Observable<DailyStreakResponse> {
+    return this.http.get<DailyStreakResponse>(`${this.API_URL}/profile/daily-streak`);
+  }
+
+  /**
+   * Fetches all active quests with the user's current progress.
+   */
+  getQuests(): Observable<QuestResponse[]> {
+    return this.http.get<QuestResponse[]>(`${this.API_URL}/profile/quests`);
+  }
+
+  /**
+   * Fetches paginated point history for the user.
+   */
+  getPointHistory(page: number, pageSize: number): Observable<PointHistoryResponseDto> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('pageSize', String(pageSize));
+
+    return this.http.get<PointHistoryResponseDto>(`${this.API_URL}/profile/point-history`, { params });
+  }
 }

@@ -65,5 +65,22 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
         /// </summary>
         /// <returns>Task representing the asynchronous operation.</returns>
         Task SaveChangesAsync();
+
+        /// <summary>
+        /// Gets the count of active (not claimed) quest progress records for a given quest ID across all users.
+        /// Used to check if a quest can be safely deleted.
+        /// </summary>
+        /// <param name="questId">The quest identifier.</param>
+        /// <returns>Count of active progress records.</returns>
+        Task<int> GetActiveProgressCountByQuestIdAsync(string questId);
+
+        /// <summary>
+        /// Resets all weekly quest progress records for all users for the given week/year.
+        /// Sets IsClaimed = false, Progress = 0, and PointsAwarded = 0.
+        /// </summary>
+        /// <param name="weekNumber">The ISO week number to reset.</param>
+        /// <param name="year">The year.</param>
+        /// <returns>Number of records reset.</returns>
+        Task<int> ResetAllWeeksAsync(int weekNumber, int year);
     }
 }

@@ -6,6 +6,7 @@ import { BetHistoryResponseDto, BetHistoryDto, DailyStreakResponse, PointHistory
 import { NavigationEnd, Router } from '@angular/router';
 import { RaceService } from '../../race/services/race.service';
 import { BetService } from '../../race/bets/bet.service';
+import { ToastService } from '../../shared/toast/toast.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -40,7 +41,8 @@ constructor(
   private router: Router,
   private cdr: ChangeDetectorRef,
   private raceService: RaceService,
-  private betService: BetService
+  private betService: BetService,
+  private toastService: ToastService
 ) {
   this.subscription.add( 
     this.router.events.subscribe((val) => {
@@ -99,6 +101,11 @@ loadStreakAndQuests(): void {
     next: (streak) => {
       this.dailyStreak = streak;
       this.cdr.detectChanges();
+
+      // Show toast for daily login points
+      if (streak.pointsToday && streak.currentStreak > 0) {
+        this.toastService.showDailyLogin(streak.currentStreak, streak.pointsToday);
+      }
     },
     error: () => {
       // Streak data is optional - ignore errors
@@ -109,6 +116,12 @@ loadStreakAndQuests(): void {
     next: (quests) => {
       this.quests = quests;
       this.cdr.detectChanges();
+
+      // Show toasts for newly completed quests (completed but not yet claimed)
+      const newQuests = quests.filter(q => q.isCompleted && !q.isClaimed);
+      for (const quest of newQuests) {
+        this.toastService.showPointsEarned(quest.name, quest.pointsReward);
+      }
     },
     error: () => {
       // Quests data is optional - ignore errors

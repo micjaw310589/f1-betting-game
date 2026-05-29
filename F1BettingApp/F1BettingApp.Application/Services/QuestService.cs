@@ -182,7 +182,25 @@ namespace F1BettingApp.Application.Services
             if (quest.IsOneTime)
             {
                 // For one-time quests, use week 0, year 0 as sentinel
-                return await _questProgressRepository.GetAsync(userId, quest.QuestId, 0, 0);
+                WeeklyQuestProgress? oneTimeProgress = await _questProgressRepository.GetAsync(userId, quest.QuestId, 0, 0);
+                if (oneTimeProgress == null)
+                {
+                    oneTimeProgress = new WeeklyQuestProgress
+                    {
+                        UserId = userId,
+                        QuestId = quest.QuestId,
+                        WeekNumber = 0,
+                        Year = 0,
+                        Progress = 0,
+                        Target = quest.Target,
+                        IsCompleted = false,
+                        PointsAwarded = 0,
+                        IsClaimed = false,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    await _questProgressRepository.UpsertAsync(oneTimeProgress);
+                }
+                return oneTimeProgress;
             }
 
             // For recurring quests, use current ISO week

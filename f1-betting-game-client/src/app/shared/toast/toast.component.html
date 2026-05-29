@@ -1,0 +1,21 @@
+<div class="toast-container">
+  @for (toast of toasts; track toast.id) {
+    <div class="toast toast-{{ toast.type }}" [class.toast-points]="toast.points !== undefined">
+      <div class="toast-icon">
+        @if (toast.points !== undefined) {
+          <span class="toast-points-icon">🏆</span>
+        } @else {
+          <span class="toast-default-icon">ℹ️</span>
+        }
+      </div>
+      <div class="toast-content">
+        <div class="toast-title">{{ toast.title }}</div>
+        <div class="toast-message">{{ toast.message }}</div>
+        @if (toast.points !== undefined) {
+          <div class="toast-points">+{{ toast.points }} points</div>
+        }
+      </div>
+      <button class="toast-close" (click)="dismiss(toast.id)" aria-label="Close notification">✕</button>
+    </div>
+  }
+</div>

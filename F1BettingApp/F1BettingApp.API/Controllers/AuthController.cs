@@ -25,11 +25,13 @@ namespace F1BettingApp.API.Controllers
         private readonly string _secretKey;
         private readonly string _issuer;
         private readonly string _audience;
+        private readonly IDailyLoginService _dailyLoginService;
 
-        public AuthController(IUserService userService, IConfiguration configuration)
+        public AuthController(IUserService userService, IConfiguration configuration, IDailyLoginService dailyLoginService)
         {
             _userService = userService;
             _configuration = configuration;
+            _dailyLoginService = dailyLoginService;
             var jwtSettings = configuration.GetSection("JwtSettings");
             _secretKey = jwtSettings["SecretKey"] ?? "fallback-secret-key";
             _issuer = jwtSettings["Issuer"] ?? "F1BettingApp";
@@ -130,6 +132,21 @@ namespace F1BettingApp.API.Controllers
                 if (authResponse == null || !authResponse.IsSuccess)
                 {
                     return Unauthorized(authResponse);
+                }
+
+                // Process daily login streak (awards points, updates streak)
+                try
+                {
+                    var userId = authResponse.User?.Id;
+                    if (userId.HasValue)
+                    {
+                        await _dailyLoginService.ProcessDailyLoginAsync(userId.Value);
+                    }
+                }
+                catch
+                {
+                    // Log error but don't fail authentication if streak processing fails
+                    // This ensures login always succeeds even if streak tracking has issues
                 }
 
                 return Ok(authResponse);

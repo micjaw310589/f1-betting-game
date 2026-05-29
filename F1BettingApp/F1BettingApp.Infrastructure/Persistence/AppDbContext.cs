@@ -18,6 +18,7 @@ namespace F1BettingApp.Infrastructure.Persistence
         public DbSet<LeaderboardHistory> LeaderboardHistories { get; set; }
         public DbSet<Driver> Drivers { get; set; }
         public DbSet<Team> Teams { get; set; }
+        public DbSet<DailyLoginStreak> DailyLoginStreaks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -157,6 +158,22 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
                 entity.Property(t => t.Country).IsRequired().HasMaxLength(50);
                 entity.Property(t => t.OpenF1TeamId).IsRequired().HasMaxLength(50);
+            });
+
+            // Configure DailyLoginStreak entity
+            modelBuilder.Entity<DailyLoginStreak>(entity =>
+            {
+                entity.HasIndex(d => d.UserId).IsUnique();
+
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(d => d.CurrentStreak).HasDefaultValue(0);
+                entity.Property(d => d.LastLoginDate).HasColumnType("date");
+                entity.Property(d => d.ClaimedToday).HasDefaultValue(false);
+                entity.Property(d => d.UpdatedAt).HasDefaultValueSql("now()");
             });
         }
     }

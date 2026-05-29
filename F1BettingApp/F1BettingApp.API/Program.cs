@@ -4,6 +4,8 @@ using System.Text.Json;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Application.Services;
 using F1BettingApp.API.BackgroundWorkers;
+using F1BettingApp.Domain.Events;
+using F1BettingApp.Infrastructure.Events;
 using F1BettingApp.Infrastructure.OpenF1;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
@@ -112,6 +114,7 @@ builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IResultRepository, ResultRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IDailyLoginStreakRepository, DailyLoginStreakRepository>();
 builder.Services.AddScoped(typeof(F1BettingApp.Infrastructure.Persistence.Repositories.IRepository<>), typeof(F1BettingApp.Infrastructure.Persistence.Repositories.Repository<>));
 builder.Services.AddScoped<IBetRepositoryExtensions, BetRepositoryExtensions>();
 builder.Services.AddScoped<IRaceRepositoryExtensions, RaceRepositoryExtensions>();
@@ -130,7 +133,11 @@ builder.Services.AddScoped<IBettingService, BettingService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDailyLoginService, DailyLoginService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
+
+// Register domain event publisher
+builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
 
 // Register background workers
 builder.Services.AddHostedService<RaceStatusMonitorJob>();

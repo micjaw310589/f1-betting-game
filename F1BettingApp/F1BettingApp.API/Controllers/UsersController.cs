@@ -3,6 +3,7 @@ using F1BettingApp.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using F1BettingApp.Application.Exceptions;
+
 namespace F1BettingApp.API.Controllers
 {
     /// <summary>
@@ -13,14 +14,17 @@ namespace F1BettingApp.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IDailyLoginService _dailyLoginService;
 
         /// <summary>
         /// Initializes a new instance of the UsersController.
         /// </summary>
         /// <param name="userService">The user service for business logic operations.</param>
-        public UsersController(IUserService userService)
+        /// <param name="dailyLoginService">The daily login streak service.</param>
+        public UsersController(IUserService userService, IDailyLoginService dailyLoginService)
         {
             _userService = userService;
+            _dailyLoginService = dailyLoginService;
         }
 
         /// <summary>
@@ -290,6 +294,40 @@ namespace F1BettingApp.API.Controllers
             catch (Exception ex) when (ex is not KeyNotFoundException && !IsAuthorizationException(ex))
             {
                 return StatusCode(500, "An internal error occurred while retrieving bet history");
+            }
+        }
+
+        /// <summary>
+        /// Gets the current daily login streak information for the authenticated user.
+        /// </summary>
+        /// <response code="200">Returns the current user's daily streak information.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("profile/daily-streak")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<DailyStreakInfoDto>> GetDailyStreakInfo()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var streakInfo = await _dailyLoginService.GetStreakInfoAsync(userIdInt);
+                return Ok(streakInfo);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving daily streak info");
             }
         }
 

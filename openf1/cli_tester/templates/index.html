@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenF1 CLI Tester</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; }
+      textarea { width: 100%; height: 300px; }
+      input, select { padding: 6px; margin: 4px 0; width: 100%; }
+      .row { display: flex; gap: 12px; }
+      .col { flex: 1; }
+      .small { width: 200px; }
+    </style>
+  </head>
+  <body>
+    <h1>OpenF1 CLI Tester</h1>
+    <p>Base URL: {{ base_url }}</p>
+    <form method="post">
+      <label>Endpoint (e.g. drivers)</label>
+      <input name="endpoint" required placeholder="drivers" />
+
+      <label>Params (key=value or comma separated)</label>
+      <input name="params" placeholder="session_key=latest" />
+
+      <div class="row">
+        <div class="col">
+          <label>Format</label>
+          <select name="format">
+            <option value="json">json</option>
+            <option value="csv">csv</option>
+          </select>
+        </div>
+        <div class="col small">
+          <label>Decode DRS</label>
+          <input type="checkbox" name="decode_drs" />
+        </div>
+        <div class="col small">
+          <label>Decode Segments</label>
+          <input type="checkbox" name="decode_segments" />
+        </div>
+      </div>
+
+      <button type="submit">Run CLI</button>
+    </form>
+
+    <h2>Output</h2>
+    {% if error %}
+      <pre style="color: red">{{ error }}</pre>
+    {% endif %}
+    {% if output %}
+      <pre>{{ output }}</pre>
+    {% endif %}
+  </body>
+</html>

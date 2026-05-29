@@ -118,6 +118,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IDailyLoginStreakRepository, DailyLoginStreakRepository>();
 builder.Services.AddScoped<IQuestDefinitionRepository, QuestDefinitionRepository>();
 builder.Services.AddScoped<IWeeklyQuestProgressRepository, WeeklyQuestProgressRepository>();
+builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
 builder.Services.AddScoped(typeof(F1BettingApp.Infrastructure.Persistence.Repositories.IRepository<>), typeof(F1BettingApp.Infrastructure.Persistence.Repositories.Repository<>));
 builder.Services.AddScoped<IBetRepositoryExtensions, BetRepositoryExtensions>();
 builder.Services.AddScoped<IRaceRepositoryExtensions, RaceRepositoryExtensions>();
@@ -139,6 +140,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDailyLoginService, DailyLoginService>();
 builder.Services.AddScoped<IQuestService, QuestService>();
 builder.Services.AddScoped<IQuestDefinitionService, QuestDefinitionService>();
+builder.Services.AddScoped<IPointHistoryService, PointHistoryService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
 
 // Register domain event publisher

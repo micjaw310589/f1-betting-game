@@ -21,17 +21,20 @@ namespace F1BettingApp.Application.Services
         private readonly IWeeklyQuestProgressRepository _questProgressRepository;
         private readonly IUserRepository _userRepository;
         private readonly IDomainEventPublisher _domainEventPublisher;
+        private readonly IPointHistoryService _pointHistoryService;
 
         public QuestService(
             IQuestDefinitionRepository questDefinitionRepository,
             IWeeklyQuestProgressRepository questProgressRepository,
             IUserRepository userRepository,
-            IDomainEventPublisher domainEventPublisher)
+            IDomainEventPublisher domainEventPublisher,
+            IPointHistoryService pointHistoryService)
         {
             _questDefinitionRepository = questDefinitionRepository;
             _questProgressRepository = questProgressRepository;
             _userRepository = userRepository;
             _domainEventPublisher = domainEventPublisher;
+            _pointHistoryService = pointHistoryService;
         }
 
         public bool IsRaceWeekendDay(DateTime date)
@@ -102,6 +105,9 @@ namespace F1BettingApp.Application.Services
                         user.AddPoints(quest.PointsReward);
                         await _userRepository.UpdateAsync(user);
 
+                        // Record point history
+                        await _pointHistoryService.RecordPointChangeAsync(userId, quest.PointsReward, "Quest", $"Quest: {quest.Name}", "System");
+
                         // Publish domain event
                         await _domainEventPublisher.PublishAsync(new PointsAwardedEvent(userId, quest.PointsReward, $"Quest: {quest.QuestId}"));
                     }
@@ -155,6 +161,9 @@ namespace F1BettingApp.Application.Services
                 {
                     user.AddPoints(quest.PointsReward);
                     await _userRepository.UpdateAsync(user);
+
+                    // Record point history
+                    await _pointHistoryService.RecordPointChangeAsync(userId, quest.PointsReward, "Quest", $"Quest: {quest.Name}", "System");
 
                     // Publish domain event
                     await _domainEventPublisher.PublishAsync(new PointsAwardedEvent(userId, quest.PointsReward, $"Quest: {quest.QuestId}"));

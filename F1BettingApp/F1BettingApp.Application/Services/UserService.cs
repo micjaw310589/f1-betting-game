@@ -20,6 +20,7 @@ namespace F1BettingApp.Application.Services
     {
         private readonly IRepository<User> _userRepository;
         private readonly IRepository<Bet> _betRepository;
+        private readonly IPointHistoryService _pointHistoryService;
         private readonly string _secretKey;
         private readonly string _issuer;
         private readonly string _audience;
@@ -28,7 +29,8 @@ namespace F1BettingApp.Application.Services
         public UserService(
             IRepository<User> userRepository,
             IRepository<Bet> betRepository,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IPointHistoryService pointHistoryService)
         {
             _userRepository = userRepository;
             _betRepository = betRepository;
@@ -36,6 +38,7 @@ namespace F1BettingApp.Application.Services
             _issuer = configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
             _audience = configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
             _tokenHandler = new JwtSecurityTokenHandler();
+            _pointHistoryService = pointHistoryService;
         }
 
         public async Task<UserDto> GetUserByIdAsync(int id)
@@ -536,6 +539,14 @@ namespace F1BettingApp.Application.Services
 
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveChangesAsync();
+
+            // Record point history for admin adjustment
+            await _pointHistoryService.RecordPointChangeAsync(
+                userId,
+                pointsDelta,
+                "AdminAdjustment",
+                reason ?? "Admin point adjustment",
+                "Admin");
 
             return new AdjustPointsResultDto
             {

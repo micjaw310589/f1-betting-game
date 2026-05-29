@@ -21,6 +21,7 @@ namespace F1BettingApp.Infrastructure.Persistence
         public DbSet<DailyLoginStreak> DailyLoginStreaks { get; set; }
         public DbSet<QuestDefinition> QuestDefinitions { get; set; }
         public DbSet<WeeklyQuestProgress> WeeklyQuestProgresses { get; set; }
+        public DbSet<PointHistory> PointHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -216,6 +217,20 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(w => w.IsClaimed).HasDefaultValue(false);
                 entity.Property(w => w.ReferenceId).HasMaxLength(50);
                 entity.Property(w => w.UpdatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure PointHistory entity
+            modelBuilder.Entity<PointHistory>(entity =>
+            {
+                entity.HasOne(ph => ph.User)
+                      .WithMany()
+                      .HasForeignKey(ph => ph.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(ph => ph.Category).IsRequired().HasMaxLength(50);
+                entity.Property(ph => ph.Description).IsRequired();
+                entity.Property(ph => ph.Source).IsRequired().HasMaxLength(20);
+                entity.Property(ph => ph.CreatedAt).HasDefaultValueSql("now()");
             });
         }
     }

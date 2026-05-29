@@ -19,15 +19,18 @@ namespace F1BettingApp.Application.Services
         private readonly IDailyLoginStreakRepository _streakRepository;
         private readonly IRepository<User> _userRepository;
         private readonly IDomainEventPublisher _eventPublisher;
+        private readonly IPointHistoryService _pointHistoryService;
 
         public DailyLoginService(
             IDailyLoginStreakRepository streakRepository,
             IRepository<User> userRepository,
-            IDomainEventPublisher eventPublisher)
+            IDomainEventPublisher eventPublisher,
+            IPointHistoryService pointHistoryService)
         {
             _streakRepository = streakRepository;
             _userRepository = userRepository;
             _eventPublisher = eventPublisher;
+            _pointHistoryService = pointHistoryService;
         }
 
         /// <inheritdoc />
@@ -190,6 +193,9 @@ namespace F1BettingApp.Application.Services
 
             user.AddPoints(pointsAwarded);
             await _userRepository.UpdateAsync(user);
+
+            // Record point history
+            await _pointHistoryService.RecordPointChangeAsync(userId, pointsAwarded, "DailyLogin", reason, "System");
 
             // Publish the domain event
             await _eventPublisher.PublishAsync(new PointsAwardedEvent(userId, pointsAwarded, reason));

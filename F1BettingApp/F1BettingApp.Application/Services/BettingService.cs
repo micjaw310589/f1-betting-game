@@ -26,6 +26,7 @@ private readonly IBetRepositoryExtensions _betRepository;
         private readonly IRaceService _raceService;
         private readonly INotificationService _notificationService;
         private readonly IQuestService _questService;
+        private readonly IPointHistoryService _pointHistoryService;
         private readonly AppDbContext _dbContext;
 
         /// <summary>
@@ -40,6 +41,7 @@ private readonly IBetRepositoryExtensions _betRepository;
             IRaceService raceService,
             INotificationService notificationService,
             IQuestService questService,
+            IPointHistoryService pointHistoryService,
             AppDbContext dbContext)
         {
             _betRepository = betRepository;
@@ -50,6 +52,7 @@ private readonly IBetRepositoryExtensions _betRepository;
             _raceService = raceService;
             _notificationService = notificationService;
             _questService = questService;
+            _pointHistoryService = pointHistoryService;
             _dbContext = dbContext;
         }
 
@@ -126,6 +129,15 @@ private readonly IBetRepositoryExtensions _betRepository;
 
             user.Points = (int)((decimal)user.Points - dto.Amount);
             await _userRepository.UpdateAsync(user);
+
+            // Record point history for bet placement
+            await _pointHistoryService.RecordPointChangeAsync(
+                userId, 
+                -(int)dto.Amount, 
+                "BetPlacement", 
+                $"Bet on {race.Name}", 
+                "Bet", 
+                bet.Id);
 
             race.TotalBets = (race.TotalBets ?? 0m) + 1m;
             race.TotalAmount = (race.TotalAmount ?? 0m) + dto.Amount;
@@ -307,18 +319,33 @@ private readonly IBetRepositoryExtensions _betRepository;
                     bet.ResolvedAt = DateTime.UtcNow;
                     _dbContext.Bets.Update(bet);
 
-                    // Accumulate winnings per user
+                    // Record point history for bet resolution
                     if (betResult.Winnings > 0)
                     {
+                        // Win: record the winnings as positive
+                        await _pointHistoryService.RecordPointChangeAsync(
+                            bet.UserId,
+                            (int)betResult.Winnings,
+                            "BetWin",
+                            $"Won bet on {race.Name}",
+                            "Bet",
+                            bet.Id);
                         totalWinningsByUser[bet.UserId] = totalWinningsByUser.GetValueOrDefault(bet.UserId) + betResult.Winnings;
-                    }
 
-                    // Credit user balance if won
-                    if (betResult.Winnings > 0)
-                    {
-                        // Use raw SQL to avoid state management conflicts
+                        // Credit user balance if won
                         await _dbContext.Database.ExecuteSqlRawAsync(
                             $"UPDATE \"Users\" SET \"Points\" = \"Points\" + {betResult.Winnings} WHERE \"Id\" = {bet.UserId}");
+                    }
+                    else
+                    {
+                        // Loss: record the amount spent
+                        await _pointHistoryService.RecordPointChangeAsync(
+                            bet.UserId,
+                            -(int)bet.Amount,
+                            "BetLoss",
+                            $"Lost bet on {race.Name}",
+                            "Bet",
+                            bet.Id);
                     }
                 }
 

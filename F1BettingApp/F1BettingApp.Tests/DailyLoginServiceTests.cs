@@ -26,6 +26,7 @@ public class DailyLoginServiceTests
     private readonly Mock<IDailyLoginStreakRepository> _streakRepoMock;
     private readonly Mock<IRepository<User>> _userRepoMock;
     private readonly Mock<IDomainEventPublisher> _eventPublisherMock;
+    private readonly Mock<IPointHistoryService> _pointHistoryServiceMock;
     private readonly DailyLoginService _service;
 
     public DailyLoginServiceTests()
@@ -33,10 +34,12 @@ public class DailyLoginServiceTests
         _streakRepoMock = new Mock<IDailyLoginStreakRepository>();
         _userRepoMock = new Mock<IRepository<User>>();
         _eventPublisherMock = new Mock<IDomainEventPublisher>();
+        _pointHistoryServiceMock = new Mock<IPointHistoryService>();
         _service = new DailyLoginService(
             _streakRepoMock.Object,
             _userRepoMock.Object,
-            _eventPublisherMock.Object);
+            _eventPublisherMock.Object,
+            _pointHistoryServiceMock.Object);
     }
 
     #region ProcessDailyLoginAsync Tests

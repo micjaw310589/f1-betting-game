@@ -25,6 +25,7 @@ private readonly IBetRepositoryExtensions _betRepository;
         private readonly IUserService _userService;
         private readonly IRaceService _raceService;
         private readonly INotificationService _notificationService;
+        private readonly IQuestService _questService;
         private readonly AppDbContext _dbContext;
 
         /// <summary>
@@ -38,6 +39,7 @@ private readonly IBetRepositoryExtensions _betRepository;
             IUserService userService,
             IRaceService raceService,
             INotificationService notificationService,
+            IQuestService questService,
             AppDbContext dbContext)
         {
             _betRepository = betRepository;
@@ -47,6 +49,7 @@ private readonly IBetRepositoryExtensions _betRepository;
             _userService = userService;
             _raceService = raceService;
             _notificationService = notificationService;
+            _questService = questService;
             _dbContext = dbContext;
         }
 
@@ -127,6 +130,30 @@ private readonly IBetRepositoryExtensions _betRepository;
             race.TotalBets = (race.TotalBets ?? 0m) + 1m;
             race.TotalAmount = (race.TotalAmount ?? 0m) + dto.Amount;
             await _raceRepository.UpdateAsync(race);
+
+            // Update quest progress for betting-related quests
+            try
+            {
+                await _questService.UpdateQuestProgressAsync(userId, "first_bet", 1);
+                await _questService.UpdateQuestProgressAsync(userId, "betting_marathon", 1);
+                // race_day_bettor: +1 if the race is on Fri/Sat/Sun
+                if (_questService.IsRaceWeekendDay(race.Date))
+                {
+                    await _questService.UpdateQuestProgressAsync(userId, "race_day_bettor", 1);
+                }
+                // bold_move: +1 if stake >= 1000
+                if (dto.Amount >= 1000)
+                {
+                    await _questService.UpdateQuestProgressAsync(userId, "bold_move", 1);
+                }
+                // For consistent_bettor, we pass the date to check uniqueness
+                var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                await _questService.UpdateQuestProgressAsync(userId, "consistent_bettor", 1, today);
+            }
+            catch (Exception ex)
+            {
+                // Quest progress updates should not block bet placement
+            }
 
             return MapBetToDto(bet);
         }
@@ -339,6 +366,36 @@ private readonly IBetRepositoryExtensions _betRepository;
                 
                 // Commit the transaction
                 await transaction.CommitAsync();
+
+                // After successful commit, update quest progress for bet resolution quests
+                try
+                {
+                    // Track wins per user for winning_streak quest
+                    var winsByUser = new Dictionary<int, int>();
+                    foreach (var bet in pendingBets)
+                    {
+                        if (bet.Status == BetStatus.Won)
+                        {
+                            winsByUser[bet.UserId] = winsByUser.GetValueOrDefault(bet.UserId) + 1;
+                        }
+                    }
+
+                    // Update winning_streak for each user who won
+                    foreach (var (userId, winCount) in winsByUser)
+                    {
+                        await _questService.UpdateQuestProgressAsync(userId, "winning_streak", winCount);
+                    }
+
+                    // Update comeback_king for users who won (first win after losses)
+                    foreach (var (userId, _) in winsByUser)
+                    {
+                        await _questService.UpdateQuestProgressAsync(userId, "comeback_king", 1);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Quest progress updates should not block race result processing
+                }
             }
             catch
             {

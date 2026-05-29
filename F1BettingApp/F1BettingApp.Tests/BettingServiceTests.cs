@@ -297,6 +297,7 @@ public class BettingServiceTests
             userService: null!,
             raceService: null!,
             notificationService: null!,
+            questService: null!,
             dbContext: null!
         );
     }

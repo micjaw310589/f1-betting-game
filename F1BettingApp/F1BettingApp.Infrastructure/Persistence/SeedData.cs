@@ -2,6 +2,7 @@ using BCrypt.Net;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace F1BettingApp.Infrastructure.Persistence;
 
@@ -162,6 +163,170 @@ public static class SeedData
                     race.OpenF1RaceId,
                     2026);
                 await context.Races.AddAsync(f1Race);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        // Seed quest definitions if not already seeded
+        if (!context.QuestDefinitions.Any())
+        {
+            var quests = new QuestDefinition[]
+            {
+                // --- Betting Quests ---
+                new QuestDefinition
+                {
+                    QuestId = "first_bet",
+                    Name = "First Checkered Flag",
+                    Description = "Place your first bet ever.",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = true,
+                    Target = 1,
+                    PointsReward = 200,
+                    IsActive = true,
+                    Order = 0
+                },
+                new QuestDefinition
+                {
+                    QuestId = "race_day_bettor",
+                    Name = "Race Day Bettor",
+                    Description = "Place at least 1 bet during a race weekend (Fri–Sun).",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = false,
+                    Target = 1,
+                    PointsReward = 50,
+                    IsActive = true,
+                    Order = 1
+                },
+                new QuestDefinition
+                {
+                    QuestId = "betting_marathon",
+                    Name = "Betting Marathon",
+                    Description = "Place 5 bets in a single week.",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = false,
+                    Target = 5,
+                    PointsReward = 150,
+                    IsActive = true,
+                    Order = 2
+                },
+                new QuestDefinition
+                {
+                    QuestId = "bold_move",
+                    Name = "Bold Move",
+                    Description = "Place a bet with 1000+ points stake in one go.",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = false,
+                    Target = 1,
+                    PointsReward = 75,
+                    IsActive = true,
+                    Order = 3
+                },
+                new QuestDefinition
+                {
+                    QuestId = "consistent_bettor",
+                    Name = "Consistent Bettor",
+                    Description = "Place at least 1 bet on 5 different days within a week.",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = false,
+                    Target = 5,
+                    PointsReward = 200,
+                    IsActive = true,
+                    Order = 4
+                },
+                // --- Engagement Quests ---
+                new QuestDefinition
+                {
+                    QuestId = "login_streak_weekly",
+                    Name = "Pole Position",
+                    Description = "Log in 5 out of 7 days in a week.",
+                    Category = QuestCategory.Engagement,
+                    IsOneTime = false,
+                    Target = 5,
+                    PointsReward = 100,
+                    IsActive = true,
+                    Order = 5
+                },
+                new QuestDefinition
+                {
+                    QuestId = "race_weekend_ready",
+                    Name = "Race Weekend Ready",
+                    Description = "Log in on both Friday and Saturday of a race weekend.",
+                    Category = QuestCategory.Engagement,
+                    IsOneTime = false,
+                    Target = 1,
+                    PointsReward = 75,
+                    IsActive = true,
+                    Order = 6
+                },
+                new QuestDefinition
+                {
+                    QuestId = "race_explorer",
+                    Name = "Race Explorer",
+                    Description = "Visit race detail pages for 3 different races in a week.",
+                    Category = QuestCategory.Engagement,
+                    IsOneTime = false,
+                    Target = 3,
+                    PointsReward = 50,
+                    IsActive = true,
+                    Order = 7
+                },
+                // --- Achievement Quests ---
+                new QuestDefinition
+                {
+                    QuestId = "winning_streak",
+                    Name = "Winning Streak",
+                    Description = "Win 3 bets in a single week.",
+                    Category = QuestCategory.Achievement,
+                    IsOneTime = false,
+                    Target = 3,
+                    PointsReward = 300,
+                    IsActive = true,
+                    Order = 8
+                },
+                new QuestDefinition
+                {
+                    QuestId = "comeback_king",
+                    Name = "Comeback King",
+                    Description = "Win a bet after having 3 consecutive losing bets.",
+                    Category = QuestCategory.Achievement,
+                    IsOneTime = true,
+                    Target = 1,
+                    PointsReward = 150,
+                    IsActive = true,
+                    Order = 9
+                },
+                new QuestDefinition
+                {
+                    QuestId = "streak_master",
+                    Name = "Streak Master",
+                    Description = "Maintain a 7-day login streak.",
+                    Category = QuestCategory.Achievement,
+                    IsOneTime = true,
+                    Target = 1,
+                    PointsReward = 500,
+                    IsActive = true,
+                    Order = 10
+                },
+                new QuestDefinition
+                {
+                    QuestId = "top_10",
+                    Name = "Top 10",
+                    Description = "Finish in the top 10 of the leaderboard at any point during the week.",
+                    Category = QuestCategory.Achievement,
+                    IsOneTime = false,
+                    Target = 1,
+                    PointsReward = 250,
+                    IsActive = true,
+                    Order = 11
+                }
+            };
+
+            foreach (var quest in quests)
+            {
+                quest.CreatedAt = DateTime.UtcNow;
+                quest.UpdatedAt = DateTime.UtcNow;
+                await context.QuestDefinitions.AddAsync(quest);
             }
 
             await context.SaveChangesAsync();

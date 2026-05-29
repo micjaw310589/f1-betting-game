@@ -22,6 +22,7 @@ namespace F1BettingApp.Tests
     {
         private readonly Mock<IUserService> _mockUserService;
         private readonly Mock<IDailyLoginService> _mockDailyLoginService;
+        private readonly Mock<IQuestService> _mockQuestService;
         private readonly IConfiguration _configuration;
         private readonly AuthController _controller;
 
@@ -29,6 +30,7 @@ namespace F1BettingApp.Tests
         {
             _mockUserService = new Mock<IUserService>();
             _mockDailyLoginService = new Mock<IDailyLoginService>();
+            _mockQuestService = new Mock<IQuestService>();
 
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
@@ -39,7 +41,7 @@ namespace F1BettingApp.Tests
             });
 
             _configuration = configurationBuilder.Build();
-            _controller = new AuthController(_mockUserService.Object, _configuration, _mockDailyLoginService.Object);
+            _controller = new AuthController(_mockUserService.Object, _configuration, _mockDailyLoginService.Object, _mockQuestService.Object);
         }
 
         [Fact]

@@ -15,16 +15,19 @@ namespace F1BettingApp.API.Controllers
     {
         private readonly IUserService _userService;
         private readonly IDailyLoginService _dailyLoginService;
+        private readonly IQuestService _questService;
 
         /// <summary>
         /// Initializes a new instance of the UsersController.
         /// </summary>
         /// <param name="userService">The user service for business logic operations.</param>
         /// <param name="dailyLoginService">The daily login streak service.</param>
-        public UsersController(IUserService userService, IDailyLoginService dailyLoginService)
+        /// <param name="questService">The quest service for weekly quest operations.</param>
+        public UsersController(IUserService userService, IDailyLoginService dailyLoginService, IQuestService questService)
         {
             _userService = userService;
             _dailyLoginService = dailyLoginService;
+            _questService = questService;
         }
 
         /// <summary>
@@ -328,6 +331,40 @@ namespace F1BettingApp.API.Controllers
             catch (Exception ex) when (!IsAuthorizationException(ex))
             {
                 return StatusCode(500, "An internal error occurred while retrieving daily streak info");
+            }
+        }
+
+        /// <summary>
+        /// Gets the current weekly quests with progress for the authenticated user.
+        /// </summary>
+        /// <response code="200">Returns the current user's quests with progress.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("profile/quests")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<QuestResponseDto>> GetQuests()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var quests = await _questService.GetActiveQuestsAsync(userIdInt);
+                return Ok(quests);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving quests");
             }
         }
 

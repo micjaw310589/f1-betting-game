@@ -23,6 +23,7 @@ namespace F1BettingApp.API.Controllers
         private readonly IRaceService _raceService;
         private readonly ILogger<RacesController> _logger;
         private readonly IOptions<RaceCacheOptions> _cacheOptions;
+        private readonly IQuestService _questService;
 
         /// <summary>
         /// Cache options for race data
@@ -38,11 +39,13 @@ namespace F1BettingApp.API.Controllers
         public RacesController(
             IRaceService raceService,
             ILogger<RacesController> logger,
-            IOptions<RaceCacheOptions> cacheOptions)
+            IOptions<RaceCacheOptions> cacheOptions,
+            IQuestService questService)
         {
             _raceService = raceService;
             _logger = logger;
             _cacheOptions = cacheOptions;
+            _questService = questService;
         }
 
         /// <summary>
@@ -189,6 +192,23 @@ namespace F1BettingApp.API.Controllers
                         Error = "RACE_NOT_FOUND",
                         Message = $"Race with ID {raceId} not found"
                     });
+                }
+
+                // Update quest progress for race page visit (engagement quests)
+                try
+                {
+                    // Get authenticated user ID if available
+                    var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
+                    {
+                        // race_explorer: +1 per unique race viewed
+                        await _questService.UpdateQuestProgressAsync(userId, "race_explorer", 1, raceId.ToString());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Quest progress updates should not block race page access
+                    _logger.LogDebug(ex, "Failed to update quest progress for race page visit, raceId={RaceId}", raceId);
                 }
 
                 var raceDetail = new RaceDetailDto

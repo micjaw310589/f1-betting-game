@@ -40,10 +40,11 @@ services:
       dockerfile: openf1/cli_tester/Dockerfile
     image: cli-tester:local
     ports:
-      - "5000:5000"
+      - "${CLI_TESTER_PORT:-5000}:5000"
     environment:
       - OPENF1_BASE_URL=${OPENF1_BASE_URL}
       - OPENF1_CLI_PATH=/app/openf1_cli.py
+      - CLI_TESTER_PORT=${CLI_TESTER_PORT}
     depends_on:
       - openf1-cli
       - db

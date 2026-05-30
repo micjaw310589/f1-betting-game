@@ -364,14 +364,8 @@ namespace F1BettingApp.Application.Services
         // --- Enhanced Statistics Methods ---
         public async Task<EnhancedUserStatisticsDto> GetEnhancedUserStatisticsAsync(int userId)
         {
-            // 1. Check cache first
-            var cachedStats = await CheckStatisticsCache(userId);
-            if (cachedStats != null) return cachedStats;
-
-            // 2. Calculate from bet history
             var stats = await CalculateUserStatisticsFromBets(userId);
 
-            // 3. Update cache
             await UpdateStatisticsCache(userId, stats);
 
             return stats;
@@ -455,7 +449,7 @@ namespace F1BettingApp.Application.Services
                 var cachedStats = await _statsCacheRepository.GetAllAsync();
                 var userCache = cachedStats.FirstOrDefault(c => c.UserId == userId);
 
-                if (userCache != null && userCache.LastUpdated > DateTime.UtcNow.AddHours(-1))
+                if (userCache != null && userCache.LastUpdated > DateTime.UtcNow.AddSeconds(-2))
                 {
                     // Convert cache entity to DTO
                     return new EnhancedUserStatisticsDto

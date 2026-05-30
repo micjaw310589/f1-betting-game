@@ -116,8 +116,8 @@ builder.Services.AddScoped(typeof(F1BettingApp.Infrastructure.Persistence.Reposi
 builder.Services.AddScoped<IBetRepositoryExtensions, BetRepositoryExtensions>();
 builder.Services.AddScoped<IRaceRepositoryExtensions, RaceRepositoryExtensions>();
 
-// Register OpenF1 settings and HttpClient
-builder.Services.Configure<OpenF1Client.OpenF1Settings>(builder.Configuration.GetSection("OpenF1"));
+ // Register OpenF1 settings and HttpClient
+builder.Services.Configure<OpenF1Settings>(builder.Configuration.GetSection("OpenF1"));
 builder.Services.AddHttpClient("OpenF1", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("OpenF1:BaseUrl") ?? "https://api.openf1.org");

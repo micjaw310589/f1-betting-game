@@ -5,7 +5,7 @@ import shlex
 
 app = Flask(__name__, template_folder="templates")
 OPENF1_CLI_PATH = os.getenv("OPENF1_CLI_PATH", "/app/openf1_cli.py")
-OPENF1_BASE_URL = os.getenv("OPENF1_BASE_URL", "https://openf1.org/api")
+OPENF1_BASE_URL = os.getenv("OPENF1_BASE_URL", "https://api.openf1.org/v1")
 
 
 @app.route("/", methods=["GET", "POST"])

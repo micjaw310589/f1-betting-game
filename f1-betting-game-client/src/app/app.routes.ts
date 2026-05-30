@@ -25,5 +25,17 @@ export const routes: Routes = [
   {
     path: 'admin',
     loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes)
+  },
+  {
+    path: 'championship',
+    loadComponent: () => import('./race/championship/championship-component/championship.component')
+      .then(m => m.ChampionshipComponent),
+    title: 'F1 Betting - Drivers\' Championship'
   }
+  // {
+  //   path: 'championship/driver/:id',
+  //   loadComponent: () => import('./race/championship/driver-details/driver-details.component')
+  //     .then(m => m.DriverDetailsComponent),
+  //   title: 'F1 Betting - Driver Performance'
+  // }
 ];

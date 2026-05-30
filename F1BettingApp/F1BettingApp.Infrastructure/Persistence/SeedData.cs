@@ -166,5 +166,106 @@ public static class SeedData
 
             await context.SaveChangesAsync();
         }
+
+        // ====================================================================
+        // SEED MOCK DATA FOR DRIVER CHAMPIONSHIP STANDINGS (Sezon 2026)
+        // ====================================================================
+        if (!context.DriverChampionships.Any())
+        {
+            // 1. Pobieramy kierowców i wyścigi z bazy, by przypisać poprawne ID
+            var drivers = await context.Drivers.ToListAsync();
+            var races = await context.Races.Where(r => r.Season == 2026).OrderBy(r => r.Date).ToListAsync();
+
+            if (drivers.Any() && races.Any())
+            {
+                // Weźmy pierwsze 3 wyścigi z kalendarza jako "ukończone" do testów
+                var gpAustralia = races.FirstOrDefault(r => r.OpenF1RaceId == "2026-aus");
+                var gpChina = races.FirstOrDefault(r => r.OpenF1RaceId == "2026-chi");
+                var gpJapan = races.FirstOrDefault(r => r.OpenF1RaceId == "2026-jpn");
+
+                // Słownik kierowców dla łatwiejszego wyszukiwania po imieniu
+                var driverDict = drivers.ToDictionary(d => d.Name);
+
+                // Struktura z wynikami symulowanymi dla TOP 5 kierowców
+                var mockResults = new List<(string DriverName, (int Pos, int Pts) Aus, (int Pos, int Pts) Chi, (int Pos, int Pts) Jpn)>
+                {
+                    ("Max Verstappen", (1, 25), (1, 25), (2, 18)),     // 68 pkt
+                    ("Charles Leclerc", (2, 18), (3, 15), (1, 25)),    // 58 pkt
+                    ("Lando Norris", (3, 15), (2, 18), (4, 12)),       // 45 pkt
+                    ("Lewis Hamilton", (4, 12), (4, 12), (3, 15)),     // 39 pkt
+                    ("George Russell", (5, 10), (5, 10), (5, 10))      // 30 pkt
+                };
+
+                foreach (var resultData in mockResults)
+                {
+                    if (driverDict.TryGetValue(resultData.DriverName, out var driver))
+                    {
+                        // Zmienione na F1BettingGame.Domain.Entities
+                        var championshipEntry = new F1BettingGame.Domain.Entities.DriverChampionship
+                        {
+                            DriverId = driver.Id,
+                            Season = 2026,
+                            Points = resultData.Aus.Pts + resultData.Chi.Pts + resultData.Jpn.Pts,
+                            Position = 0, 
+                            LastUpdated = DateTime.UtcNow,
+                            RaceResults = new List<F1BettingGame.Domain.Entities.DriverChampionshipRace>()
+                        };
+
+                        await context.DriverChampionships.AddAsync(championshipEntry);
+                        await context.SaveChangesAsync(); 
+
+                        // Dodajemy wyniki z poszczególnych wyścigów (również ze zmienionym namespace)
+                        if (gpAustralia != null)
+                        {
+                            context.DriverChampionshipRaces.Add(new F1BettingGame.Domain.Entities.DriverChampionshipRace
+                            {
+                                DriverChampionshipId = championshipEntry.Id,
+                                RaceId = gpAustralia.Id,
+                                PointsEarned = resultData.Aus.Pts,
+                                Position = resultData.Aus.Pos
+                            });
+                        }
+
+                        if (gpChina != null)
+                        {
+                            context.DriverChampionshipRaces.Add(new F1BettingGame.Domain.Entities.DriverChampionshipRace
+                            {
+                                DriverChampionshipId = championshipEntry.Id,
+                                RaceId = gpChina.Id,
+                                PointsEarned = resultData.Chi.Pts,
+                                Position = resultData.Chi.Pos
+                            });
+                        }
+
+                        if (gpJapan != null)
+                        {
+                            context.DriverChampionshipRaces.Add(new F1BettingGame.Domain.Entities.DriverChampionshipRace
+                            {
+                                DriverChampionshipId = championshipEntry.Id,
+                                RaceId = gpJapan.Id,
+                                PointsEarned = resultData.Jpn.Pts,
+                                Position = resultData.Jpn.Pos
+                            });
+                        }
+                    }
+                }
+
+                await context.SaveChangesAsync();
+
+                // 2. Automatyczne przeliczenie i ustawienie pozycji (1, 2, 3...) na podstawie sumy punktów
+                var standings = await context.DriverChampionships
+                    .Where(dc => dc.Season == 2026)
+                    .OrderByDescending(dc => dc.Points)
+                    .ToListAsync();
+
+                int currentPosition = 1;
+                foreach (var entry in standings)
+                {
+                    entry.Position = currentPosition++;
+                }
+
+                await context.SaveChangesAsync();
+            }
+        }
     }
 }

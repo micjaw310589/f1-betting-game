@@ -1,0 +1,56 @@
+<div class="championship-container">
+  <h1 class="championship-title">Drivers' Championship</h1>
+
+  @if (isLoading) {
+    <div class="loader-overlay">Loading standings...</div>
+  }
+
+  @if (hasError) {
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (!isLoading && !hasError) {
+    <div class="standings-card">
+      <div class="table-responsive">
+        <table class="f1-table">
+          <thead>
+            <tr>
+              <th class="text-center">Pos</th>
+              <th>Driver</th>
+              <th>Team</th>
+              <th class="text-center">Wins</th>
+              <th class="text-center">Podiums</th>
+              <th class="text-right">Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of standings; track row.driverId) {
+              <tr class="driver-row">
+                <td class="text-center position-cell">{{ row.position }}</td>
+                <td class="driver-name">{{ row.driverName }}</td>
+                <td class="team-cell">
+                  <span 
+                    class="team-color-indicator" 
+                    [style.background-color]="getTeamColor(row.teamName)">
+                  </span>
+                  {{ row.teamName }}
+                </td>
+                <td class="text-center wins-cell">{{ row.wins > 0 ? row.wins : '-' }}</td>
+                <td class="text-center">{{ row.podiums }}</td>
+                <td class="text-right points-cell">{{ row.points }} PTS</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      
+      @if (standings.length > 0) {
+        <div class="last-updated">
+          Last updated: {{ standings[0].lastUpdated | date: 'medium' }}
+        </div>
+      }
+    </div>
+  }
+</div>

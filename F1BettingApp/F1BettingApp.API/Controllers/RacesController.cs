@@ -54,69 +54,85 @@ namespace F1BettingApp.API.Controllers
         /// <param name="season">Filter by season year</param>
         /// <param name="country">Filter by country</param>
         /// <returns>Paginated list of races</returns>
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PagedResult<RaceSummaryDto>>> GetRaces(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20,
-            [FromQuery] string status = null,
-            [FromQuery] int? season = null,
-            [FromQuery] string country = null)
+[HttpGet]
+[ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+public async Task<ActionResult<PagedResult<RaceSummaryDto>>> GetRaces(
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20,
+    [FromQuery] string status = null,
+    [FromQuery] int? season = null,
+    [FromQuery] string country = null)
+{
+    _logger.LogInformation("Getting races with parameters: Page={Page}, PageSize={PageSize}, Status={Status}, Season={Season}, Country={Country}",
+        page, pageSize, status, season, country);
+
+    try
+    {
+        var races = await _raceService.GetAllRacesAsync();
+
+        // --- TUTAJ JEST NAPRAWA LOGIKI STATUSÓW ---
+        IEnumerable<RaceDto> filteredRaces;
+
+        if (!string.IsNullOrEmpty(status) && status.Equals("Finished", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogInformation("Getting races with parameters: Page={Page}, PageSize={PageSize}, Status={Status}, Season={Season}, Country={Country}",
-                page, pageSize, status, season, country);
-
-            try
-            {
-                var races = await _raceService.GetAllRacesAsync();
-
-                // Apply filters
-                var filteredRaces = ApplyFilters(races, status, season, country);
-
-                // Calculate pagination
-                var totalItems = filteredRaces.Count();
-                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-                var startIndex = (page - 1) * pageSize;
-                var pagedRaces = filteredRaces.Skip(startIndex).Take(pageSize);
-
-                var result = new PagedResult<RaceSummaryDto>
-                {
-                    Items = pagedRaces.Select(r => new RaceSummaryDto
-                    {
-                        Id = r.Id,
-                        Name = r.Name,
-                        Circuit = r.Circuit,
-                        Country = r.Country,
-                        RaceDate = r.RaceDate,
-                        Status = r.Status,
-                        Season = r.Season,
-                        Flag = r.Flag
-                    }),
-                    Page = page,
-                    PageSize = pageSize,
-                    TotalItems = totalItems,
-                    TotalPages = totalPages
-                };
-
-                _logger.LogInformation("Races retrieved: Total={Total}, Page={Page}, PageSize={PageSize}",
-                    totalItems, page, pageSize);
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving races");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorResponse
-                    {
-                        Error = "RACE_DATA_ERROR",
-                        Message = "An error occurred while retrieving races",
-                        Details = ex.Message
-                    });
-            }
+            // Jeśli użytkownik chce "Finished" (Past Races), to szukamy najpierw ignorując filtr statusu w ApplyFilters, 
+            // a potem ręcznie filtrujemy na oba przeszłe statusy: Finished oraz ResultsProcessed
+            var racesWithoutStatusFilter = ApplyFilters(races, null, season, country);
+            filteredRaces = racesWithoutStatusFilter.Where(r => 
+                r.Status.ToString().Equals("Finished", StringComparison.OrdinalIgnoreCase) || 
+                r.Status.ToString().Equals("ResultsProcessed", StringComparison.OrdinalIgnoreCase));
         }
+        else
+        {
+            // Dla wszystkich innych statusów (w tym InProgress dla Live oraz Scheduled dla Upcoming) 
+            // działamy standardowo, tak jak było wcześniej
+            filteredRaces = ApplyFilters(races, status, season, country);
+        }
+        // ------------------------------------------
 
+        // Calculate pagination (reszta kodu bez zmian)
+        var totalItems = filteredRaces.Count();
+        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+        var startIndex = (page - 1) * pageSize;
+        var pagedRaces = filteredRaces.Skip(startIndex).Take(pageSize);
+
+        var result = new PagedResult<RaceSummaryDto>
+        {
+            Items = pagedRaces.Select(r => new RaceSummaryDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Circuit = r.Circuit,
+                Country = r.Country,
+                RaceDate = r.RaceDate,
+                Status = r.Status,
+                Season = r.Season,
+                Flag = r.Flag
+            }),
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = totalItems,
+            TotalPages = totalPages
+        };
+
+        _logger.LogInformation("Races retrieved: Total={Total}, Page={Page}, PageSize={PageSize}",
+            totalItems, page, pageSize);
+
+        return Ok(result);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error retrieving races");
+        return StatusCode(StatusCodes.Status500InternalServerError,
+            new ErrorResponse
+            {
+                Error = "RACE_DATA_ERROR",
+                Message = "An error occurred while retrieving races",
+                Details = ex.Message
+            });
+    }
+}
         /// <summary>
         /// Get upcoming races only
         /// </summary>

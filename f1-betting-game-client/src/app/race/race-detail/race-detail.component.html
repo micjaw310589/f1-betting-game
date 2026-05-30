@@ -15,15 +15,14 @@
                     <strong>Season:</strong> {{ data.details.season }}
                 </div>
             </div>
-
-            @if (isLoggedIn$ | async) {
-                <a
-                    class="place-bet-button"
-                    [routerLink]="['/races', data.details.id, 'bets', 'create']"
-                    title="Place a bet">
-                    Create Bet
-                </a>
-            }
+@if ((isLoggedIn$ | async) && data.details.status === 'Scheduled') {
+    <a
+        class="place-bet-button"
+        [routerLink]="['/races', data.details.id, 'bets', 'create']"
+        title="Place a bet">
+        Create Bet
+    </a>
+}
         </div>
 
         <div class="detail-grid">

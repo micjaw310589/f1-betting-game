@@ -1,23 +1,29 @@
 <div class="race-list-container">
     <h1>Formula 1 Race Calendar</h1>
 
-    <div class="filter-buttons">
-        <button 
-            (click)="filterRaces('all')" 
-            [class.active]="filterType === 'all'">
-            All Races
-        </button>
-        <button 
-            (click)="filterRaces('upcoming')" 
-            [class.active]="filterType === 'upcoming'">
-            Upcoming
-        </button>
-        <button 
-            (click)="filterRaces('past')" 
-            [class.active]="filterType === 'past'">
-            Past Races
-        </button>
-    </div>
+<div class="filter-buttons">
+    <button 
+        (click)="filterRaces('all')" 
+        [class.active]="filterType === 'all'">
+        All Races
+    </button>
+    <button 
+        (click)="filterRaces('upcoming')" 
+        [class.active]="filterType === 'upcoming'">
+        Upcoming
+    </button>
+    <button 
+        (click)="filterRaces('past')" 
+        [class.active]="filterType === 'past'">
+        Past Races
+    </button>
+    <button 
+        (click)="filterRaces('live')" 
+        [class.active]="filterType === 'live'"
+        class="live-filter-btn">
+        Live
+    </button>
+</div>
 
     @if (isLoading) {
         <div class="loader-overlay">Loading race data...</div>
@@ -47,17 +53,17 @@
                 {{ getStatusText(race.status) }}
             </div>
 
-            @if (authService.currentUser | async) {
-                <div class="card-actions">
-                    <a
-                        class="place-bet-button"
-                        [routerLink]="['/races', race.id, 'bets', 'create']"
-                        (click)="$event.stopPropagation()"
-                        title="Place a bet">
-                        Place Bet
-                    </a>
-                </div>
-            }
+@if ((authService.currentUser | async) && race.status === 'Scheduled') {
+    <div class="card-actions">
+        <a
+            class="place-bet-button"
+            [routerLink]="['/races', race.id, 'bets', 'create']"
+            (click)="$event.stopPropagation()"
+            title="Place a bet">
+            Place Bet
+        </a>
+    </div>
+}
         </div>
     } @empty {
         <p>No races found for this category.</p>

@@ -166,6 +166,40 @@ h1 {
   color: white;
 }
 
+.status-results-processed {
+  background-color: #28a745; /* Zielony lub inny kolor wygaszony np. #6c757d */
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Opcjonalna animacja pulsu dla wyścigów Live */
+@keyframes pulse {
+  0% { transform: skewX(var(--skew-x)) scale(1); }
+  50% { transform: skewX(var(--skew-x)) scale(1.03); box-shadow: 0 0 15px rgba(0, 123, 255, 0.8); }
+  100% { transform: skewX(var(--skew-x)) scale(1); }
+}
+
+/* Wpycha przycisk LIVE na maksymalnie prawą stronę */
+.filter-buttons .live-filter-btn {
+  margin-left: auto;
+}
+
+/* Specjalny, agresywny styl F1 gdy zakładka Live jest aktywna */
+.filter-buttons button.live-filter-btn.active {
+  background-color: var(--color-f1-red);
+  color: white;
+  box-shadow: 0 0 15px rgba(225, 6, 0, 0.6);
+  animation: filterPulse 2s infinite;
+}
+
+/* Animacja pulsowania dla przycisku w menu */
+@keyframes filterPulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.85; box-shadow: 0 0 20px rgba(225, 6, 0, 0.8); }
+  100% { opacity: 1; }
+}
+
+
 /* Paginacja w stylu Dashboardu */
 .pagination-controls {
   margin-top: 50px;

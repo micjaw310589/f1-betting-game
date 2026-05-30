@@ -1,6 +1,17 @@
 <div class="championship-container">
   <h1 class="championship-title">Drivers' Championship</h1>
 
+  <!-- SPORTOWE PRZEŁĄCZNIKI SEZONÓW W STYLU RACE-LIST -->
+  <div class="filter-buttons">
+    @for (seasonYear of availableSeasons; track seasonYear) {
+      <button 
+        (click)="changeSeason(seasonYear)" 
+        [class.active]="selectedSeason === seasonYear">
+        Season {{ seasonYear }}
+      </button>
+    }
+  </div>
+
   @if (isLoading) {
     <div class="loader-overlay">Loading standings...</div>
   }
@@ -40,6 +51,12 @@
                 <td class="text-center wins-cell">{{ row.wins > 0 ? row.wins : '-' }}</td>
                 <td class="text-center">{{ row.podiums }}</td>
                 <td class="text-right points-cell">{{ row.points }} PTS</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="text-center" style="padding: 30px; color: var(--color-text-subtle);">
+                  No standings found for the {{ selectedSeason }} season.
+                </td>
               </tr>
             }
           </tbody>

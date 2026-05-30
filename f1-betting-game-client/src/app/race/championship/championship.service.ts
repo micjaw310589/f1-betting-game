@@ -20,6 +20,13 @@ export class ChampionshipService {
   }
 
   /**
+   * NOWA METODA: Pobiera klasyfikację generalną dla wybranego sezonu z backendu
+   */
+  getSeasonStandings(season: number): Observable<DriverChampionshipDto[]> {
+    return this.http.get<DriverChampionshipDto[]>(`${this.API_URL}/season/${season}`);
+  }
+
+  /**
    * Pobiera szczegółową historię wyścigów danego kierowcy
    */
   getDriverDetails(driverId: number): Observable<DriverChampionshipDto> {

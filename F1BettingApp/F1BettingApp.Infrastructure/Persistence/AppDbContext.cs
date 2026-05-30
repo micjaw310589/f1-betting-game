@@ -18,6 +18,7 @@ namespace F1BettingApp.Infrastructure.Persistence
         public DbSet<LeaderboardHistory> LeaderboardHistories { get; set; }
         public DbSet<Driver> Drivers { get; set; }
         public DbSet<Team> Teams { get; set; }
+        public DbSet<UserBetStatisticsCache> UserBetStatisticsCaches { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -157,6 +158,26 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
                 entity.Property(t => t.Country).IsRequired().HasMaxLength(50);
                 entity.Property(t => t.OpenF1TeamId).IsRequired().HasMaxLength(50);
+            });
+
+            // Configure UserBetStatisticsCache entity
+            modelBuilder.Entity<UserBetStatisticsCache>(entity =>
+            {
+                entity.HasOne(c => c.User)
+                      .WithMany()
+                      .HasForeignKey(c => c.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(c => c.UserId).IsUnique();
+
+                entity.Property(c => c.TotalWinnings).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.TotalAmountBet).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LargestWin).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LargestLoss).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LastUpdated)
+                      .HasConversion(
+                          v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
+                          v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
             });
         }
     }

@@ -1,0 +1,118 @@
+<div class="stats-container">
+  <!-- Header Section -->
+  <div class="header-row">
+    <h1 class="page-header">Your Betting Statistics</h1>
+    <button type="button" class="action-button" (click)="refreshData()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+      </svg>
+      Refresh Data
+    </button>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loader-inline text-center">
+    <div class="spinner"></div>
+    Loading your telemetry...
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="error && !isLoading" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Statistics content -->
+  <div *ngIf="statistics && !isLoading" class="stats-wrapper">
+    
+    <!-- Key Metrics Section -->
+    <section class="panel">
+      <h2>Key Metrics</h2>
+      <div class="stats-grid grid-4">
+        <div class="stat-box">
+          <div class="stat-label">Total Bets</div>
+          <div class="stat-value text-blue">{{ statistics.totalBets }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Winning Bets</div>
+          <div class="stat-value text-green">{{ statistics.winningBets }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Losing Bets</div>
+          <div class="stat-value text-red">{{ statistics.losingBets }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Push Bets</div>
+          <div class="stat-value text-yellow">{{ statistics.pushBets }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Performance Metrics Section -->
+    <section class="panel">
+      <h2>Performance & ROI</h2>
+      <div class="stats-grid grid-4">
+        <div class="stat-box">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-value" [class]="getWinRateColor()">{{ statistics.winRate.toFixed(2) }}%</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Return on Investment</div>
+          <div class="stat-value" [class]="getROIColor()">{{ statistics.returnOnInvestment.toFixed(2) }}%</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Total Winnings</div>
+          <div class="stat-value text-green">{{ statistics.totalWinnings.toFixed(0) }} pts</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Total Amount Bet</div>
+          <div class="stat-value text-white">{{ statistics.totalAmountBet.toFixed(0) }} pts</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid-split">
+      <!-- Streaks Section -->
+      <section class="panel">
+        <h2>Active Streaks</h2>
+        <div class="stats-grid grid-1">
+          <div class="stat-box-horizontal">
+            <div class="stat-label">Current Win Streak</div>
+            <div class="stat-value text-green">{{ statistics.currentWinStreak }}</div>
+          </div>
+          <div class="stat-box-horizontal">
+            <div class="stat-label">Current Lose Streak</div>
+            <div class="stat-value text-red">{{ statistics.currentLoseStreak }}</div>
+          </div>
+          <div class="stat-box-horizontal">
+            <div class="stat-label">Longest Win Streak</div>
+            <div class="stat-value text-blue">{{ statistics.longestWinStreak }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Additional Stats Section -->
+      <section class="panel">
+        <h2>Insights</h2>
+        <div class="stats-grid grid-2">
+          <div class="stat-box">
+            <div class="stat-label">Favorite Driver</div>
+            <div class="stat-value text-white text-md">{{ statistics.favoriteDriverName || 'N/A' }}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Avg Bet Amount</div>
+            <div class="stat-value text-white text-md">{{ statistics.averageBetAmount.toFixed(0) || '0' }} pts</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Largest Win</div>
+            <div class="stat-value text-green text-md">{{ statistics.largestWin.toFixed(0) || '0' }} pts</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Largest Loss</div>
+            <div class="stat-value text-red text-md">{{ statistics.largestLoss.toFixed(0) || '0' }} pts</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+</div>

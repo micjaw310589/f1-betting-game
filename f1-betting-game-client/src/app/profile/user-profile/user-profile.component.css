@@ -90,6 +90,29 @@
   font-weight: 900;
 }
 
+.stats-link {
+  margin-left: 1rem;
+}
+
+.view-stats-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.view-stats-link:hover {
+  color: #2563eb;
+}
+
+.view-stats-link svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 /* Paginacja */
 .pagination-controls.compact {
   display: flex;
@@ -162,20 +185,6 @@
 .bet-line:nth-child(3) { width: 150px; } /* Date */
 .bet-line:nth-child(4) { width: 100px; } /* Stake */
 
-.bet-label {
-  font-size: 11px;
-  color: var(--color-f1-red);
-  text-transform: uppercase;
-  font-weight: 800;
-  margin-bottom: 4px;
-}
-
-.bet-value {
-  font-weight: 700;
-  color: #fff;
-  font-size: 14px;
-}
-
 /* Statusy (lewy pasek) */
 .bet-won { border-left: 5px solid var(--color-status-won); }
 .bet-lost { border-left: 5px solid var(--color-status-lost); }
@@ -221,6 +230,20 @@
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: 800;
+  font-size: 14px;
+}
+
+.bet-label {
+  font-size: 11px;
+  color: var(--color-f1-red);
+  text-transform: uppercase;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.bet-value {
+  font-weight: 700;
+  color: #fff;
   font-size: 14px;
 }
 

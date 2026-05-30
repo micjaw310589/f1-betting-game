@@ -38,20 +38,19 @@
           </thead>
           <tbody>
             @for (row of standings; track row.driverId) {
-              <tr class="driver-row">
-                <td class="text-center position-cell">{{ row.position }}</td>
-                <td class="driver-name">{{ row.driverName }}</td>
-                <td class="team-cell">
-                  <span 
-                    class="team-color-indicator" 
-                    [style.background-color]="getTeamColor(row.teamName)">
-                  </span>
-                  {{ row.teamName }}
-                </td>
-                <td class="text-center wins-cell">{{ row.wins > 0 ? row.wins : '-' }}</td>
-                <td class="text-center">{{ row.podiums }}</td>
-                <td class="text-right points-cell">{{ row.points }} PTS</td>
-              </tr>
+<tr class="driver-row" [routerLink]="['/championship/driver', row.driverId]" style="cursor: pointer;">
+      <td class="text-center position-cell">{{ row.position }}</td>
+      <td class="driver-name">
+        <a class="driver-link">{{ row.driverName }}</a>
+      </td>
+      <td class="team-cell">
+        <span class="team-color-indicator" [style.background-color]="getTeamColor(row.teamName)"></span>
+        {{ row.teamName }}
+      </td>
+      <td class="text-center wins-cell">{{ row.wins > 0 ? row.wins : '-' }}</td>
+      <td class="text-center">{{ row.podiums }}</td>
+      <td class="text-right points-cell">{{ row.points }} PTS</td>
+    </tr>
             } @empty {
               <tr>
                 <td colspan="6" class="text-center" style="padding: 30px; color: var(--color-text-subtle);">

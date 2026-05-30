@@ -31,11 +31,6 @@ export const routes: Routes = [
     loadComponent: () => import('./race/championship/championship-component/championship.component')
       .then(m => m.ChampionshipComponent),
     title: 'F1 Betting - Drivers\' Championship'
-  }
-  // {
-  //   path: 'championship/driver/:id',
-  //   loadComponent: () => import('./race/championship/driver-details/driver-details.component')
-  //     .then(m => m.DriverDetailsComponent),
-  //   title: 'F1 Betting - Driver Performance'
-  // }
+  },
+{ path: 'championship/driver/:id', loadComponent: () => import('./race/championship/driver-detail-component/driver-detail-component').then(m => m.DriverDetailComponent) }
 ];

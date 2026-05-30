@@ -523,5 +523,102 @@ namespace F1BettingApp.API.Controllers
             var results = await _raceService.GetDriversWithOddsForRaceAsync(raceId);
             return Ok(results);
         }
+
+
+        /// <summary>
+        /// Get the driver championship standings for the current season.
+        /// </summary>
+        [HttpGet("championship/current")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<DriverChampionshipDto>>> GetCurrentChampionship()
+        {
+            int currentSeason = DateTime.UtcNow.Year;
+            _logger.LogInformation("Retrieving driver championship standings for the current season: {Season}", currentSeason);
+
+            try
+            {
+                var championship = await _raceService.GetDriverChampionshipStandingsAsync(currentSeason);
+                return Ok(championship);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving championship standings for season {Season}", currentSeason);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "CHAMPIONSHIP_DATA_ERROR",
+                        Message = "An error occurred while retrieving the current championship standings",
+                        Details = ex.Message
+                    });
+            }
+        }
+
+        /// <summary>
+        /// Get detailed race history and standings for a specific driver in the current season.
+        /// </summary>
+        [HttpGet("championship/driver/{driverId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<DriverChampionshipDto>> GetDriverChampionship(int driverId)
+        {
+            int currentSeason = DateTime.UtcNow.Year;
+            _logger.LogInformation("Retrieving championship history for driver ID: {DriverId} in season {Season}", driverId, currentSeason);
+
+            try
+            {
+                var details = await _raceService.GetDriverChampionshipDetailsAsync(driverId, currentSeason);
+                if (details == null)
+                {
+                    return NotFound(new ErrorResponse 
+                    { 
+                        Error = "DRIVER_CHAMPIONSHIP_NOT_FOUND", 
+                        Message = $"Championship data for driver ID {driverId} was not found for the {currentSeason} season." 
+                    });
+                }
+                return Ok(details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving championship details for driver ID: {DriverId}", driverId);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "CHAMPIONSHIP_DRIVER_ERROR",
+                        Message = "An error occurred while retrieving the driver's championship history",
+                        Details = ex.Message
+                    });
+            }
+        }
+
+        /// <summary>
+        /// Get the driver championship standings for a specific historical season.
+        /// </summary>
+        [HttpGet("championship/season/{season}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<DriverChampionshipDto>>> GetSeasonChampionship(int season)
+        {
+            _logger.LogInformation("Retrieving driver championship standings for season: {Season}", season);
+
+            try
+            {
+                var championship = await _raceService.GetDriverChampionshipStandingsAsync(season);
+                return Ok(championship);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving championship standings for season {Season}", season);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "CHAMPIONSHIP_SEASON_ERROR",
+                        Message = $"An error occurred while retrieving the championship standings for the {season} season.",
+                        Details = ex.Message
+                    });
+            }
+        }
+        
     }
 }

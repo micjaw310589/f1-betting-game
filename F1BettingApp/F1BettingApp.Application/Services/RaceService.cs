@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Transactions;
 using System.Collections.Generic;
 using System.Linq;
+using F1BettingGame.Domain.Entities;
 
 namespace F1BettingApp.Application.Services
 {
@@ -561,5 +562,222 @@ namespace F1BettingApp.Application.Services
                 return 1.25m;
             }
         }
+
+/// <summary>
+        /// Pobiera klasyfikację generalną kierowców dla danego sezonu posortowaną od 1. miejsca.
+        /// </summary>
+        public async Task<IEnumerable<DriverChampionshipDto>> GetDriverChampionshipStandingsAsync(int season)
+        {
+            return await _dbContext.DriverChampionships
+                .Include(dc => dc.Driver)
+                    .ThenInclude(d => d.Team)
+                .Include(dc => dc.RaceResults)
+                    .ThenInclude(r => r.Race)
+                .Where(dc => dc.Season == season)
+                .OrderBy(dc => dc.Position)
+                .Select(dc => new DriverChampionshipDto
+                {
+                    DriverId = dc.DriverId,
+                    DriverName = dc.Driver.Name,
+                    DriverCountry = dc.Driver.Country,
+                    TeamName = dc.Driver.Team != null ? dc.Driver.Team.Name : "No Team",
+                    Season = dc.Season,
+                    TotalPoints = dc.Points,
+                    Position = dc.Position,
+                    LastUpdated = dc.LastUpdated,
+                    RaceResults = dc.RaceResults
+                        .OrderBy(r => r.Race.Date)
+                        .Select(r => new DriverChampionshipRaceDto
+                        {
+                            RaceId = r.RaceId,
+                            RaceName = r.Race.Name,
+                            PointsEarned = r.PointsEarned,
+                            PositionInRace = r.Position
+                        }).ToList()
+                })
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Pobiera szczegółową historię startów konkretnego kierowcy w wybranym sezonie.
+        /// </summary>
+        public async Task<DriverChampionshipDto?> GetDriverChampionshipDetailsAsync(int driverId, int season)
+        {
+            return await _dbContext.DriverChampionships
+                .Include(dc => dc.Driver)
+                    .ThenInclude(d => d.Team)
+                .Include(dc => dc.RaceResults)
+                    .ThenInclude(r => r.Race)
+                .Where(dc => dc.DriverId == driverId && dc.Season == season)
+                .Select(dc => new DriverChampionshipDto
+                {
+                    DriverId = dc.DriverId,
+                    DriverName = dc.Driver.Name,
+                    DriverCountry = dc.Driver.Country,
+                    TeamName = dc.Driver.Team != null ? dc.Driver.Team.Name : "No Team",
+                    Season = dc.Season,
+                    TotalPoints = dc.Points,
+                    Position = dc.Position,
+                    LastUpdated = dc.LastUpdated,
+                    RaceResults = dc.RaceResults
+                        .OrderBy(r => r.Race.Date)
+                        .Select(r => new DriverChampionshipRaceDto
+                        {
+                            RaceId = r.RaceId,
+                            RaceName = r.Race.Name,
+                            PointsEarned = r.PointsEarned,
+                            PositionInRace = r.Position
+                        }).ToList()
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Aktualizuje tabelę klasyfikacji na podstawie wyników pojedynczego ukończonego wyścigu.
+        /// </summary>
+        public async Task UpdateChampionshipFromRaceResultsAsync(int raceId)
+        {
+            var race = await _dbContext.Races.FindAsync(raceId);
+            if (race == null) return;
+
+            // Pobierz wyniki dla tego wyścigu
+            var raceResults = await _dbContext.Results
+                .Where(r => r.RaceId == raceId)
+                .ToListAsync();
+
+            if (!raceResults.Any()) return;
+
+            foreach (var result in raceResults)
+            {
+                // Znajdź lub utwórz rekord klasyfikacji generalnej dla kierowcy w danym sezonie
+                var championshipEntry = await _dbContext.DriverChampionships
+                    .FirstOrDefaultAsync(dc => dc.DriverId == result.DriverId && dc.Season == race.Season);
+
+                if (championshipEntry == null)
+                {
+                    championshipEntry = new DriverChampionship
+                    {
+                        DriverId = result.DriverId,
+                        Season = race.Season,
+                        Points = 0,
+                        Position = 0,
+                        LastUpdated = DateTime.UtcNow
+                    };
+                    _dbContext.DriverChampionships.Add(championshipEntry);
+                    // Zapisujemy, aby wygenerować Id wymagane do powiązania tabeli wyścigów
+                    await _dbContext.SaveChangesAsync();
+                }
+
+                // Sprawdź, czy punkty z tego wyścigu nie zostały już przypadkowo dodane (idempotentność)
+                var alreadyProcessed = await _dbContext.DriverChampionshipRaces
+                    .AnyAsync(r => r.DriverChampionshipId == championshipEntry.Id && r.RaceId == raceId);
+
+                if (!alreadyProcessed)
+                {
+                    var raceEntry = new DriverChampionshipRace
+                    {
+                        DriverChampionshipId = championshipEntry.Id,
+                        RaceId = raceId,
+                        PointsEarned = result.Points,
+                        Position = result.Position
+                    };
+
+                    _dbContext.DriverChampionshipRaces.Add(raceEntry);
+                    championshipEntry.Points += result.Points;
+                    championshipEntry.LastUpdated = DateTime.UtcNow;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            // Po dodaniu punktów, przelicz pozycje wszystkich kierowców w tym sezonie
+            await RecalculatePositionsAsync(race.Season);
+        }
+
+        /// <summary>
+        /// Czyści i całkowicie od nowa generuje klasyfikację dla wybranego sezonu.
+        /// </summary>
+        public async Task RecalculateChampionshipAsync(int season)
+        {
+            // Usunięcie starych danych dla wybranego sezonu (Cascade usunie rekordy z tabeli DriverChampionshipRaces)
+            var existingEntries = await _dbContext.DriverChampionships
+                .Where(dc => dc.Season == season)
+                .ToListAsync();
+
+            _dbContext.DriverChampionships.RemoveRange(existingEntries);
+            await _dbContext.SaveChangesAsync();
+
+            // Pobranie wszystkich ukończonych wyścigów z tego sezonu, które mają przypisane wyniki
+            var races = await _dbContext.Races
+                .Where(r => r.Season == season)
+                .OrderBy(r => r.Date)
+                .ToListAsync();
+
+            foreach (var race in races)
+            {
+                var raceResults = await _dbContext.Results
+                    .Where(r => r.RaceId == race.Id)
+                    .ToListAsync();
+
+                foreach (var result in raceResults)
+                {
+                    var championshipEntry = await _dbContext.DriverChampionships
+                        .FirstOrDefaultAsync(dc => dc.DriverId == result.DriverId && dc.Season == season);
+
+                    if (championshipEntry == null)
+                    {
+                        championshipEntry = new DriverChampionship
+                        {
+                            DriverId = result.DriverId,
+                            Season = season,
+                            Points = 0,
+                            Position = 0,
+                            LastUpdated = DateTime.UtcNow
+                        };
+                        _dbContext.DriverChampionships.Add(championshipEntry);
+                        await _dbContext.SaveChangesAsync();
+                    }
+
+                    var raceEntry = new DriverChampionshipRace
+                    {
+                        DriverChampionshipId = championshipEntry.Id,
+                        RaceId = race.Id,
+                        PointsEarned = result.Points,
+                        Position = result.Position
+                    };
+
+                    _dbContext.DriverChampionshipRaces.Add(raceEntry);
+                    championshipEntry.Points += result.Points;
+                    championshipEntry.LastUpdated = DateTime.UtcNow;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            // Przydzielenie ostatecznych pozycji w tabeli
+            await RecalculatePositionsAsync(season);
+        }
+
+        /// <summary>
+        /// Prywatna metoda pomocnicza do sortowania kierowców i aktualizacji ich pozycji (1, 2, 3...) w bazie danych.
+        /// </summary>
+        private async Task RecalculatePositionsAsync(int season)
+        {
+            var standings = await _dbContext.DriverChampionships
+                .Where(dc => dc.Season == season)
+                .OrderByDescending(dc => dc.Points)
+                .ToListAsync();
+
+            int position = 1;
+            foreach (var entry in standings)
+            {
+                entry.Position = position++;
+                entry.LastUpdated = DateTime.UtcNow;
+            }
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        
     }
 }

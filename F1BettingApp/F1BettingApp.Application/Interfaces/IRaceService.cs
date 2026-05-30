@@ -115,5 +115,25 @@ namespace F1BettingApp.Application.Interfaces
         /// </summary>
         /// <returns>Collection of all driver DTOs.</returns>
         Task<IEnumerable<DriverDto>> GetAllDriversAsync();
+
+        /// <summary>
+        /// Pobiera klasyfikację generalną kierowców dla danego sezonu.
+        /// </summary>
+        Task<IEnumerable<DriverChampionshipDto>> GetDriverChampionshipStandingsAsync(int season);
+
+        /// <summary>
+        /// Pobiera szczegółową historię startów konkretnego kierowcy w danym sezonie.
+        /// </summary>
+        Task<DriverChampionshipDto?> GetDriverChampionshipDetailsAsync(int driverId, int season);
+
+        /// <summary>
+        /// Przelicza od nowa całą tabelę klasyfikacji dla wybranego sezonu (przydatne przy korektach).
+        /// </summary>
+        Task RecalculateChampionshipAsync(int season);
+
+        /// <summary>
+        /// Aktualizuje tabelę klasyfikacji o wyniki konkretnego wyścigu.
+        /// </summary>
+        Task UpdateChampionshipFromRaceResultsAsync(int raceId);
     }
 }

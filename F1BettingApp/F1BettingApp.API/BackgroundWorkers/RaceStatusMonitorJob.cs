@@ -11,7 +11,7 @@ namespace F1BettingApp.API.BackgroundWorkers;
 
 /// <summary>
 /// Background worker that periodically checks for newly finished races
-/// and triggers automatic bet processing.
+/// and triggers automatic bet processing and championship updates.
 /// Runs continuously as a hosted service.
 /// </summary>
 public class RaceStatusMonitorJob : BackgroundService
@@ -62,6 +62,8 @@ public class RaceStatusMonitorJob : BackgroundService
         using var scope = _serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var bettingService = scope.ServiceProvider.GetRequiredService<IBettingService>();
+        // Wstrzykujemy nowo rozbudowany IRaceService
+        var raceService = scope.ServiceProvider.GetRequiredService<IRaceService>();
 
         try
         {
@@ -98,10 +100,14 @@ public class RaceStatusMonitorJob : BackgroundService
                         continue;
                     }
 
-                    // Process the race results (this is idempotent)
+                    // 1. Aktualizacja klasyfikacji generalnej mistrzostw (Krok dodany ze specyfikacji)
+                    _logger.LogInformation("Updating driver championship standings for race ID {RaceId}.", race.Id);
+                    await raceService.UpdateChampionshipFromRaceResultsAsync(race.Id);
+
+                    // 2. Rozliczenie zakładów graczy (Dotychczasowa logika)
                     await bettingService.ProcessRaceResultsAsync(race.Id);
 
-                    _logger.LogInformation("Successfully processed results for race ID {RaceId} - {RaceName}.", race.Id, race.Name);
+                    _logger.LogInformation("Successfully processed results and championship for race ID {RaceId} - {RaceName}.", race.Id, race.Name);
                 }
                 catch (Exception ex)
                 {

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
+using F1BettingGame.Domain.Entities;
 
 namespace F1BettingApp.Infrastructure.Persistence
 {
@@ -18,6 +19,9 @@ namespace F1BettingApp.Infrastructure.Persistence
         public DbSet<LeaderboardHistory> LeaderboardHistories { get; set; }
         public DbSet<Driver> Drivers { get; set; }
         public DbSet<Team> Teams { get; set; }
+
+        public DbSet<DriverChampionship> DriverChampionships { get; set; }
+        public DbSet<DriverChampionshipRace> DriverChampionshipRaces { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -158,6 +162,24 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(t => t.Country).IsRequired().HasMaxLength(50);
                 entity.Property(t => t.OpenF1TeamId).IsRequired().HasMaxLength(50);
             });
+
+            // Unikalny indeks zapobiegający dublowaniu kierowcy w tym samym sezonie
+            modelBuilder.Entity<DriverChampionship>()
+                .HasIndex(dc => new { dc.DriverId, dc.Season })
+                .IsUnique();
+
+            // Konfiguracja relacji jeden-do-wielu dla tabeli wyścigów w tabeli klasyfikacji
+            modelBuilder.Entity<DriverChampionshipRace>()
+                .HasOne(dcr => dcr.DriverChampionship)
+                .WithMany(dc => dc.RaceResults)
+                .HasForeignKey(dcr => dcr.DriverChampionshipId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DriverChampionshipRace>()
+                .HasOne(dcr => dcr.Race)
+                .WithMany() // Jeśli w encji Race nie potrzebujesz kolekcji DriverChampionshipRaces
+                .HasForeignKey(dcr => dcr.RaceId)
+                .OnDelete(DeleteBehavior.Restrict); // Blokujemy usuwanie wyścigu, jeśli są przypisane punkty
         }
     }
 }

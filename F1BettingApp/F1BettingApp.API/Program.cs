@@ -176,6 +176,14 @@ builder.Services.AddAuthentication(options =>
         {
             context.HandleResponse();
             context.Response.StatusCode = 401;
+            // Ensure CORS headers are present on auth challenge responses so browser preflight/requests receive them
+            var origin = context.Request.Headers["Origin"].ToString();
+            if (!string.IsNullOrEmpty(origin))
+            {
+                context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+                // Vary header helps caches differentiate responses per origin
+                context.Response.Headers.Append("Vary", "Origin");
+            }
             context.Response.Headers.Append("X-Error", "Access denied");
             return Task.CompletedTask;
         }

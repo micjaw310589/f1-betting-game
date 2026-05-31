@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ProfileService } from '../profile.service';
 import { BetHistoryDto } from '../profile.models';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -28,7 +28,8 @@ export class UserBetsComponent implements OnInit {
   constructor(
     private profileService: ProfileService,
     private fb: FormBuilder,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private cdr: ChangeDetectorRef
   ) {
     this.filterForm = this.fb.group({
       status: [''],
@@ -46,8 +47,7 @@ export class UserBetsComponent implements OnInit {
     this.isLoading = true;
     this.error = null;
 
-    // Get current user ID - in a real app, this would come from auth service
-    const userId = 1; // Temporary - should come from auth
+    const userId = 1;
 
     this.profileService.getBetHistoryWithFilters(userId, 100, 0).subscribe({
       next: (bets) => {
@@ -57,11 +57,13 @@ export class UserBetsComponent implements OnInit {
         this.extractDriverOptions();
         this.applyFilters();
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading bet history:', err);
         this.error = 'Failed to load bet history. Please try again later.';
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -84,17 +86,14 @@ export class UserBetsComponent implements OnInit {
     const { status, driverId, startDate, endDate } = this.filterForm.value;
 
     this.filteredBets = this.bets.filter(bet => {
-      // Filter by status
       if (status && bet.status !== status) {
         return false;
       }
 
-      // Filter by driver
       if (driverId && bet.driverId !== Number(driverId)) {
         return false;
       }
 
-      // Filter by date range
       if (startDate || endDate) {
         const betDate = new Date(bet.createdAt);
         const start = startDate ? new Date(startDate) : null;
@@ -113,7 +112,7 @@ export class UserBetsComponent implements OnInit {
     });
 
     this.totalItems = this.filteredBets.length;
-    this.currentPage = 1; // Reset to first page when filters change
+    this.currentPage = 1;
   }
 
   resetFilters(): void {
@@ -162,7 +161,6 @@ export class UserBetsComponent implements OnInit {
       return;
     }
 
-    // Create CSV content
     const headers = ['ID', 'Date', 'Race', 'Driver', 'Type', 'Amount', 'Status', 'Winnings'];
     const rows = this.filteredBets.map(bet => [
       bet.id,
@@ -175,13 +173,11 @@ export class UserBetsComponent implements OnInit {
       bet.winnings ? `$${bet.winnings.toFixed(2)}` : 'N/A'
     ]);
 
-    // Combine headers and rows
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.join(','))
     ].join('\n');
 
-    // Create download link
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

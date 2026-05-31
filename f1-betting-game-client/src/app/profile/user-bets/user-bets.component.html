@@ -1,15 +1,15 @@
-<div class="container mx-auto px-4 py-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold text-gray-800">Your Bet History</h1>
-    <div class="flex gap-4">
-      <button (click)="refreshData()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+<div class="stats-container">
+  <div class="header-row">
+    <h1 class="page-header">Your Bet History</h1>
+    <div class="action-group">
+      <button type="button" class="action-button" (click)="refreshData()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
         </svg>
         Refresh
       </button>
-      <button (click)="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <button type="button" class="action-button btn-green" (click)="exportToCSV()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
         Export CSV
@@ -17,125 +17,118 @@
     </div>
   </div>
 
-  <!-- Loading state -->
-  <div *ngIf="isLoading" class="text-center py-12">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-    <p class="text-gray-600">Loading bet history...</p>
+  <div *ngIf="isLoading" class="loader-inline text-center">
+    <div class="spinner"></div>
+    Loading bet history...
   </div>
 
-  <!-- Error state -->
-  <div *ngIf="error && !isLoading" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-    <div class="flex">
-      <div class="flex-shrink-0">
-        <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-        </svg>
-      </div>
-      <div class="ml-3">
-        <p class="text-red-700">{{ error }}</p>
-      </div>
-    </div>
+  <div *ngIf="error && !isLoading" class="error-message">
+    {{ error }}
   </div>
 
-  <!-- Filter Section -->
-  <div *ngIf="!isLoading" class="bg-white rounded-xl shadow-md p-6 border border-gray-100 mb-6">
-    <h3 class="text-lg font-semibold text-gray-700 mb-4">Filters</h3>
-    <form [formGroup]="filterForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div>
-        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-        <select id="status" formControlName="status" (change)="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-          <option value="">All Statuses</option>
-          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
-        </select>
-      </div>
+  <div *ngIf="!isLoading" class="stats-wrapper">
+    
+    <section class="panel">
+      <h2>Filters</h2>
+      <form [formGroup]="filterForm" class="stats-grid grid-4">
+        
+        <div class="form-group">
+          <label for="status" class="stat-label">Status</label>
+          <select id="status" formControlName="status" (change)="applyFilters()" class="form-control">
+            <option value="">All Statuses</option>
+            <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+          </select>
+        </div>
 
-      <div>
-        <label for="driverId" class="block text-sm font-medium text-gray-700 mb-1">Driver</label>
-        <select id="driverId" formControlName="driverId" (change)="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-          <option value="">All Drivers</option>
-          <option *ngFor="let driver of driverOptions" [value]="driver.id">{{ driver.name }}</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label for="driverId" class="stat-label">Driver</label>
+          <select id="driverId" formControlName="driverId" (change)="applyFilters()" class="form-control">
+            <option value="">All Drivers</option>
+            <option *ngFor="let driver of driverOptions" [value]="driver.id">{{ driver.name }}</option>
+          </select>
+        </div>
 
-      <div>
-        <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-        <input type="date" id="startDate" formControlName="startDate" (change)="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-      </div>
+        <div class="form-group">
+          <label for="startDate" class="stat-label">Start Date</label>
+          <input type="date" id="startDate" formControlName="startDate" (change)="applyFilters()" class="form-control">
+        </div>
 
-      <div>
-        <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-        <input type="date" id="endDate" formControlName="endDate" (change)="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-      </div>
-    </form>
+        <div class="form-group">
+          <label for="endDate" class="stat-label">End Date</label>
+          <input type="date" id="endDate" formControlName="endDate" (change)="applyFilters()" class="form-control">
+        </div>
 
-    <div class="flex gap-4 mt-4">
-      <button type="button" (click)="resetFilters()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition-colors">
-        Reset Filters
-      </button>
-    </div>
-  </div>
-
-  <!-- Bet History Table -->
-  <div *ngIf="!isLoading" class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Race</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Winnings</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr *ngFor="let bet of paginatedBets">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ bet.id }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formatDate(bet.createdAt) }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ bet.raceName || 'N/A' }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ bet.driverName || 'Driver ' + bet.driverId }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ bet.betType }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${{ bet.amount.toFixed(2) }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-              <span class="px-2 py-1 rounded-full text-xs font-medium" [class]="getStatusClass(bet.status)">
-                {{ bet.status }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {{ bet.winnings ? '$' + bet.winnings.toFixed(2) : 'N/A' }}
-            </td>
-          </tr>
-
-          <tr *ngIf="filteredBets.length === 0">
-            <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
-              No bets found matching your criteria.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div *ngIf="totalPages > 1" class="bg-gray-50 px-6 py-4 flex justify-between items-center">
-        <div class="text-sm text-gray-700">
-        Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ math.min(currentPage * itemsPerPage, totalItems) }} of {{ totalItems }} bets
-      </div>
-      <div class="flex gap-2">
-        <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1" class="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-          Previous
-        </button>
-
-        <button *ngFor="let page of pages" (click)="changePage(page)" [class]="currentPage === page ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'" class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium transition-colors">
-          {{ page }}
-        </button>
-
-        <button (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages" class="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-          Next
+      </form>
+      
+      <div class="filter-actions mt-15">
+        <button type="button" (click)="resetFilters()" class="action-button btn-secondary">
+          Reset Filters
         </button>
       </div>
-    </div>
+    </section>
+
+    <section class="panel table-panel">
+      <h2>History</h2>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Race</th>
+              <th>Driver</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Winnings</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let bet of paginatedBets">
+              <td class="text-gray-500">#{{ bet.id }}</td>
+              <td>{{ formatDate(bet.createdAt) }}</td>
+              <td>{{ bet.raceName || 'N/A' }}</td>
+              <td>{{ bet.driverName || 'Driver ' + bet.driverId }}</td>
+              <td>{{ bet.betType }}</td>
+              <td class="text-white">${{ bet.amount.toFixed(2) }}</td>
+              <td>
+                <span class="status-badge" [class]="getStatusClass(bet.status)">
+                  {{ bet.status }}
+                </span>
+              </td>
+              <td [class]="bet.winnings ? 'text-green' : 'text-gray-500'">
+                {{ bet.winnings ? '$' + bet.winnings.toFixed(2) : 'N/A' }}
+              </td>
+            </tr>
+
+            <tr *ngIf="filteredBets.length === 0">
+              <td colspan="8" class="text-center empty-state">
+                No bets found matching your criteria.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="totalPages > 1" class="pagination-footer">
+        <div class="pagination-info">
+          Showing <span class="text-white">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> to <span class="text-white">{{ math.min(currentPage * itemsPerPage, totalItems) }}</span> of <span class="text-white">{{ totalItems }}</span> bets
+        </div>
+        <div class="pagination-controls">
+          <button (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1" class="page-btn">
+            Prev
+          </button>
+          
+          <button *ngFor="let page of pages" (click)="changePage(page)" [class.active]="currentPage === page" class="page-btn">
+            {{ page }}
+          </button>
+
+          <button (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages" class="page-btn">
+            Next
+          </button>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>

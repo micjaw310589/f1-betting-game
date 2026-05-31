@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ProfileService } from '../profile.service';
 import { UserBetAnalysisDto } from '../profile.models';
 import { CommonModule, DecimalPipe } from '@angular/common';
@@ -15,7 +15,10 @@ export class UserAnalyticsComponent implements OnInit {
   isLoading = true;
   error: string | null = null;
 
-  constructor(private profileService: ProfileService) {}
+  constructor(
+    private profileService: ProfileService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadAnalysis();
@@ -29,11 +32,13 @@ export class UserAnalyticsComponent implements OnInit {
       next: (analysis) => {
         this.analysis = analysis;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading analysis:', err);
         this.error = 'Failed to load analysis. Please try again later.';
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

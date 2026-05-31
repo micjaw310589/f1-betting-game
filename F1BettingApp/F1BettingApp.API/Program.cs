@@ -132,8 +132,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
 
-// Register background workers
+ // Register background workers
 builder.Services.AddHostedService<RaceStatusMonitorJob>();
+builder.Services.AddHostedService<OpenF1SyncJob>();
 
 // Configure ASP.NET Core Identity for user management
 //builder.Services.AddIdentity<F1BettingApp.Domain.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>()

@@ -15,6 +15,8 @@ namespace F1BettingApp.Infrastructure.Persistence
         public DbSet<Bet> Bets { get; set; }
         public DbSet<Race> Races { get; set; }
         public DbSet<Result> Results { get; set; }
+        public DbSet<RaceResult> RaceResults { get; set; }
+        public DbSet<RaceResultPosition> RaceResultPositions { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<LeaderboardHistory> LeaderboardHistories { get; set; }
         public DbSet<Driver> Drivers { get; set; }
@@ -253,6 +255,41 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(ph => ph.Description).IsRequired();
                 entity.Property(ph => ph.Source).IsRequired().HasMaxLength(20);
                 entity.Property(ph => ph.CreatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure RaceResult entity
+            modelBuilder.Entity<RaceResult>(entity =>
+            {
+                entity.HasIndex(r => r.RaceId).IsUnique();
+                entity.Property(r => r.Season).IsRequired();
+                entity.Property(r => r.CreatedAt).HasDefaultValueSql("now()");
+                entity.Property(r => r.UpdatedAt).HasDefaultValueSql("now()");
+
+                entity.HasOne(r => r.Race)
+                      .WithMany()
+                      .HasForeignKey(r => r.RaceId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.FastestLapDriver)
+                      .WithMany()
+                      .HasForeignKey(r => r.FastestLapDriverId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configure RaceResultPosition entity
+            modelBuilder.Entity<RaceResultPosition>(entity =>
+            {
+                entity.HasOne(p => p.RaceResult)
+                      .WithMany(r => r.Positions)
+                      .HasForeignKey(p => p.RaceResultId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(p => p.Driver)
+                      .WithMany()
+                      .HasForeignKey(p => p.DriverId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(p => new { p.RaceResultId, p.Position }).IsUnique();
             });
         }
     }

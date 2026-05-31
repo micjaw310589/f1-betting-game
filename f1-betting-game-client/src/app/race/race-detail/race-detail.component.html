@@ -59,6 +59,60 @@
                     <div class="loader-inline">Loading odds...</div>
                 }
             </section>
+
+            @if (raceResult$ | async; as raceResult) {
+                <section class="detail-panel race-results">
+                    <h2>Race Results</h2>
+                    <div class="results-table-container">
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Pos</th>
+                                    <th>Driver</th>
+                                    <th>Team</th>
+                                    <th>Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (position of raceResult.positions; track position.driverId) {
+                                    <tr class="position-row position-{{ position.position }}">
+                                        <td class="position-cell">
+                                            {{ position.position }}
+                                            @if (position.position === 1) {
+                                                <span class="pos-badge gold">🏆</span>
+                                            } @else if (position.position === 2) {
+                                                <span class="pos-badge silver">🥈</span>
+                                            } @else if (position.position === 3) {
+                                                <span class="pos-badge bronze">🥉</span>
+                                            }
+                                        </td>
+                                        <td class="driver-cell">
+                                            {{ position.driverName }}
+                                            @if (raceResult.fastestLapDriverId === position.driverId) {
+                                                <span class="fastest-lap-badge">⚡ FL</span>
+                                            }
+                                        </td>
+                                        <td class="team-cell">{{ position.teamName }}</td>
+                                        <td class="points-cell">{{ position.points }}</td>
+                                    </tr>
+                                } @empty {
+                                    <tr>
+                                        <td colspan="4" class="no-results">No results available</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (raceResult.fastestLapDriverId) {
+                        <div class="fastest-lap-info">
+                            <strong>Fastest Lap:</strong> {{ raceResult.fastestLapDriverName }}
+                            @if (raceResult.fastestLapTime) {
+                                <span class="lap-time"> ({{ raceResult.fastestLapTime * 1000 | duration }})</span>
+                            }
+                        </div>
+                    }
+                </section>
+            }
         </div>
 
     } @else {

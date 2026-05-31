@@ -656,5 +656,97 @@ public async Task<ActionResult<PagedResult<RaceSummaryDto>>> GetRaces(
             }
         }
         
+
+        /// <summary>
+        /// Store race results automatically for a finished race (current season only).
+        /// </summary>
+        /// <param name="raceId">Race identifier</param>
+        /// <param name="dto">The race results data with positions and optional fastest lap.</param>
+        /// <returns>Success message</returns>
+        [HttpPost("{raceId}/results")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult> StoreRaceResults(int raceId, [FromBody] StoreRaceResultsDto dto)
+        {
+            _logger.LogInformation("Storing race results for race: {RaceId}", raceId);
+
+            try
+            {
+                await _raceService.StoreRaceResultAsync(raceId, dto.Positions, dto.FastestLapDriverId);
+
+                _logger.LogInformation("Race results stored successfully for: {RaceId}", raceId);
+
+                return Ok(new { message = "Race results stored successfully" });
+            }
+            catch (KeyNotFoundException)
+            {
+                _logger.LogWarning("Race not found while storing results: {RaceId}", raceId);
+                return NotFound(new ErrorResponse
+                {
+                    Error = "RACE_NOT_FOUND",
+                    Message = $"Race with ID {raceId} not found"
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid arguments while storing race results: {RaceId}", raceId);
+                return BadRequest(new ErrorResponse
+                {
+                    Error = "INVALID_INPUT",
+                    Message = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing race results: {RaceId}", raceId);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "RACE_DATA_ERROR",
+                        Message = "An error occurred while storing race results",
+                        Details = ex.Message
+                    });
+            }
+        }
+
+        /// <summary>
+        /// Get stored race results from the RaceResult entity (current season only).
+        /// Returns null-compatible result if no stored results exist.
+        /// </summary>
+        /// <param name="raceId">Race identifier</param>
+        /// <returns>Stored race result DTO or null</returns>
+        [HttpGet("{raceId}/stored-results")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<RaceResultDto?>> GetStoredRaceResults(int raceId)
+        {
+            _logger.LogInformation("Getting stored race results for race: {RaceId}", raceId);
+
+            try
+            {
+                var result = await _raceService.GetStoredRaceResultAsync(raceId);
+
+                if (result == null)
+                {
+                    _logger.LogInformation("No stored race results found for: {RaceId}", raceId);
+                    return Ok((object)null);
+                }
+
+                _logger.LogInformation("Stored race results retrieved for: {RaceId}", raceId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving stored race results: {RaceId}", raceId);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "RACE_DATA_ERROR",
+                        Message = "An error occurred while retrieving stored race results",
+                        Details = ex.Message
+                    });
+            }
+        }
     }
 }

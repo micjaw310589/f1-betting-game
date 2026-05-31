@@ -10,6 +10,32 @@ import {
 } from '../models/race.models';
 import { DriverWithOdds } from '../bets/bet-placement/bet-placement.component';
 
+export interface PositionDto {
+  position: number;
+  driverId: number;
+  driverName: string;
+  teamId: number;
+  teamName: string;
+  points: number;
+  fastestLap?: number;
+}
+
+export interface RaceResultDto {
+  raceId: number;
+  raceName: string;
+  circuit: string;
+  country: string;
+  raceDate: Date;
+  winnerDriverId: number;
+  winnerDriverName: string;
+  winnerTeamId: number;
+  winnerTeamName: string;
+  fastestLapDriverId: number;
+  fastestLapDriverName: string;
+  fastestLapTime?: number;
+  positions: PositionDto[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -82,7 +108,7 @@ const statusMap: Record<string, string> = {
   getRaceOdds(raceId: number): Observable<Record<number, number>> {
     // Use the correct backend endpoint that actually exists
     return this.getUpcomingRacesWithOdds().pipe(
-      map(races => {
+      map((races: RaceDto[]) => {
         const race = races.find(r => r.id === raceId);
         if (race && race.odds) {
           // Convert Dictionary<int, decimal> to Record<number, number>
@@ -112,8 +138,18 @@ const statusMap: Record<string, string> = {
     return throwError(() => new Error(errorMessage));
   }
 
-  // W race.service.ts dodaj:
-getDriversWithOdds(raceId: number): Observable<DriverWithOdds[]> {
+  getDriversWithOdds(raceId: number): Observable<DriverWithOdds[]> {
     return this.http.get<DriverWithOdds[]>(`${this.API_URL}/${raceId}/drivers-with-odds`);
+  }
+
+  /**
+   * Gets stored race results from the RaceResult entity (current season only).
+   * @param raceId The ID of the race
+   * @returns Race result DTO or null if not found
+   */
+  getStoredRaceResults(raceId: number): Observable<RaceResultDto | null> {
+    return this.http.get<RaceResultDto | null>(`${this.API_URL}/${raceId}/stored-results`).pipe(
+      catchError(() => of(null))
+    );
   }
 }

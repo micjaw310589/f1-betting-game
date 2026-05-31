@@ -779,5 +779,159 @@ namespace F1BettingApp.Application.Services
         }
 
         
+
+        public async Task StoreRaceResultAsync(int raceId, List<PositionEntryDto> positions, int? fastestLapDriverId = null)
+        {
+            var race = await _raceRepository.GetByIdAsync(raceId);
+            if (race == null)
+                throw new KeyNotFoundException($"Race with ID {raceId} not found.");
+
+            var currentSeason = DateTime.UtcNow.Year;
+
+            // Only store results for current season
+            if (race.Season != currentSeason)
+                return;
+
+            // Validate positions
+            if (positions == null || !positions.Any())
+                throw new ArgumentException("At least one position entry is required.");
+
+            foreach (var pos in positions)
+            {
+                if (pos.Position < 1)
+                    throw new ArgumentException($"Position must be at least 1.");
+                if (pos.DriverId <= 0)
+                    throw new ArgumentException($"Invalid driver ID: {pos.DriverId}. Must be greater than 0.");
+            }
+
+            // Validate no duplicate drivers
+            var driverIds = positions.Select(p => p.DriverId).ToList();
+            var duplicates = driverIds.GroupBy(d => d).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+            if (duplicates.Any())
+                throw new ArgumentException($"Drivers cannot appear in multiple positions: {string.Join(", ", duplicates)}");
+
+            if (fastestLapDriverId.HasValue && fastestLapDriverId.Value <= 0)
+                throw new ArgumentException($"Invalid fastest lap driver ID: {fastestLapDriverId.Value}. Must be greater than 0.");
+
+            var raceResult = await _dbContext.RaceResults
+                .Include(r => r.Positions)
+                .FirstOrDefaultAsync(r => r.RaceId == raceId);
+
+            if (raceResult == null)
+            {
+                raceResult = new RaceResult
+                {
+                    RaceId = raceId,
+                    Season = currentSeason,
+                    Positions = new List<RaceResultPosition>(),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _dbContext.RaceResults.Add(raceResult);
+            }
+
+            // Update positions
+            raceResult.Positions.Clear();
+            foreach (var pos in positions.OrderBy(p => p.Position))
+            {
+                var points = CalculatePointsForPosition(pos.Position);
+                raceResult.Positions.Add(new RaceResultPosition
+                {
+                    Position = pos.Position,
+                    DriverId = pos.DriverId,
+                    TeamId = 0,
+                    Points = points
+                });
+            }
+
+            raceResult.FastestLapDriverId = fastestLapDriverId;
+            raceResult.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<RaceResultDto?> GetStoredRaceResultAsync(int raceId)
+        {
+            var currentSeason = DateTime.UtcNow.Year;
+
+            var raceResult = await _dbContext.RaceResults
+                .Include(r => r.Positions)
+                .Include(r => r.FastestLapDriver)
+                .Where(r => r.RaceId == raceId && r.Season == currentSeason)
+                .FirstOrDefaultAsync();
+
+            if (raceResult == null)
+                return null;
+
+            var allDrivers = await _driverRepository.GetAllAsync();
+            var driverLookup = allDrivers.ToDictionary(d => d.Id, d => d);
+
+            var positions = raceResult.Positions
+                .OrderBy(p => p.Position)
+                .Select(p => new PositionDto
+                {
+                    Position = p.Position,
+                    DriverId = p.DriverId,
+                    DriverName = driverLookup.ContainsKey(p.DriverId) ? driverLookup[p.DriverId].Name : "Unknown",
+                    TeamId = p.TeamId,
+                    TeamName = driverLookup.ContainsKey(p.DriverId) ? driverLookup[p.DriverId].Team?.Name ?? "TBD" : "TBD",
+                    Points = p.Points,
+                    FastestLap = null
+                })
+                .ToList();
+
+            // Find winner (position 1)
+            var winnerPosition = positions.FirstOrDefault(p => p.Position == 1);
+            var winnerDriverId = winnerPosition?.DriverId ?? 0;
+            var winnerDriver = driverLookup.ContainsKey(winnerDriverId) ? driverLookup[winnerDriverId] : null;
+
+            // Find fastest lap driver
+            var fastestLapDriverId = raceResult.FastestLapDriverId ?? 0;
+            var fastestLapDriver = fastestLapDriverId > 0 && driverLookup.ContainsKey(fastestLapDriverId)
+                ? driverLookup[fastestLapDriverId]
+                : null;
+
+            // Mark positions with fastest lap indicator
+            foreach (var pos in positions)
+            {
+                if (pos.DriverId == fastestLapDriverId)
+                {
+                    pos.FastestLap = TimeSpan.Zero;
+                }
+            }
+
+            return new RaceResultDto
+            {
+                RaceId = raceResult.RaceId,
+                RaceName = raceResult.Race?.Name ?? "Unknown",
+                Circuit = raceResult.Race?.Circuit ?? "Unknown",
+                Country = raceResult.Race?.Country ?? "Unknown",
+                RaceDate = raceResult.Race?.Date ?? DateTime.UtcNow,
+                WinnerDriverId = winnerDriver?.Id ?? 0,
+                WinnerDriverName = winnerDriver?.Name ?? "TBD",
+                WinnerTeamId = winnerDriver?.TeamId ?? 0,
+                WinnerTeamName = winnerDriver?.Team?.Name ?? "TBD",
+                FastestLapDriverId = raceResult.FastestLapDriverId,
+                FastestLapDriverName = fastestLapDriver?.Name ?? "TBD",
+                FastestLapTime = raceResult.FastLapTime,
+                Positions = positions
+            };
+        }
+
+        public async Task<int> PurgeOldSeasonResultsAsync()
+        {
+            var currentSeason = DateTime.UtcNow.Year;
+            var oldResults = await _dbContext.RaceResults
+                .Where(r => r.Season < currentSeason)
+                .ToListAsync();
+
+            if (!oldResults.Any())
+                return 0;
+
+            var count = oldResults.Count;
+            _dbContext.RaceResults.RemoveRange(oldResults);
+            await _dbContext.SaveChangesAsync();
+            return count;
+        }
     }
 }

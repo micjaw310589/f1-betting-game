@@ -22,6 +22,7 @@ public class AdminControllerTests
 {
     private readonly Mock<IRaceService> _mockRaceService;
     private readonly Mock<IBettingService> _mockBettingService;
+    private readonly Mock<IQuestDefinitionService> _mockQuestDefinitionService;
     private readonly Mock<ILogger<AdminController>> _mockLogger;
     private readonly AdminController _controller;
 
@@ -29,8 +30,9 @@ public class AdminControllerTests
     {
         _mockRaceService = new Mock<IRaceService>();
         _mockBettingService = new Mock<IBettingService>();
+        _mockQuestDefinitionService = new Mock<IQuestDefinitionService>();
         _mockLogger = new Mock<ILogger<AdminController>>();
-        _controller = new AdminController(_mockRaceService.Object, _mockBettingService.Object, _mockLogger.Object);
+        _controller = new AdminController(_mockRaceService.Object, _mockBettingService.Object, _mockQuestDefinitionService.Object, _mockLogger.Object);
     }
 
     // Helper to extract ObjectResult from ActionResult<T>

@@ -23,6 +23,10 @@ export const routes: Routes = [
     loadComponent: () => import('./profile/user-profile/user-profile.component').then(m => m.UserProfileComponent)
   },
   {
+    path: 'quests',
+    loadComponent: () => import('./quest-board/quest-board.component').then(m => m.QuestBoardComponent)
+  },
+  {
     path: 'admin',
     loadChildren: () => import('./admin/admin.routes').then(m => m.AdminRoutes)
   },

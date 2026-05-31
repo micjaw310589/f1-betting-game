@@ -4,6 +4,9 @@ using System.Text.Json;
 using F1BettingApp.Application.Interfaces;
 using F1BettingApp.Application.Services;
 using F1BettingApp.API.BackgroundWorkers;
+using F1BettingApp.API.Jobs;
+using F1BettingApp.Domain.Events;
+using F1BettingApp.Infrastructure.Events;
 using F1BettingApp.Infrastructure.OpenF1;
 using F1BettingApp.Infrastructure.Persistence;
 using F1BettingApp.Infrastructure.Persistence.Repositories;
@@ -112,6 +115,10 @@ builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IResultRepository, ResultRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IDailyLoginStreakRepository, DailyLoginStreakRepository>();
+builder.Services.AddScoped<IQuestDefinitionRepository, QuestDefinitionRepository>();
+builder.Services.AddScoped<IWeeklyQuestProgressRepository, WeeklyQuestProgressRepository>();
+builder.Services.AddScoped<IPointHistoryRepository, PointHistoryRepository>();
 builder.Services.AddScoped(typeof(F1BettingApp.Infrastructure.Persistence.Repositories.IRepository<>), typeof(F1BettingApp.Infrastructure.Persistence.Repositories.Repository<>));
 builder.Services.AddScoped<IBetRepositoryExtensions, BetRepositoryExtensions>();
 builder.Services.AddScoped<IRaceRepositoryExtensions, RaceRepositoryExtensions>();
@@ -130,10 +137,18 @@ builder.Services.AddScoped<IBettingService, BettingService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDailyLoginService, DailyLoginService>();
+builder.Services.AddScoped<IQuestService, QuestService>();
+builder.Services.AddScoped<IQuestDefinitionService, QuestDefinitionService>();
+builder.Services.AddScoped<IPointHistoryService, PointHistoryService>();
 builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
+
+// Register domain event publisher
+builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
 
 // Register background workers
 builder.Services.AddHostedService<RaceStatusMonitorJob>();
+builder.Services.AddHostedService<F1BettingApp.API.Jobs.QuestResetBackgroundJob>();
 
 // Configure ASP.NET Core Identity for user management
 //builder.Services.AddIdentity<F1BettingApp.Domain.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>()

@@ -18,6 +18,11 @@ import {
     CreateBetDto,
     UpdateBetDto,
     BetStatus,
+    QuestDefinitionDto,
+    CreateQuestDefinitionDto,
+    UpdateQuestDefinitionDto,
+    ResetWeekResponseDto,
+    CompletedCountResponseDto,
 } from '../models/admin.models';
 
 @Injectable({
@@ -232,6 +237,89 @@ export class AdminService {
     deleteBet(betId: number): Observable<void> {
         return this.http
             .delete<void>(`${this.ADMIN_API_URL}/bets/${betId}`)
+            .pipe(catchError(this.handleError));
+    }
+
+    // ========================
+    // Quest Management Methods
+    // ========================
+
+    /**
+     * Gets a paginated, filtered, and searchable list of quest definitions (admin only).
+     */
+    getAllQuestDefinitions(
+        page: number = 1,
+        pageSize: number = 20,
+        isActive?: boolean | null,
+        searchTerm?: string
+    ): Observable<PagedResult<QuestDefinitionDto>> {
+        let params = new HttpParams()
+            .set('page', page.toString())
+            .set('pageSize', pageSize.toString());
+
+        if (isActive !== undefined && isActive !== null) {
+            params = params.set('isActive', isActive.toString());
+        }
+        if (searchTerm) {
+            params = params.set('searchTerm', searchTerm);
+        }
+
+        return this.http
+            .get<PagedResult<QuestDefinitionDto>>(`${this.ADMIN_API_URL}/quest-definitions/paged`, { params })
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Creates a new quest definition (admin only).
+     */
+    createQuestDefinition(dto: CreateQuestDefinitionDto): Observable<QuestDefinitionDto> {
+        return this.http
+            .post<QuestDefinitionDto>(`${this.ADMIN_API_URL}/quest-definitions`, dto)
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Updates an existing quest definition (admin only).
+     */
+    updateQuestDefinition(id: number, dto: UpdateQuestDefinitionDto): Observable<QuestDefinitionDto> {
+        return this.http
+            .put<QuestDefinitionDto>(`${this.ADMIN_API_URL}/quest-definitions/${id}`, dto)
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Deletes a quest definition (admin only).
+     */
+    deleteQuestDefinition(id: number): Observable<void> {
+        return this.http
+            .delete<void>(`${this.ADMIN_API_URL}/quest-definitions/${id}`)
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Toggles a quest's active status (admin only).
+     */
+    toggleQuestActive(id: number, isActive: boolean): Observable<QuestDefinitionDto> {
+        return this.http
+            .patch<QuestDefinitionDto>(`${this.ADMIN_API_URL}/quest-definitions/${id}/active`, { isActive })
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Resets all weekly quest progress for the current week (admin only).
+     */
+    resetWeeklyQuests(): Observable<ResetWeekResponseDto> {
+        return this.http
+            .post<ResetWeekResponseDto>(`${this.ADMIN_API_URL}/quest-definitions/reset-week`, {})
+            .pipe(catchError(this.handleError));
+    }
+
+    /**
+     * Gets the completion count for a specific quest (admin only).
+     */
+    getQuestCompletedCount(questId: string): Observable<CompletedCountResponseDto> {
+        return this.http
+            .get<CompletedCountResponseDto>(`${this.ADMIN_API_URL}/quest-definitions/${questId}/completed-count`)
             .pipe(catchError(this.handleError));
     }
 

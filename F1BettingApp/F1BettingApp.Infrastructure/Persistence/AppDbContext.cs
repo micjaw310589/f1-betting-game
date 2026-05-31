@@ -22,6 +22,10 @@ namespace F1BettingApp.Infrastructure.Persistence
 
         public DbSet<DriverChampionship> DriverChampionships { get; set; }
         public DbSet<DriverChampionshipRace> DriverChampionshipRaces { get; set; }
+        public DbSet<DailyLoginStreak> DailyLoginStreaks { get; set; }
+        public DbSet<QuestDefinition> QuestDefinitions { get; set; }
+        public DbSet<WeeklyQuestProgress> WeeklyQuestProgresses { get; set; }
+        public DbSet<PointHistory> PointHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -180,6 +184,76 @@ namespace F1BettingApp.Infrastructure.Persistence
                 .WithMany() // Jeśli w encji Race nie potrzebujesz kolekcji DriverChampionshipRaces
                 .HasForeignKey(dcr => dcr.RaceId)
                 .OnDelete(DeleteBehavior.Restrict); // Blokujemy usuwanie wyścigu, jeśli są przypisane punkty
+
+            // Configure DailyLoginStreak entity
+            modelBuilder.Entity<DailyLoginStreak>(entity =>
+            {
+                entity.HasIndex(d => d.UserId).IsUnique();
+
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(d => d.CurrentStreak).HasDefaultValue(0);
+                entity.Property(d => d.LastLoginDate).HasColumnType("date");
+                entity.Property(d => d.ClaimedToday).HasDefaultValue(false);
+                entity.Property(d => d.UpdatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure QuestDefinition entity
+            modelBuilder.Entity<QuestDefinition>(entity =>
+            {
+                entity.HasIndex(q => q.QuestId).IsUnique();
+                entity.Property(q => q.QuestId).IsRequired().HasMaxLength(50);
+                entity.Property(q => q.Name).IsRequired().HasMaxLength(100);
+                entity.Property(q => q.Description).IsRequired();
+
+                // Map quest category enum to string
+                entity.Property(q => q.Category)
+                      .HasConversion(
+                          v => v.ToString(),
+                          v => (QuestCategory)Enum.Parse(typeof(QuestCategory), v));
+
+                entity.Property(q => q.IsActive).HasDefaultValue(true);
+                entity.Property(q => q.Order).HasDefaultValue(0);
+                entity.Property(q => q.CreatedAt).HasDefaultValueSql("now()");
+                entity.Property(q => q.UpdatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure WeeklyQuestProgress entity
+            modelBuilder.Entity<WeeklyQuestProgress>(entity =>
+            {
+                entity.HasIndex(w => new { w.UserId, w.QuestId, w.WeekNumber, w.Year }).IsUnique();
+
+                entity.HasOne(w => w.User)
+                      .WithMany()
+                      .HasForeignKey(w => w.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(w => w.QuestId).IsRequired().HasMaxLength(50);
+                entity.Property(w => w.Progress).HasDefaultValue(0);
+                entity.Property(w => w.Target).HasDefaultValue(0);
+                entity.Property(w => w.IsCompleted).HasDefaultValue(false);
+                entity.Property(w => w.PointsAwarded).HasDefaultValue(0);
+                entity.Property(w => w.IsClaimed).HasDefaultValue(false);
+                entity.Property(w => w.ReferenceId).HasMaxLength(50);
+                entity.Property(w => w.UpdatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure PointHistory entity
+            modelBuilder.Entity<PointHistory>(entity =>
+            {
+                entity.HasOne(ph => ph.User)
+                      .WithMany()
+                      .HasForeignKey(ph => ph.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(ph => ph.Category).IsRequired().HasMaxLength(50);
+                entity.Property(ph => ph.Description).IsRequired();
+                entity.Property(ph => ph.Source).IsRequired().HasMaxLength(20);
+                entity.Property(ph => ph.CreatedAt).HasDefaultValueSql("now()");
+            });
         }
     }
 }

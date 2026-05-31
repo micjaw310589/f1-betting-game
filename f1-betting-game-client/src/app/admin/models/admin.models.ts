@@ -310,3 +310,82 @@ export interface PositionItemDto {
     fastestLap: Date | null;
     pitStopTime: Date | null;
 }
+
+// ========================
+// Quest Management Models
+// ========================
+
+/**
+ * Quest definition DTO (admin view).
+ * Corresponds to F1BettingApp.Application.DTOs.QuestDto
+ */
+export interface QuestDefinitionDto {
+    id: number;
+    questId: string;
+    name: string;
+    description: string;
+    category: string;
+    isOneTime: boolean;
+    target: number;
+    pointsReward: number;
+    isActive: boolean;
+    order: number;
+    createdAt: Date;
+    updatedAt: Date;
+    completedCount?: number;
+}
+
+/**
+ * DTO for creating a quest definition (admin).
+ * Corresponds to F1BettingApp.Application.DTOs.CreateQuestDto
+ */
+export interface CreateQuestDefinitionDto {
+    questId: string;
+    name: string;
+    description: string;
+    category: string;
+    isOneTime: boolean;
+    target: number;
+    pointsReward: number;
+    order: number;
+    isActive: boolean;
+}
+
+/**
+ * DTO for updating a quest definition (admin).
+ * Corresponds to F1BettingApp.Application.DTOs.UpdateQuestDto
+ */
+export interface UpdateQuestDefinitionDto {
+    name?: string;
+    description?: string;
+    category?: string;
+    isOneTime?: boolean;
+    target?: number;
+    pointsReward?: number;
+    order?: number;
+    isActive?: boolean;
+}
+
+/**
+ * Quest category configuration.
+ */
+export const QUEST_CATEGORIES: { value: string; label: string }[] = [
+    { value: 'Betting', label: '🏎️ Betting' },
+    { value: 'Engagement', label: '⚡ Engagement' },
+    { value: 'Achievement', label: '🏆 Achievement' },
+];
+
+/**
+ * Response for quest reset operation.
+ */
+export interface ResetWeekResponseDto {
+    resetCount: number;
+    message: string;
+}
+
+/**
+ * Response for completed count query.
+ */
+export interface CompletedCountResponseDto {
+    completedCount: number;
+}

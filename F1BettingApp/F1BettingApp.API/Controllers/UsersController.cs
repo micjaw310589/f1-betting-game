@@ -3,6 +3,7 @@ using F1BettingApp.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using F1BettingApp.Application.Exceptions;
+
 namespace F1BettingApp.API.Controllers
 {
     /// <summary>
@@ -13,14 +14,23 @@ namespace F1BettingApp.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IDailyLoginService _dailyLoginService;
+        private readonly IQuestService _questService;
+        private readonly IPointHistoryService _pointHistoryService;
 
         /// <summary>
         /// Initializes a new instance of the UsersController.
         /// </summary>
         /// <param name="userService">The user service for business logic operations.</param>
-        public UsersController(IUserService userService)
+        /// <param name="dailyLoginService">The daily login streak service.</param>
+        /// <param name="questService">The quest service for weekly quest operations.</param>
+        /// <param name="pointHistoryService">The point history service.</param>
+        public UsersController(IUserService userService, IDailyLoginService dailyLoginService, IQuestService questService, IPointHistoryService pointHistoryService)
         {
             _userService = userService;
+            _dailyLoginService = dailyLoginService;
+            _questService = questService;
+            _pointHistoryService = pointHistoryService;
         }
 
         /// <summary>
@@ -290,6 +300,124 @@ namespace F1BettingApp.API.Controllers
             catch (Exception ex) when (ex is not KeyNotFoundException && !IsAuthorizationException(ex))
             {
                 return StatusCode(500, "An internal error occurred while retrieving bet history");
+            }
+        }
+
+        /// <summary>
+        /// Gets the current daily login streak information for the authenticated user.
+        /// </summary>
+        /// <response code="200">Returns the current user's daily streak information.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("profile/daily-streak")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<DailyStreakInfoDto>> GetDailyStreakInfo()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var streakInfo = await _dailyLoginService.GetStreakInfoAsync(userIdInt);
+                return Ok(streakInfo);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving daily streak info");
+            }
+        }
+
+        /// <summary>
+        /// Gets the current weekly quests with progress for the authenticated user.
+        /// </summary>
+        /// <response code="200">Returns the current user's quests with progress.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("profile/quests")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<QuestResponseDto>> GetQuests()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var quests = await _questService.GetActiveQuestsAsync(userIdInt);
+                return Ok(quests);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving quests");
+            }
+        }
+
+        /// <summary>
+        /// Gets paginated point history for the currently authenticated user.
+        /// </summary>
+        /// <param name="page">The page number for pagination (default: 1).</param>
+        /// <param name="pageSize">The number of items per page (default: 20, max: 100).</param>
+        /// <response code="200">Returns the current user's point history.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("profile/point-history")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<PointHistoryResponseDto>> GetPointHistory(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Validate pagination parameters
+            if (page < 1 || page > int.MaxValue / pageSize)
+            {
+                return BadRequest("Invalid page number");
+            }
+
+            if (pageSize < 1 || pageSize > 100)
+            {
+                return BadRequest("Page size must be between 1 and 100");
+            }
+
+            try
+            {
+                // Parse userId to int for service call
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var history = await _pointHistoryService.GetUserPointHistoryAsync(userIdInt, page, pageSize);
+                return Ok(history);
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving point history");
             }
         }
 

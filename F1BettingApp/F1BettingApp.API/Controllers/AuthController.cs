@@ -25,11 +25,15 @@ namespace F1BettingApp.API.Controllers
         private readonly string _secretKey;
         private readonly string _issuer;
         private readonly string _audience;
+        private readonly IDailyLoginService _dailyLoginService;
+        private readonly IQuestService _questService;
 
-        public AuthController(IUserService userService, IConfiguration configuration)
+        public AuthController(IUserService userService, IConfiguration configuration, IDailyLoginService dailyLoginService, IQuestService questService)
         {
             _userService = userService;
             _configuration = configuration;
+            _dailyLoginService = dailyLoginService;
+            _questService = questService;
             var jwtSettings = configuration.GetSection("JwtSettings");
             _secretKey = jwtSettings["SecretKey"] ?? "fallback-secret-key";
             _issuer = jwtSettings["Issuer"] ?? "F1BettingApp";
@@ -130,6 +134,38 @@ namespace F1BettingApp.API.Controllers
                 if (authResponse == null || !authResponse.IsSuccess)
                 {
                     return Unauthorized(authResponse);
+                }
+
+                // Process daily login streak (awards points, updates streak)
+                try
+                {
+                    var userId = authResponse.User?.Id;
+                    if (userId.HasValue)
+                    {
+                        await _dailyLoginService.ProcessDailyLoginAsync(userId.Value);
+
+                        // Update quest progress for login-related quests
+                        try
+                        {
+                            await _questService.UpdateQuestProgressAsync(userId.Value, "first_login", 1);
+                            await _questService.UpdateQuestProgressAsync(userId.Value, "login_streak_weekly", 1);
+                            // streak_master: awards one-time when streak hits 7
+                            var streakInfo = await _dailyLoginService.GetStreakInfoAsync(userId.Value);
+                            if (streakInfo != null && streakInfo.CurrentStreak >= 7)
+                            {
+                                await _questService.UpdateQuestProgressAsync(userId.Value, "streak_master", 1);
+                            }
+                        }
+                        catch
+                        {
+                            // Quest progress updates should not block login
+                        }
+                    }
+                }
+                catch
+                {
+                    // Log error but don't fail authentication if streak processing fails
+                    // This ensures login always succeeds even if streak tracking has issues
                 }
 
                 return Ok(authResponse);

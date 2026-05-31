@@ -49,3 +49,49 @@ export interface BetHistoryResponseDto {
   hasNextPage?: boolean;
   hasPreviousPage?: boolean;
 }
+
+// Daily Streak interfaces
+export interface DailyStreakResponse {
+  currentStreak: number;
+  lastLoginDate: Date;
+  pointsToday: number;
+  claimedToday: boolean;
+  nextBonusMilestone: number;
+  pointsAtNextMilestone: number;
+}
+
+// Quest interfaces
+export interface QuestResponse {
+  questId: string;
+  name: string;
+  description: string;
+  category: string;
+  isOneTime: boolean;
+  target: number;
+  progress: number;
+  isCompleted: boolean;
+  isClaimed: boolean;
+  pointsReward: number;
+  isActive: boolean;
+}
+
+// Point History interfaces
+export interface PointHistoryDto {
+  id: number;
+  points: number;
+  category: string;
+  description: string;
+  referenceId?: number | null;
+  source: string;
+  createdAt: Date;
+}
+
+export interface PointHistoryResponseDto {
+  items: PointHistoryDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages?: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+}

@@ -250,3 +250,395 @@
     justify-content: flex-end;
   }
 }
+
+/* ============================================
+   LOGIN STREAK CARD
+   ============================================ */
+
+.streak-card {
+  background: linear-gradient(145deg, var(--color-card-bg-1), var(--color-card-bg-2));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 25px;
+  border-bottom: 3px solid var(--color-border);
+  transition: var(--transition-med);
+  margin-bottom: 30px;
+}
+
+.streak-card h2 {
+  margin: 0 0 20px 0;
+  font-size: 26px;
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
+.streak-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.streak-fire {
+  font-size: 48px;
+  line-height: 1;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.streak-count {
+  font-size: 32px;
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.streak-points {
+  font-size: 16px;
+  color: var(--color-text-subtle);
+  text-align: center;
+}
+
+.streak-next {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--color-f1-red);
+  font-weight: 700;
+}
+
+.streak-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.streak-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  border: 2px solid var(--color-border);
+  color: var(--color-text-subtle);
+  background: rgba(31, 36, 45, 0.4);
+  transition: all 0.3s;
+}
+
+.streak-dot.filled {
+  background: var(--color-f1-red);
+  border-color: var(--color-f1-red);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(225, 6, 0, 0.4);
+}
+
+/* ============================================
+   WEEKLY QUESTS CARD
+   ============================================ */
+
+.quests-card {
+  background: linear-gradient(145deg, var(--color-card-bg-1), var(--color-card-bg-2));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 25px;
+  border-bottom: 3px solid var(--color-border);
+  transition: var(--transition-med);
+  margin-bottom: 30px;
+}
+
+.quests-card h2 {
+  margin: 0 0 20px 0;
+  font-size: 26px;
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
+.quests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.quest-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #111418;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.quest-row:hover {
+  border-color: #444;
+  background: #161a21;
+}
+
+.quest-row.quest-completed {
+  border-color: var(--color-status-won);
+}
+
+.quest-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.quest-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.quest-description {
+  font-size: 13px;
+  color: var(--color-text-subtle);
+  margin-bottom: 10px;
+}
+
+.quest-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-f1-red);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: right;
+}
+
+.quest-reward {
+  margin-left: 20px;
+  flex-shrink: 0;
+}
+
+.reward-amount {
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffd93d;
+}
+
+.claimed-badge {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-status-won);
+  text-transform: uppercase;
+}
+
+.ready-badge {
+  font-size: 14px;
+  font-weight: 800;
+  color: #4ecdc4;
+  text-transform: uppercase;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   POINTS HISTORY CARD
+   ============================================ */
+
+.point-history-card {
+  background: linear-gradient(145deg, var(--color-card-bg-1), var(--color-card-bg-2));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 25px;
+  border-bottom: 3px solid var(--color-border);
+  transition: var(--transition-med);
+  margin-bottom: 30px;
+}
+
+.point-history-card h2 {
+  margin: 0 0 20px 0;
+  font-size: 26px;
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
+.point-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.point-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #111418;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.point-history-row:hover {
+  border-color: #444;
+  background: #161a21;
+}
+
+.history-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.history-category {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.history-category.cat-daily-login {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+  border: 1px solid rgba(78, 205, 196, 0.4);
+}
+
+.history-category.cat-quest {
+  background: rgba(255, 217, 61, 0.2);
+  color: #ffd93d;
+  border: 1px solid rgba(255, 217, 61, 0.4);
+}
+
+.history-category.cat-bet {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.4);
+}
+
+.history-description {
+  font-size: 14px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-points {
+  font-size: 16px;
+  font-weight: 900;
+  margin: 0 15px;
+  white-space: nowrap;
+}
+
+.points-positive {
+  color: var(--color-status-won);
+}
+
+.points-negative {
+  color: var(--color-status-lost);
+}
+
+.history-date {
+  font-size: 12px;
+  color: var(--color-text-subtle);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Pagination for point history */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.pagination-controls button {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  background-color: var(--color-bg);
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  transform: skewX(var(--skew-x));
+  transition: all 0.2s;
+  font-family: var(--font-main);
+  font-size: 12px;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: var(--color-f1-red);
+  box-shadow: 0 0 10px rgba(225, 6, 0, 0.4);
+}
+
+.pagination-controls button:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.pagination-controls span {
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* RWD */
+@media (max-width: 768px) {
+  .quest-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .quest-reward {
+    margin-left: 0;
+  }
+
+  .point-history-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .history-info {
+    width: 100%;
+  }
+
+  .history-points {
+    margin: 0;
+  }
+
+  .history-date {
+    align-self: flex-end;
+  }
+}

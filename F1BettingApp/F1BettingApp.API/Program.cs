@@ -34,7 +34,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngular", policy =>
     {
         policy.WithOrigins("https://f1-betting-game-qy5l.vercel.app"
-//        ,"http://localhost:4200" //TODO: DELETE THIS LATER PRBLY
+       ,"http://localhost:4200" //TODO: DELETE THIS LATER PRBLY
         )
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -134,6 +134,7 @@ builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
 
 // Register background workers
 builder.Services.AddHostedService<RaceStatusMonitorJob>();
+builder.Services.AddHostedService<RaceResultPurgeJob>();
 
 // Configure ASP.NET Core Identity for user management
 //builder.Services.AddIdentity<F1BettingApp.Domain.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>()

@@ -7,11 +7,12 @@ import { NavigationEnd, Router } from '@angular/router';
 import { RaceService } from '../../race/services/race.service';
 import { BetService } from '../../race/bets/bet.service';
 import { ToastService } from '../../shared/toast/toast.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './user-profile.component.html',
   styleUrls: ['./user-profile.component.css']
 })

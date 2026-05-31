@@ -1,5 +1,6 @@
 using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Interfaces;
+using F1BettingApp.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using F1BettingApp.Application.Exceptions;
@@ -251,7 +252,7 @@ namespace F1BettingApp.API.Controllers
         }
 
         /// <summary>
-        /// Gets paginated bet history for the currently authenticated user (Task-05 route).
+        /// Gets bet history for the currently authenticated user (Task-05 route).
         /// </summary>
         /// <param name="page">The page number for pagination (default: 1).</param>
         /// <param name="pageSize">The number of items per page (default: 20, max: 100).</param>
@@ -297,9 +298,196 @@ namespace F1BettingApp.API.Controllers
             {
                 return NotFound("User not found");
             }
-            catch (Exception ex) when (ex is not KeyNotFoundException && !IsAuthorizationException(ex))
+            catch (Exception ex) when (!IsAuthorizationException(ex))
             {
                 return StatusCode(500, "An internal error occurred while retrieving bet history");
+            }
+        }
+
+        // --- Enhanced Statistics Endpoints ---
+        /// <summary>
+        /// Gets enhanced statistics for the currently authenticated user.
+        /// </summary>
+        /// <response code="200">Returns the current user's enhanced statistics.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("me/stats/enhanced")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<EnhancedUserStatisticsDto>> GetCurrentUserEnhancedStatistics()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var statistics = await _userService.GetEnhancedUserStatisticsAsync(userIdInt);
+                return Ok(statistics);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("User not found");
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving user statistics");
+            }
+        }
+
+        /// <summary>
+        /// Gets bet history for a specific user with filtering and pagination.
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="limit">Number of items to return (default: 50)</param>
+        /// <param name="offset">Offset for pagination (default: 0)</param>
+        /// <param name="status">Optional filter by bet status</param>
+        /// <param name="driverId">Optional filter by driver ID</param>
+        /// <response code="200">Returns the user's bet history.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        /// <response code="403">Returns forbidden if user is not an admin and tries to access other users.</response>
+        [HttpGet("{userId}/bets/history")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<IEnumerable<BetHistoryDto>>> GetUserBetHistory(
+            int userId,
+            [FromQuery] int limit = 50,
+            [FromQuery] int offset = 0,
+            [FromQuery] BetStatus? status = null,
+            [FromQuery] int? driverId = null)
+        {
+            // Check if user is admin or trying to access their own data
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (!int.TryParse(currentUserId, out var currentUserIdInt))
+            {
+                return BadRequest("Invalid user identifier");
+            }
+
+            // Only admins can access other users' data
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && userId != currentUserIdInt)
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                var history = await _userService.GetBetHistoryAsync(userId, limit, offset, status, driverId);
+                return Ok(history);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("User not found");
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving bet history");
+            }
+        }
+
+        /// <summary>
+        /// Gets comprehensive bet analysis for the currently authenticated user.
+        /// </summary>
+        /// <response code="200">Returns the current user's bet analysis.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        [HttpGet("me/bets/analysis")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<UserBetAnalysisDto>> GetCurrentUserBetAnalysis()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                if (!int.TryParse(userId, out var userIdInt))
+                {
+                    return BadRequest("Invalid user identifier");
+                }
+
+                var analysis = await _userService.GetUserBetAnalysisAsync(userIdInt);
+                return Ok(analysis);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("User not found");
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving bet analysis");
+            }
+        }
+
+        /// <summary>
+        /// Gets user statistics for a specific time range.
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="startDate">Start date of the range</param>
+        /// <param name="endDate">End date of the range</param>
+        /// <response code="200">Returns the user's statistics for the time range.</response>
+        /// <response code="401">Returns unauthorized if not authenticated.</response>
+        /// <response code="403">Returns forbidden if user is not an admin and tries to access other users.</response>
+        [HttpGet("{userId}/stats/range")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<EnhancedUserStatisticsDto>> GetUserStatisticsByRange(
+            int userId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            // Check if user is admin or trying to access their own data
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (!int.TryParse(currentUserId, out var currentUserIdInt))
+            {
+                return BadRequest("Invalid user identifier");
+            }
+
+            // Only admins can access other users' data
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin && userId != currentUserIdInt)
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                var stats = await _userService.GetUserStatisticsByTimeRangeAsync(userId, startDate, endDate);
+                return Ok(stats);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound("User not found");
+            }
+            catch (Exception ex) when (!IsAuthorizationException(ex))
+            {
+                return StatusCode(500, "An internal error occurred while retrieving statistics");
             }
         }
 

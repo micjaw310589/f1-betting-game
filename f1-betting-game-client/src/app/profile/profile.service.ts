@@ -7,7 +7,10 @@ import {
   DailyStreakResponse,
   PointHistoryResponseDto,
   QuestResponse,
-  UserProfileDto
+  UserProfileDto,
+  BetHistoryDto,
+  EnhancedUserStatisticsDto,
+  UserBetAnalysisDto
 } from './profile.models';
 
 export interface ProfileAndBetsResponse {
@@ -74,5 +77,43 @@ export class ProfileService {
       .set('pageSize', String(pageSize));
 
     return this.http.get<PointHistoryResponseDto>(`${this.API_URL}/profile/point-history`, { params });
+  }
+
+  // Enhanced Statistics Methods
+  getEnhancedStatistics(): Observable<EnhancedUserStatisticsDto> {
+    return this.http.get<EnhancedUserStatisticsDto>(`${this.API_URL}/me/stats/enhanced`);
+  }
+
+  getBetHistoryWithFilters(
+    userId: number,
+    limit: number = 50,
+    offset: number = 0,
+    status?: string | null,
+    driverId?: number | null
+  ): Observable<BetHistoryDto[]> {
+    let params = new HttpParams()
+      .set('limit', String(limit))
+      .set('offset', String(offset));
+
+    if (status) {
+      params = params.set('status', status);
+    }
+    if (driverId) {
+      params = params.set('driverId', String(driverId));
+    }
+
+    return this.http.get<BetHistoryDto[]>(`${this.API_URL}/${userId}/bets/history`, { params });
+  }
+
+  getUserBetAnalysis(): Observable<UserBetAnalysisDto> {
+    return this.http.get<UserBetAnalysisDto>(`${this.API_URL}/me/bets/analysis`);
+  }
+
+  getStatisticsByTimeRange(startDate: Date, endDate: Date): Observable<EnhancedUserStatisticsDto> {
+    const params = new HttpParams()
+      .set('startDate', startDate.toISOString())
+      .set('endDate', endDate.toISOString());
+
+    return this.http.get<EnhancedUserStatisticsDto>(`${this.API_URL}/me/stats/range`, { params });
   }
 }

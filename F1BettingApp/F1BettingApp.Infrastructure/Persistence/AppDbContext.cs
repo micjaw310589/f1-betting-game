@@ -28,6 +28,7 @@ namespace F1BettingApp.Infrastructure.Persistence
         public DbSet<QuestDefinition> QuestDefinitions { get; set; }
         public DbSet<WeeklyQuestProgress> WeeklyQuestProgresses { get; set; }
         public DbSet<PointHistory> PointHistories { get; set; }
+        public DbSet<UserBetStatisticsCache> UserBetStatisticsCaches { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -290,6 +291,26 @@ namespace F1BettingApp.Infrastructure.Persistence
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(p => new { p.RaceResultId, p.Position }).IsUnique();
+            });
+
+            // Configure UserBetStatisticsCache entity
+            modelBuilder.Entity<UserBetStatisticsCache>(entity =>
+            {
+                entity.HasOne(c => c.User)
+                      .WithMany()
+                      .HasForeignKey(c => c.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(c => c.UserId).IsUnique();
+
+                entity.Property(c => c.TotalWinnings).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.TotalAmountBet).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LargestWin).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LargestLoss).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LastUpdated)
+                      .HasConversion(
+                          v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
+                          v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
             });
         }
     }

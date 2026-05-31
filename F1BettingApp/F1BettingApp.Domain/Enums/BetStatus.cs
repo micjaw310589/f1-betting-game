@@ -5,6 +5,7 @@ namespace F1BettingApp.Domain.Enums
         Pending,
         Won,
         Lost,
+        Push,
         Canceled,
         Resolved
     }

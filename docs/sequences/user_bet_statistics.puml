@@ -1,0 +1,67 @@
+@startuml UserBetStatisticsSequence
+!theme blueprint
+
+title User Bet Statistics - Three Main Modules
+
+actor User as user
+participant "UsersController" as controller
+participant "IUserService" as userService
+participant "UserBetStatisticsCache" as cache
+participant "BetRepository" as betRepo
+
+autonumber
+
+== Module 1: Statistics ==
+user -> controller: GET /api/users/{userId}/stats
+controller -> userService: GetEnhancedUserStatisticsAsync(userId)
+
+alt cache exists
+    userService -> cache: CheckStatisticsCache(userId)
+    cache --> userService: cachedStats
+    userService --> controller: EnhancedUserStatisticsDto
+    controller --> user: 200 OK with stats
+else cache empty
+    userService -> betRepo: GetUserBetsWithResultsAsync(userId)
+    betRepo --> userService: List<Bet>
+
+    userService -> userService: CalculateUserStatisticsFromBets(bets)
+    userService -> userService: CalculateStreaks(bets)
+    userService -> userService: FindFavoriteDriver(bets)
+    userService -> userService: FindLargestBets(bets)
+    userService -> userService: CalculateROI()
+
+    userService -> cache: UpdateStatisticsCache(userId, stats)
+    cache -> cache: Save/Update
+
+    userService --> controller: EnhancedUserStatisticsDto
+    controller --> user: 200 OK with stats
+end
+
+== Module 2: Bet History ==
+user -> controller: GET /api/users/{userId}/bets/history?limit=50&offset=0
+controller -> userService: GetBetHistoryAsync(userId, limit, offset)
+
+userService -> betRepo: GetUserBetsWithFiltersAsync(userId, limit, offset, status, driverId)
+betRepo --> userService: List<Bet>
+
+userService -> userService: MapBetsToHistoryDto(bets)
+userService --> controller: PagedResult<BetHistoryDto>
+controller --> user: 200 OK with bet history
+
+== Module 3: Advanced Analytics ==
+user -> controller: GET /api/users/{userId}/bets/analysis
+controller -> userService: GetUserBetAnalysisAsync(userId)
+
+userService -> betRepo: GetUserBetsWithResultsAsync(userId)
+betRepo --> userService: List<Bet>
+
+userService -> userService: CalculateBetTypeAnalysis(bets)
+userService -> userService: CalculateDriverAnalysis(bets)
+userService -> userService: CalculateTeamAnalysis(bets)
+userService -> userService: CalculateMonthlyAnalysis(bets)
+userService -> userService: CalculateTimeOfDayAnalysis(bets)
+
+userService --> controller: UserBetAnalysisDto
+controller --> user: 200 OK with analysis
+
+@enduml

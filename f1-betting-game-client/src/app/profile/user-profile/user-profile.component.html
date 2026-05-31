@@ -21,15 +21,36 @@
           <span class="meta-value">{{ profile?.email }}</span>
         </div>
 
-<div class="meta-row">
-  <span class="meta-label">Virtual Points</span>
-  <span class="meta-value points">{{ profile?.points | number:'1.0-0' }}</span>
-</div>
+        <div class="meta-row">
+          <span class="meta-label">Virtual Points</span>
+          <span class="meta-value points">{{ profile?.points | number:'1.0-0' }}</span>
+        </div>
 
         <div class="meta-row">
           <span class="meta-label">Member since</span>
           <span class="meta-value">{{ profile?.createdAt | date: 'mediumDate' }}</span>
         </div>
+      </div>
+
+      <div class="profile-actions">
+        <a [routerLink]="['/profile/bets']" class="action-button">
+          <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          Full Bet History
+        </a>
+        <a [routerLink]="['/profile/stats']" class="action-button">
+          <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          General Stats
+        </a>
+        <a [routerLink]="['/profile/analytics']" class="action-button">
+          <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Advanced Analytics
+        </a>
       </div>
     </section>
 
@@ -98,55 +119,56 @@
   <div class="bets-header">
     <h2>Bet History</h2>
 
-    @if (bets.length > 0) {
-      <div class="pagination-controls compact">
-        <button
-          class="page-btn"
-          (click)="paginate(page - 1)"
-          [disabled]="!hasPreviousPage">
-          Previous
-        </button>
+        @if (bets.length > 0) {
+          <div class="pagination-controls compact">
+            <button
+              class="page-btn"
+              (click)="paginate(page - 1)"
+              [disabled]="!hasPreviousPage">
+              Previous
+            </button>
 
-        <span class="page-info">
-          Page {{ page }} of {{ totalPages }}
-        </span>
+            <span class="page-info">
+              Page {{ page }} of {{ totalPages }}
+            </span>
 
-        <button
-          class="page-btn"
-          (click)="paginate(page + 1)"
-          [disabled]="!hasNextPage">
-          Next
-        </button>
+            <button
+              class="page-btn"
+              (click)="paginate(page + 1)"
+              [disabled]="!hasNextPage">
+              Next
+            </button>
+          </div>
+        }
       </div>
-    }
-  </div>
 
-  @if (bets.length === 0) {
-    <div class="empty-state">
-      No bets yet. Start your race journey!
-    </div>
-  } @else {
-    <div class="bets-list">
-      @for (bet of bets; track bet.id) {
-      <div class="bet-row" [class]="getBetStatusClass(bet.status)">
-  <div class="bet-content"> <div class="bet-main">
-      <div class="bet-line">
-        <span class="bet-label">Race</span>
-        <span class="bet-value">{{ bet.raceName ? bet.raceName : ('Race #' + bet.raceId) }}</span>
-      </div>
-      <div class="bet-line">
-        <span class="bet-label">Type</span>
-        <span class="bet-value">{{ formatBetType(bet.betType) }}</span>
-      </div>
-      <div class="bet-line">
-        <span class="bet-label">Date</span>
-        <span class="bet-value">{{ bet.raceDate | date: 'mediumDate' }}</span>
-      </div>
-      <div class="bet-line">
-        <span class="bet-label">Stake</span>
-        <span class="bet-value">{{ formatMoney(bet.amount) }} pts</span>
-      </div>
-    </div>
+      @if (bets.length === 0) {
+        <div class="empty-state">
+          No bets yet. Start your race journey!
+        </div>
+      } @else {
+        <div class="bets-list">
+          @for (bet of bets; track bet.id) {
+            <div class="bet-row" [class]="getBetStatusClass(bet.status)">
+              <div class="bet-content"> 
+                <div class="bet-main">
+                  <div class="bet-line">
+                    <span class="bet-label">Race</span>
+                    <span class="bet-value">{{ bet.raceName ? bet.raceName : ('Race #' + bet.raceId) }}</span>
+                  </div>
+                  <div class="bet-line">
+                    <span class="bet-label">Type</span>
+                    <span class="bet-value">{{ formatBetType(bet.betType) }}</span>
+                  </div>
+                  <div class="bet-line">
+                    <span class="bet-label">Date</span>
+                    <span class="bet-value">{{ bet.raceDate | date: 'mediumDate' }}</span>
+                  </div>
+                  <div class="bet-line">
+                    <span class="bet-label">Stake</span>
+                    <span class="bet-value">{{ formatMoney(bet.amount) }} pts</span>
+                  </div>
+                </div>
 
     <div class="bet-actions">
       @if (bet.status === 'Pending') {

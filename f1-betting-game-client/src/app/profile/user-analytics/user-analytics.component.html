@@ -1,0 +1,143 @@
+<div class="stats-container">
+  <div class="header-row">
+    <h1 class="page-header">Advanced Betting Analytics</h1>
+    <button type="button" class="action-button" (click)="refreshData()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+      </svg>
+      Refresh
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="loader-inline text-center">
+    <div class="spinner"></div>
+    Loading analytics...
+  </div>
+
+  <div *ngIf="error && !isLoading" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="analysis && !isLoading" class="stats-wrapper">
+    
+    <div class="grid-split-half">
+      <section class="panel">
+        <h2>Performance by Bet Type</h2>
+        <div class="stats-grid grid-1">
+          <div *ngFor="let betType of analysis.betTypeAnalysis | keyvalue" class="stat-box-horizontal">
+            <div class="info-group">
+              <p class="title-text">{{ betType.key }}</p>
+              <p class="subtitle-text">{{ betType.value.totalBets }} bets</p>
+            </div>
+            <div class="metrics-group">
+              <p class="value-text" 
+                 [class.text-green]="(betType.value.winRate || 0) >= 60" 
+                 [class.text-red]="(betType.value.winRate || 0) < 40" 
+                 [class.text-yellow]="(betType.value.winRate || 0) >= 40 && (betType.value.winRate || 0) < 60">
+                {{ (betType.value.winRate || 0).toFixed(1) }}% WR
+              </p>
+              <p class="subtitle-text text-right">${{ (betType.value.totalWinnings || 0).toFixed(2) }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Performance by Driver (Top 5)</h2>
+        <div class="stats-grid grid-1">
+          <div *ngFor="let driver of analysis.driverAnalysis | keyvalue | slice:0:5; let i = index" class="stat-box-horizontal rank-box">
+            <div class="info-group rank-group">
+              <span class="rank-number">{{ i + 1 }}</span>
+              <div>
+                <p class="title-text">{{ driver.value.driverName }}</p>
+                <p class="subtitle-text">{{ driver.value.totalBets }} bets</p>
+              </div>
+            </div>
+            <div class="metrics-group">
+              <p class="value-text" 
+                 [class.text-green]="(driver.value.winRate || 0) >= 60" 
+                 [class.text-red]="(driver.value.winRate || 0) < 40" 
+                 [class.text-yellow]="(driver.value.winRate || 0) >= 40 && (driver.value.winRate || 0) < 60">
+                {{ (driver.value.winRate || 0).toFixed(1) }}% WR
+              </p>
+              <p class="subtitle-text text-right">${{ (driver.value.totalWinnings || 0).toFixed(2) }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>Performance by Time of Day</h2>
+      <div class="stats-grid grid-4">
+        
+        <div class="stat-box time-box">
+          <div class="stat-label">Morning</div>
+          <div class="time-value-big">{{ analysis.timeOfDayAnalysis.morningBets || 0 }}</div>
+          <div class="time-wr" 
+               [class.text-green]="(analysis.timeOfDayAnalysis.morningWinRate || 0) >= 60" 
+               [class.text-red]="(analysis.timeOfDayAnalysis.morningWinRate || 0) < 40"
+               [class.text-yellow]="(analysis.timeOfDayAnalysis.morningWinRate || 0) >= 40 && (analysis.timeOfDayAnalysis.morningWinRate || 0) < 60">
+            {{ (analysis.timeOfDayAnalysis.morningWinRate || 0).toFixed(1) }}% WR
+          </div>
+        </div>
+
+        <div class="stat-box time-box">
+          <div class="stat-label">Afternoon</div>
+          <div class="time-value-big">{{ analysis.timeOfDayAnalysis.afternoonBets || 0 }}</div>
+          <div class="time-wr" 
+               [class.text-green]="(analysis.timeOfDayAnalysis.afternoonWinRate || 0) >= 60" 
+               [class.text-red]="(analysis.timeOfDayAnalysis.afternoonWinRate || 0) < 40"
+               [class.text-yellow]="(analysis.timeOfDayAnalysis.afternoonWinRate || 0) >= 40 && (analysis.timeOfDayAnalysis.afternoonWinRate || 0) < 60">
+            {{ (analysis.timeOfDayAnalysis.afternoonWinRate || 0).toFixed(1) }}% WR
+          </div>
+        </div>
+
+        <div class="stat-box time-box">
+          <div class="stat-label">Evening</div>
+          <div class="time-value-big">{{ analysis.timeOfDayAnalysis.eveningBets || 0 }}</div>
+          <div class="time-wr" 
+               [class.text-green]="(analysis.timeOfDayAnalysis.eveningWinRate || 0) >= 60" 
+               [class.text-red]="(analysis.timeOfDayAnalysis.eveningWinRate || 0) < 40"
+               [class.text-yellow]="(analysis.timeOfDayAnalysis.eveningWinRate || 0) >= 40 && (analysis.timeOfDayAnalysis.eveningWinRate || 0) < 60">
+            {{ (analysis.timeOfDayAnalysis.eveningWinRate || 0).toFixed(1) }}% WR
+          </div>
+        </div>
+
+        <div class="stat-box time-box">
+          <div class="stat-label">Night</div>
+          <div class="time-value-big">{{ analysis.timeOfDayAnalysis.nightBets || 0 }}</div>
+          <div class="time-wr" 
+               [class.text-green]="(analysis.timeOfDayAnalysis.nightWinRate || 0) >= 60" 
+               [class.text-red]="(analysis.timeOfDayAnalysis.nightWinRate || 0) < 40"
+               [class.text-yellow]="(analysis.timeOfDayAnalysis.nightWinRate || 0) >= 40 && (analysis.timeOfDayAnalysis.nightWinRate || 0) < 60">
+            {{ (analysis.timeOfDayAnalysis.nightWinRate || 0).toFixed(1) }}% WR
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Monthly Performance (Last 12 Months)</h2>
+      <div class="stats-grid grid-1">
+        <div *ngFor="let month of analysis.monthlyAnalysis" class="stat-box-horizontal month-box">
+          <div class="info-group">
+            <p class="title-text">{{ month.year }}-{{ month.month | number:'2.0-0' }}</p>
+            <p class="subtitle-text">{{ month.totalBets || 0 }} bets</p>
+          </div>
+          <div class="metrics-group">
+            <p class="value-text" 
+               [class.text-green]="(month.winRate || 0) >= 60" 
+               [class.text-red]="(month.winRate || 0) < 40" 
+               [class.text-yellow]="(month.winRate || 0) >= 40 && (month.winRate || 0) < 60">
+              {{ (month.winRate || 0).toFixed(1) }}% WR
+            </p>
+            <p class="subtitle-text text-right">${{ (month.totalWinnings || 0).toFixed(2) }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>

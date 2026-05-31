@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth/auth.service';
 import { QuestBoardService } from './quest-board.service';
@@ -11,20 +11,32 @@ import { QuestBoardDto, getCategoryConfig, getTypeBadge, getProgressPercentage, 
   templateUrl: './quest-board.component.html',
   styleUrl: './quest-board.component.css'
 })
-export class QuestBoardComponent implements OnInit {
+export class QuestBoardComponent implements OnInit, OnDestroy {
   quests: QuestBoardDto[] = [];
   isLoading = true;
   error = '';
   isLoggedIn = false;
+  private pollingInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private questBoardService: QuestBoardService,
-    public authService: AuthService
+    public authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.isLoggedIn = this.authService.isLoggedIn();
     this.loadQuests();
+    // Auto-refresh quest data every 30 seconds
+    this.pollingInterval = setInterval(() => {
+      this.loadQuests();
+    }, 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
   }
 
   loadQuests(): void {
@@ -35,10 +47,12 @@ export class QuestBoardComponent implements OnInit {
       next: (quests) => {
         this.quests = quests;
         this.isLoading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.error = err.message || 'Failed to load quests';
         this.isLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }

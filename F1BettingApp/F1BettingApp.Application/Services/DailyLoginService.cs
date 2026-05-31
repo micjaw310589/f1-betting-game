@@ -114,6 +114,7 @@ namespace F1BettingApp.Application.Services
                 CurrentStreak = streak.CurrentStreak,
                 LastLoginDate = streak.LastLoginDate.ToString("yyyy-MM-dd"),
                 PointsToday = pointsToday,
+                ClaimedToday = streak.ClaimedToday,
                 NextBonusMilestone = nextMilestone,
                 PointsAtNextMilestone = pointsAtNextMilestone
             };

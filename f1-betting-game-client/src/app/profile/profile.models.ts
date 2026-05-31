@@ -55,6 +55,7 @@ export interface DailyStreakResponse {
   currentStreak: number;
   lastLoginDate: Date;
   pointsToday: number;
+  claimedToday: boolean;
   nextBonusMilestone: number;
   pointsAtNextMilestone: number;
 }

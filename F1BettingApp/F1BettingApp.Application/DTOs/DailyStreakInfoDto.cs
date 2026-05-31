@@ -21,6 +21,11 @@ namespace F1BettingApp.Application.DTOs
         public int PointsToday { get; set; }
 
         /// <summary>
+        /// Whether daily points have already been claimed for today.
+        /// </summary>
+        public bool ClaimedToday { get; set; }
+
+        /// <summary>
         /// The streak day at which the next bonus multiplier kicks in.
         /// Null if the user has reached the maximum multiplier (7+ days).
         /// </summary>

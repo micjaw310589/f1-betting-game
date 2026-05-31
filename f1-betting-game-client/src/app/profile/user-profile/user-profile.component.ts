@@ -102,8 +102,8 @@ loadStreakAndQuests(): void {
       this.dailyStreak = streak;
       this.cdr.detectChanges();
 
-      // Show toast for daily login points
-      if (streak.pointsToday && streak.currentStreak > 0) {
+      // Show toast only when daily reward was just claimed (not on every page load)
+      if (streak.claimedToday && streak.pointsToday && streak.currentStreak > 0) {
         this.toastService.showDailyLogin(streak.currentStreak, streak.pointsToday);
       }
     },

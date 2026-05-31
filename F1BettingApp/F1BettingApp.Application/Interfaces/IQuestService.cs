@@ -18,6 +18,15 @@ namespace F1BettingApp.Application.Interfaces
         Task<QuestResponseDto> GetActiveQuestsAsync(int userId);
 
         /// <summary>
+        /// Gets the quest board progress for a single quest for a single user.
+        /// Returns null if the user is not authenticated or quest not found.
+        /// </summary>
+        /// <param name="questId">The quest identifier.</param>
+        /// <param name="userId">The user ID (nullable for unauthenticated requests).</param>
+        /// <returns>QuestBoardDto with progress, or null if not found.</returns>
+        Task<QuestBoardDto?> GetQuestBoardProgressAsync(string questId, int? userId);
+
+        /// <summary>
         /// Evaluates all active quests for the user, awards points for newly completed ones.
         /// Called at weekly reset and at specific action triggers.
         /// </summary>

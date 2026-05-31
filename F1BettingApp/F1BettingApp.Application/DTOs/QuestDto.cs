@@ -6,6 +6,16 @@ namespace F1BettingApp.Application.DTOs
     public class QuestDto
     {
         /// <summary>
+        /// Numeric ID for admin operations.
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Number of users who have completed this quest (lifetime count).
+        /// </summary>
+        public int CompletedCount { get; set; }
+
+        /// <summary>
         /// Unique quest identifier.
         /// </summary>
         public string QuestId { get; set; } = string.Empty;
@@ -59,6 +69,11 @@ namespace F1BettingApp.Application.DTOs
         /// Whether this quest is currently active.
         /// </summary>
         public bool IsActive { get; set; }
+
+        /// <summary>
+        /// Display order in the UI (lower values appear first).
+        /// </summary>
+        public int Order { get; set; }
     }
 
     /// <summary>

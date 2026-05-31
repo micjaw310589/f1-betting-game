@@ -135,5 +135,12 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             await SaveChangesAsync();
             return records.Count;
         }
+
+        public async Task<int> GetCompletedCountByQuestIdAsync(string questId)
+        {
+            return await _dbSet
+                .Where(p => p.QuestId == questId && p.IsClaimed)
+                .CountAsync();
+        }
     }
 }

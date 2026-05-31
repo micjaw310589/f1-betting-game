@@ -39,6 +39,26 @@ namespace F1BettingApp.API.Controllers
         }
 
         /// <summary>
+        /// Gets a paginated, filtered, and searchable list of quest definitions.
+        /// </summary>
+        /// <param name="page">Page number (1-based).</param>
+        /// <param name="pageSize">Page size.</param>
+        /// <param name="isActive">Optional filter for active quests.</param>
+        /// <param name="searchTerm">Optional search term to filter by name or quest ID.</param>
+        /// <returns>Paginated result of quest definitions.</returns>
+        [HttpGet("paged")]
+        [ProducesResponseType(typeof(PagedResult<QuestDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<PagedResult<QuestDto>>> GetPaged(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] bool? isActive = null,
+            [FromQuery] string? searchTerm = null)
+        {
+            var result = await _questDefinitionService.GetPagedQuestDefinitionsAsync(page, pageSize, isActive, searchTerm);
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Creates a new quest definition.
         /// </summary>
         /// <param name="dto">The quest creation data.</param>
@@ -175,6 +195,19 @@ namespace F1BettingApp.API.Controllers
         }
 
         /// <summary>
+        /// Gets the count of users who have completed a specific quest.
+        /// </summary>
+        /// <param name="questId">The quest identifier.</param>
+        /// <returns>Completion count for the quest.</returns>
+        [HttpGet("{questId}/completed-count")]
+        [ProducesResponseType(typeof(CompletedCountResponseDto), StatusCodes.Status200OK)]
+        public async Task<ActionResult<CompletedCountResponseDto>> GetCompletedCount(string questId)
+        {
+            var count = await _questDefinitionService.GetCompletedCountByQuestIdAsync(questId);
+            return Ok(new CompletedCountResponseDto { CompletedCount = count });
+        }
+
+        /// <summary>
         /// Forces a reset of all weekly quest progress for the current week.
         /// Useful for testing and debugging.
         /// </summary>
@@ -199,5 +232,13 @@ namespace F1BettingApp.API.Controllers
     {
         public int ResetCount { get; set; }
         public string Message { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Response DTO for the completed count endpoint.
+    /// </summary>
+    public class CompletedCountResponseDto
+    {
+        public int CompletedCount { get; set; }
     }
 }

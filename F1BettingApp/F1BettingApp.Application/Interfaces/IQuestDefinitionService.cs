@@ -17,6 +17,16 @@ namespace F1BettingApp.Application.Interfaces
         Task<List<QuestDto>> GetAllQuestDefinitionsAsync(bool? isActive = null);
 
         /// <summary>
+        /// Gets a paginated, filtered, and searchable list of quest definitions with completion counts.
+        /// </summary>
+        /// <param name="page">Page number (1-based).</param>
+        /// <param name="pageSize">Page size.</param>
+        /// <param name="isActive">Optional filter for active quests.</param>
+        /// <param name="searchTerm">Optional search term to filter by name or quest ID.</param>
+        /// <returns>Paginated result of quest definitions with completion counts.</returns>
+        Task<PagedResult<QuestDto>> GetPagedQuestDefinitionsAsync(int page, int pageSize, bool? isActive = null, string? searchTerm = null);
+
+        /// <summary>
         /// Creates a new quest definition.
         /// </summary>
         /// <param name="dto">The quest creation data.</param>
@@ -52,5 +62,12 @@ namespace F1BettingApp.Application.Interfaces
         /// </summary>
         /// <returns>Number of records reset.</returns>
         Task<int> ResetWeeklyQuestsAsync();
+
+        /// <summary>
+        /// Gets the count of users who have completed a specific quest (lifetime).
+        /// </summary>
+        /// <param name="questId">The quest identifier.</param>
+        /// <returns>Number of users who completed this quest.</returns>
+        Task<int> GetCompletedCountByQuestIdAsync(string questId);
     }
 }

@@ -10,11 +10,12 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
     public interface IQuestDefinitionRepository
     {
         /// <summary>
-        /// Gets all quest definitions, optionally filtered by active status.
+        /// Gets all quest definitions, optionally filtered by active status and search term.
         /// </summary>
         /// <param name="isActive">Optional filter for active quests.</param>
+        /// <param name="searchTerm">Optional search term to filter by name or quest ID.</param>
         /// <returns>All matching quest definitions ordered by display order.</returns>
-        Task<IQueryable<QuestDefinition>> GetAllAsync(bool? isActive = null);
+        Task<IQueryable<QuestDefinition>> GetAllAsync(bool? isActive = null, string? searchTerm = null);
 
         /// <summary>
         /// Gets a quest definition by its unique QuestId.

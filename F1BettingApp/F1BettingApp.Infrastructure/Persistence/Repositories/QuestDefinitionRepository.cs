@@ -20,7 +20,7 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
             _dbSet = context.Set<QuestDefinition>();
         }
 
-        public async Task<IQueryable<QuestDefinition>> GetAllAsync(bool? isActive = null)
+        public async Task<IQueryable<QuestDefinition>> GetAllAsync(bool? isActive = null, string? searchTerm = null)
         {
             var query = _dbSet.AsQueryable();
 
@@ -29,7 +29,15 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
                 query = query.Where(q => q.IsActive == isActive.Value);
             }
 
-            return query.OrderBy(q => q.Order);
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                query = query.Where(q =>
+                    q.Name.ToLower().Contains(term) ||
+                    q.QuestId.ToLower().Contains(term));
+            }
+
+            return query.OrderBy(q => q.Order).ThenBy(q => q.QuestId);
         }
 
         public async Task<QuestDefinition?> GetByQuestIdAsync(string questId)

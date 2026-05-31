@@ -82,5 +82,12 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
         /// <param name="year">The year.</param>
         /// <returns>Number of records reset.</returns>
         Task<int> ResetAllWeeksAsync(int weekNumber, int year);
+
+        /// <summary>
+        /// Gets the count of users who have completed (IsClaimed = true) a given quest ID across all users.
+        /// </summary>
+        /// <param name="questId">The quest identifier.</param>
+        /// <returns>Count of completed progress records.</returns>
+        Task<int> GetCompletedCountByQuestIdAsync(string questId);
     }
 }

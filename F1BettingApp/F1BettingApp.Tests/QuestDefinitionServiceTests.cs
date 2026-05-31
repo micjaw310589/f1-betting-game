@@ -418,14 +418,22 @@ namespace F1BettingApp.Tests
                 _quests.Add(quest);
             }
 
-            public Task<IQueryable<QuestDefinition>> GetAllAsync(bool? isActive = null)
+            public Task<IQueryable<QuestDefinition>> GetAllAsync(bool? isActive = null, string? searchTerm = null)
             {
                 var query = _quests.AsQueryable();
                 if (isActive.HasValue)
                 {
                     query = query.Where(q => q.IsActive == isActive.Value);
                 }
-                return Task.FromResult(query);
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    var term = searchTerm.ToLower();
+                    query = query.Where(q =>
+                        q.Name.ToLower().Contains(term) ||
+                        q.QuestId.ToLower().Contains(term));
+                }
+                var ordered = query.OrderBy(q => q.Order).ThenBy(q => q.QuestId);
+                return Task.FromResult(ordered as IQueryable<QuestDefinition> ?? query);
             }
 
             public Task<QuestDefinition?> GetByQuestIdAsync(string questId)
@@ -579,6 +587,11 @@ namespace F1BettingApp.Tests
                     record.IsClaimed = false;
                 }
                 return Task.FromResult(records.Count);
+            }
+
+            public Task<int> GetCompletedCountByQuestIdAsync(string questId)
+            {
+                return Task.FromResult(_progressRecords.Count(p => p.QuestId == questId && p.IsClaimed));
             }
         }
     }

@@ -37,6 +37,13 @@
         >
             Bets
         </button>
+        <button
+            class="tab-button"
+            [class.active]="activeTab === 'quests'"
+            (click)="switchTab('quests')"
+        >
+            Quests
+        </button>
     </div>
 
     @if (activeTab === 'sync') {
@@ -608,6 +615,396 @@
     @if (activeTab === 'bets') {
         <div class="tab-content">
             <app-admin-bet-management></app-admin-bet-management>
+        </div>
+    }
+
+    <!-- Quests Tab -->
+    @if (activeTab === 'quests') {
+        <div class="tab-content">
+            <h3>Quests Management</h3>
+            <p>Create, edit, and manage quest definitions.</p>
+
+            @if (questFormSuccess) {
+                <div class="message success">Quest saved successfully!</div>
+            }
+            @if (questFormError) {
+                <div class="message error">{{ questFormError }}</div>
+            }
+            @if (resetQuestSuccess) {
+                <div class="message success">{{ resetQuestSuccess }}</div>
+            }
+            @if (resetQuestError) {
+                <div class="message error">{{ resetQuestError }}</div>
+            }
+
+            <!-- Quest Toolbar -->
+            <div class="quest-toolbar">
+                <div class="quest-search">
+                    <input
+                        type="text"
+                        [(ngModel)]="questSearchTerm"
+                        (ngModelChange)="onQuestSearch()"
+                        placeholder="🔍 Search by name or quest ID..."
+                        class="form-input quest-search-input"
+                    />
+                </div>
+                <div class="quest-filters">
+                    <select
+                        [(ngModel)]="questFilterActive"
+                        (ngModelChange)="onQuestFilterChange()"
+                        class="form-input quest-filter-select"
+                    >
+                        <option [ngValue]="null">Status: All</option>
+                        <option [ngValue]="true">Active</option>
+                        <option [ngValue]="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="quest-actions">
+                    <button class="btn-add-driver" (click)="openCreateQuestForm()">
+                        <span>+ Create Quest</span>
+                    </button>
+                    <button class="btn-reset-weeks" (click)="openResetQuestConfirm()">
+                        ⚠️ Reset Weekly Quests
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quest Form Modal -->
+            @if (showQuestForm) {
+                <div class="modal-overlay" (click)="closeQuestForm()">
+                    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+                        <div class="modal-header">
+                            <h3>{{ isEditingQuest ? 'Edit Quest' : 'Create New Quest' }}</h3>
+                            <button class="modal-close" (click)="closeQuestForm()">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="quest-id">Quest ID *</label>
+                                    <input
+                                        id="quest-id"
+                                        type="text"
+                                        [(ngModel)]="questForm.questId"
+                                        [disabled]="isEditingQuest"
+                                        class="form-input"
+                                        placeholder="e.g., first_bet"
+                                    />
+                                    <small class="form-hint">Lowercase letters and underscores only</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="quest-name">Name *</label>
+                                    <input
+                                        id="quest-name"
+                                        type="text"
+                                        [(ngModel)]="questForm.name"
+                                        class="form-input"
+                                        placeholder="e.g., First Bet"
+                                    />
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label for="quest-description">Description *</label>
+                                    <input
+                                        id="quest-description"
+                                        type="text"
+                                        [(ngModel)]="questForm.description"
+                                        class="form-input"
+                                        placeholder="e.g., Place your first bet"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="quest-category">Category *</label>
+                                    <select
+                                        id="quest-category"
+                                        [(ngModel)]="questForm.category"
+                                        class="form-input"
+                                    >
+                                        @for (cat of QUEST_CATEGORIES; track cat.value) {
+                                            <option [ngValue]="cat.value">{{ cat.label }}</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="quest-type">Type</label>
+                                    <select
+                                        id="quest-type"
+                                        [(ngModel)]="questForm.isOneTime"
+                                        class="form-input"
+                                    >
+                                        <option [ngValue]="true">One-time</option>
+                                        <option [ngValue]="false">Weekly</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="quest-target">Target *</label>
+                                    <input
+                                        id="quest-target"
+                                        type="number"
+                                        [(ngModel)]="questForm.target"
+                                        class="form-input"
+                                        min="1"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="quest-reward">Points Reward *</label>
+                                    <input
+                                        id="quest-reward"
+                                        type="number"
+                                        [(ngModel)]="questForm.pointsReward"
+                                        class="form-input"
+                                        min="0"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="quest-order">Order</label>
+                                    <input
+                                        id="quest-order"
+                                        type="number"
+                                        [(ngModel)]="questForm.order"
+                                        class="form-input"
+                                        min="0"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="quest-active">Active</label>
+                                    <select
+                                        id="quest-active"
+                                        [(ngModel)]="questForm.isActive"
+                                        class="form-input"
+                                    >
+                                        <option [ngValue]="true">Active</option>
+                                        <option [ngValue]="false">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-cancel" (click)="closeQuestForm()">
+                                Cancel
+                            </button>
+                            <button
+                                class="btn-confirm"
+                                [disabled]="isSavingQuest"
+                                (click)="saveQuest()"
+                            >
+                                @if (isSavingQuest) {
+                                    <span class="spinner-small" style="border-top-color: #fff;"></span>
+                                    Saving...
+                                } @else {
+                                    {{ isEditingQuest ? 'Update Quest' : 'Create Quest' }}
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Quests Table -->
+            @if (isLoadingQuests) {
+                <div class="loading">Loading quests...</div>
+            } @else if (questDefinitions.length === 0) {
+                <div class="message info">No quests found. Create one to get started.</div>
+            } @else {
+                <table class="quests-table">
+                    <thead>
+                        <tr>
+                            <th class="col-id">ID</th>
+                            <th class="col-quest-id">Quest ID</th>
+                            <th class="col-name">Name</th>
+                            <th class="col-category">Category</th>
+                            <th class="col-type">Type</th>
+                            <th class="col-target">Target</th>
+                            <th class="col-reward">Reward</th>
+                            <th class="col-active">Active</th>
+                            <th class="col-completed">Completed By</th>
+                            <th class="col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (quest of questDefinitions; track quest.id) {
+                            <tr>
+                                <td class="col-id">{{ quest.id }}</td>
+                                <td class="col-quest-id"><code>{{ quest.questId }}</code></td>
+                                <td class="col-name">
+                                    <strong>{{ quest.name }}</strong>
+                                </td>
+                                <td class="col-category">
+                                    <span class="quest-category-badge" [style.backgroundColor]="getQuestCategoryColor(quest.category)">
+                                        {{ getQuestCategoryEmoji(quest.category) }} {{ quest.category }}
+                                    </span>
+                                </td>
+                                <td class="col-type">
+                                    {{ quest.isOneTime ? 'One-time' : 'Weekly' }}
+                                </td>
+                                <td class="col-target">{{ quest.target }}</td>
+                                <td class="col-reward">{{ quest.pointsReward }} pts</td>
+                                <td class="col-active">
+                                    <span class="status-badge {{ quest.isActive ? 'status-active' : 'status-inactive' }}">
+                                        {{ quest.isActive ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td class="col-completed">{{ quest.completedCount ?? 0 }} done</td>
+                                <td class="col-actions">
+                                    <div class="quest-action-buttons">
+                                        <button class="btn-edit-quest" (click)="openEditQuestForm(quest)" title="Edit">
+                                            ✏️ Edit
+                                        </button>
+                                        <button class="btn-delete-quest" (click)="openDeleteQuestConfirm(quest.id)" title="Delete">
+                                            🗑️ Delete
+                                        </button>
+                                        <button
+                                            class="btn-toggle-quest"
+                                            (click)="toggleQuestActive(quest)"
+                                            [disabled]="togglingQuestId === quest.id"
+                                            title="Toggle Active"
+                                        >
+                                            {{ togglingQuestId === quest.id ? '...' : (quest.isActive ? '🔄 Deactivate' : '🔄 Activate') }}
+                                        </button>
+                                        <button class="btn-view-quest" (click)="openViewQuestProgress(quest)" title="View Progress">
+                                            👁️ Progress
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                @if (questTotalPages > 1) {
+                    <div class="pagination">
+                        <button
+                            class="btn-pagination"
+                            [disabled]="questPage <= 1"
+                            (click)="onQuestPageChange(1)"
+                        >
+                            First
+                        </button>
+                        <button
+                            class="btn-pagination"
+                            [disabled]="questPage <= 1"
+                            (click)="onQuestPageChange(questPage - 1)"
+                        >
+                            Prev
+                        </button>
+                        @for (p of getQuestPageNumbers(); track p) {
+                            <button
+                                class="btn-pagination"
+                                [class.active]="p === questPage"
+                                (click)="onQuestPageChange(p)"
+                            >
+                                {{ p }}
+                            </button>
+                        }
+                        <button
+                            class="btn-pagination"
+                            [disabled]="questPage >= questTotalPages"
+                            (click)="onQuestPageChange(questPage + 1)"
+                        >
+                            Next
+                        </button>
+                        <span class="pagination-info">
+                            Page {{ questPage }} of {{ questTotalPages }} ({{ questTotalItems }} quests)
+                        </span>
+                    </div>
+                }
+            }
+        </div>
+    }
+
+    <!-- Delete Quest Confirmation Modal -->
+    @if (showDeleteQuestConfirm) {
+        <div class="modal-overlay" (click)="closeDeleteQuestConfirm()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Confirm Quest Deletion</h3>
+                    <button class="modal-close" (click)="closeDeleteQuestConfirm()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this quest?</p>
+                    @if (deleteQuestError) {
+                        <div class="message error">
+                            ❌ {{ deleteQuestError }}
+                        </div>
+                    }
+                    <p class="warning-text">
+                        ⚠️ This action cannot be undone. Any associated progress records will remain.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeDeleteQuestConfirm()">
+                        Cancel
+                    </button>
+                    <button
+                        class="btn-confirm"
+                        [disabled]="isDeletingQuest"
+                        (click)="deleteQuest()"
+                    >
+                        @if (isDeletingQuest) {
+                            <span class="spinner-small" style="border-top-color: #fff;"></span>
+                            Deleting...
+                        } @else {
+                            Delete Quest
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- View Quest Progress Modal -->
+    @if (isViewingQuest) {
+        <div class="modal-overlay" (click)="closeViewQuestProgress()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Quest Progress: {{ viewQuestId }}</h3>
+                    <button class="modal-close" (click)="closeViewQuestProgress()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="quest-progress-summary">
+                        <div class="progress-stat">
+                            <span class="progress-stat-value">{{ viewQuestCompletedCount }}</span>
+                            <span class="progress-stat-label">Users Completed</span>
+                        </div>
+                    </div>
+                    <p class="info-text">This count represents the total number of users who have completed this quest (lifetime).</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeViewQuestProgress()">Close</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Reset Weekly Quests Confirmation Modal -->
+    @if (showResetQuestConfirm) {
+        <div class="modal-overlay" (click)="closeResetQuestConfirm()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>Reset Weekly Quests</h3>
+                    <button class="modal-close" (click)="closeResetQuestConfirm()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to reset all weekly quest progress for the current week?</p>
+                    <p class="warning-text">
+                        ⚠️ This will reset all weekly quest progress for all users. One-time quests will not be affected.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" (click)="closeResetQuestConfirm()">Cancel</button>
+                    <button
+                        class="btn-confirm"
+                        [disabled]="isResettingQuests"
+                        (click)="resetWeeklyQuests()"
+                    >
+                        @if (isResettingQuests) {
+                            <span class="spinner-small" style="border-top-color: #fff;"></span>
+                            Resetting...
+                        } @else {
+                            Reset Weekly Quests
+                        }
+                    </button>
+                </div>
+            </div>
         </div>
     }
 </div>

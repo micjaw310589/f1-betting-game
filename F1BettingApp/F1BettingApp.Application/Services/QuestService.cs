@@ -61,6 +61,38 @@ namespace F1BettingApp.Application.Services
             return result;
         }
 
+        public async Task<QuestBoardDto?> GetQuestBoardProgressAsync(string questId, int? userId)
+        {
+            var quest = await _questDefinitionRepository.GetByQuestIdAsync(questId);
+            if (quest == null || !quest.IsActive)
+            {
+                return null;
+            }
+
+            QuestBoardDto dto = new()
+            {
+                QuestId = quest.QuestId,
+                Name = quest.Name,
+                Description = quest.Description,
+                Category = quest.Category.ToString(),
+                IsOneTime = quest.IsOneTime,
+                Target = quest.Target,
+                PointsReward = quest.PointsReward,
+                IsActive = quest.IsActive,
+                Order = quest.Order,
+            };
+
+            if (userId.HasValue)
+            {
+                var progress = await GetQuestProgressAsync(userId.Value, quest);
+                dto.Progress = progress?.Progress ?? 0;
+                dto.IsCompleted = progress?.IsCompleted ?? false;
+                dto.IsClaimed = progress?.IsClaimed ?? false;
+            }
+
+            return dto;
+        }
+
         public async Task<QuestDto?> GetQuestDefinitionAsync(string questId)
         {
             var quest = await _questDefinitionRepository.GetByQuestIdAsync(questId);

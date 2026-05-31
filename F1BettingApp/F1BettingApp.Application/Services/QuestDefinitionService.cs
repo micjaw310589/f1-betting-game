@@ -39,6 +39,42 @@ namespace F1BettingApp.Application.Services
             return questList.Select(MapToDto).ToList();
         }
 
+        public async Task<PagedResult<QuestDto>> GetPagedQuestDefinitionsAsync(int page, int pageSize, bool? isActive = null, string? searchTerm = null)
+        {
+            var query = await _questDefinitionRepository.GetAllAsync(isActive, searchTerm);
+            var totalItems = await query.CountAsync();
+            var totalPages = pageSize > 0 ? (int)Math.Ceiling(totalItems / (double)pageSize) : 0;
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Batch load completed counts for all items
+            var completedCounts = new Dictionary<string, int>();
+            var countTasks = items.Select(async quest =>
+            {
+                var count = await _weeklyQuestProgressRepository.GetCompletedCountByQuestIdAsync(quest.QuestId);
+                return (quest.QuestId, count);
+            });
+            var countResults = await Task.WhenAll(countTasks);
+            foreach (var (questId, count) in countResults)
+            {
+                completedCounts[questId] = count;
+            }
+
+            var result = new PagedResult<QuestDto>
+            {
+                Items = items.Select(quest => MapToDtoWithCompletedCount(quest, completedCounts)).ToList(),
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages
+            };
+
+            return result;
+        }
+
         public async Task<QuestDto> CreateQuestDefinitionAsync(CreateQuestDto dto)
         {
             ValidateQuestDto(dto, isUpdate: false);
@@ -66,7 +102,7 @@ namespace F1BettingApp.Application.Services
             };
 
             await _questDefinitionRepository.CreateAsync(quest);
-            return MapToDto(quest);
+            return MapToDtoWithCompletedCount(quest, new Dictionary<string, int>());
         }
 
         public async Task<QuestDto> UpdateQuestDefinitionAsync(int id, UpdateQuestDto dto)
@@ -77,6 +113,7 @@ namespace F1BettingApp.Application.Services
                 throw new KeyNotFoundException($"Quest with ID {id} not found.");
             }
 
+            // Check QuestId uniqueness if changed
             if (dto.Name != null) quest.Name = dto.Name;
             if (dto.Description != null) quest.Description = dto.Description;
             if (dto.Category != null)
@@ -101,7 +138,7 @@ namespace F1BettingApp.Application.Services
             quest.UpdatedAt = DateTime.UtcNow;
 
             await _questDefinitionRepository.UpdateAsync(quest);
-            return MapToDto(quest);
+            return MapToDtoWithCompletedCount(quest, new Dictionary<string, int>());
         }
 
         public async Task DeleteQuestDefinitionAsync(int id)
@@ -136,7 +173,7 @@ namespace F1BettingApp.Application.Services
             quest.UpdatedAt = DateTime.UtcNow;
 
             await _questDefinitionRepository.UpdateAsync(quest);
-            return MapToDto(quest);
+            return MapToDtoWithCompletedCount(quest, new Dictionary<string, int>());
         }
 
         public async Task<int> ResetWeeklyQuestsAsync()
@@ -146,6 +183,11 @@ namespace F1BettingApp.Application.Services
 
             // Reset all weekly quest progress for all users for the current week
             return await _weeklyQuestProgressRepository.ResetAllWeeksAsync(weekNumber, year);
+        }
+
+        public async Task<int> GetCompletedCountByQuestIdAsync(string questId)
+        {
+            return await _weeklyQuestProgressRepository.GetCompletedCountByQuestIdAsync(questId);
         }
 
         private static void ValidateQuestDto(CreateQuestDto dto, bool isUpdate)
@@ -238,6 +280,7 @@ namespace F1BettingApp.Application.Services
         {
             return new QuestDto
             {
+                Id = quest.Id,
                 QuestId = quest.QuestId,
                 Name = quest.Name,
                 Description = quest.Description,
@@ -248,7 +291,30 @@ namespace F1BettingApp.Application.Services
                 IsCompleted = false,
                 IsClaimed = false,
                 PointsReward = quest.PointsReward,
-                IsActive = quest.IsActive
+                IsActive = quest.IsActive,
+                Order = quest.Order,
+                CompletedCount = 0
+            };
+        }
+
+        private QuestDto MapToDtoWithCompletedCount(QuestDefinition quest, Dictionary<string, int> completedCounts)
+        {
+            return new QuestDto
+            {
+                Id = quest.Id,
+                QuestId = quest.QuestId,
+                Name = quest.Name,
+                Description = quest.Description,
+                Category = quest.Category.ToString(),
+                IsOneTime = quest.IsOneTime,
+                Target = quest.Target,
+                Progress = 0,
+                IsCompleted = false,
+                IsClaimed = false,
+                PointsReward = quest.PointsReward,
+                IsActive = quest.IsActive,
+                Order = quest.Order,
+                CompletedCount = completedCounts.TryGetValue(quest.QuestId, out var count) ? count : 0
             };
         }
     }

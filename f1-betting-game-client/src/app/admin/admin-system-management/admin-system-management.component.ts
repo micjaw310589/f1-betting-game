@@ -11,6 +11,12 @@ import {
     RaceResultDto,
     PositionItemDto,
     OverrideRaceResultDto,
+    QuestDefinitionDto,
+    CreateQuestDefinitionDto,
+    UpdateQuestDefinitionDto,
+    QUEST_CATEGORIES,
+    ResetWeekResponseDto,
+    PagedResult,
 } from '../models/admin.models';
 
 @Component({
@@ -22,7 +28,7 @@ import {
 })
 export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     // --- Tab Navigation ---
-    activeTab: 'sync' | 'results' | 'metadata' | 'races' | 'bets' = 'bets';
+    activeTab: 'sync' | 'results' | 'metadata' | 'races' | 'bets' | 'quests' = 'bets';
 
     // --- Sync Section ---
     isSyncing = false;
@@ -77,6 +83,57 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     @ViewChild(AdminBetManagementComponent)
     private betManagementComponent!: AdminBetManagementComponent;
 
+    // ========================
+    // Quest Management
+    // ========================
+    questDefinitions: QuestDefinitionDto[] = [];
+    isLoadingQuests = true;
+    questPage = 1;
+    questPageSize = 20;
+    questTotalItems = 0;
+    questTotalPages = 0;
+    questFilterActive: boolean | null = null;
+    questSearchTerm = '';
+
+    // Quest form
+    showQuestForm = false;
+    isEditingQuest = false;
+    editingQuestId: number | null = null;
+    questForm: CreateQuestDefinitionDto = {
+        questId: '',
+        name: '',
+        description: '',
+        category: 'Betting',
+        isOneTime: true,
+        target: 1,
+        pointsReward: 100,
+        order: 1,
+        isActive: true,
+    };
+    isSavingQuest = false;
+    questFormError = '';
+    questFormSuccess = false;
+
+    // Quest delete
+    deleteQuestId: number | null = null;
+    showDeleteQuestConfirm = false;
+    isDeletingQuest = false;
+    deleteQuestError = '';
+
+    // Quest toggle
+    togglingQuestId: number | null = null;
+
+    // Quest reset
+    showResetQuestConfirm = false;
+    isResettingQuests = false;
+    resetQuestSuccess = '';
+    resetQuestError = '';
+
+    // Quest detail view
+    viewQuestId: string | null = null;
+    viewQuestCompletedCount = 0;
+    isViewingQuest = false;
+
     constructor(
         private adminService: AdminService,
         private cdr: ChangeDetectorRef
@@ -95,16 +152,6 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
 
     // ========================
     // Tab Navigation
-    // ========================
-
-    switchTab(tab: 'sync' | 'results' | 'metadata' | 'races' | 'bets'): void {
-        this.activeTab = tab;
-        this.showDeleteConfirm = false;
-        this.showCreateRaceForm = false;
-        this.showMetadataConfirmModal = false;
-        this.showResultsConfirmModal = false;
-    }
-
     // ========================
     // Sync Methods
     // ========================
@@ -645,5 +692,319 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
     getAvailableDrivers(): { id: number | null; name: string; teamName: string }[] {
         if (this.isLoadingDrivers) return [];
         return this.allDrivers;
+    }
+
+    // ========================
+    // Quest Management Methods
+    // ========================
+
+    switchTab(tab: 'sync' | 'results' | 'metadata' | 'races' | 'bets' | 'quests'): void {
+        this.activeTab = tab;
+        this.showDeleteConfirm = false;
+        this.showCreateRaceForm = false;
+        this.showMetadataConfirmModal = false;
+        this.showResultsConfirmModal = false;
+        this.showQuestForm = false;
+        this.showDeleteQuestConfirm = false;
+        this.showResetQuestConfirm = false;
+        this.isViewingQuest = false;
+
+        // Load quests when switching to quests tab
+        if (tab === 'quests') {
+            this.loadQuestDefinitions();
+        }
+    }
+
+    loadQuestDefinitions(): void {
+        this.isLoadingQuests = true;
+
+        this.adminService.getAllQuestDefinitions(
+            this.questPage,
+            this.questPageSize,
+            this.questFilterActive,
+            this.questSearchTerm || undefined
+        ).subscribe({
+            next: (result) => {
+                this.questDefinitions = result.items as QuestDefinitionDto[];
+                this.questTotalItems = result.totalItems;
+                this.questTotalPages = result.totalPages;
+                this.isLoadingQuests = false;
+                this.cdr.markForCheck();
+            },
+            error: (error) => {
+                console.error('Error loading quest definitions:', error);
+                this.isLoadingQuests = false;
+            },
+        });
+    }
+
+    onQuestSearch(): void {
+        this.questPage = 1;
+        this.loadQuestDefinitions();
+    }
+
+    onQuestFilterChange(): void {
+        this.questPage = 1;
+        this.loadQuestDefinitions();
+    }
+
+    onQuestPageChange(page: number): void {
+        this.questPage = page;
+        this.loadQuestDefinitions();
+    }
+
+    openCreateQuestForm(): void {
+        this.isEditingQuest = false;
+        this.editingQuestId = null;
+        this.questForm = {
+            questId: '',
+            name: '',
+            description: '',
+            category: 'Betting',
+            isOneTime: true,
+            target: 1,
+            pointsReward: 100,
+            order: 1,
+            isActive: true,
+        };
+        this.questFormError = '';
+        this.questFormSuccess = false;
+        this.showQuestForm = true;
+    }
+
+    openEditQuestForm(quest: QuestDefinitionDto): void {
+        this.isEditingQuest = true;
+        this.editingQuestId = quest.id;
+        this.questForm = {
+            questId: quest.questId,
+            name: quest.name,
+            description: quest.description,
+            category: quest.category,
+            isOneTime: quest.isOneTime,
+            target: quest.target,
+            pointsReward: quest.pointsReward,
+            order: quest.order,
+            isActive: quest.isActive,
+        };
+        this.questFormError = '';
+        this.questFormSuccess = false;
+        this.showQuestForm = true;
+    }
+
+    closeQuestForm(): void {
+        this.showQuestForm = false;
+        this.isEditingQuest = false;
+        this.editingQuestId = null;
+    }
+
+    saveQuest(): void {
+        // Validate
+        if (!this.questForm.questId?.trim()) {
+            this.questFormError = 'Quest ID is required.';
+            return;
+        }
+        if (!/^[a-z_]+$/.test(this.questForm.questId)) {
+            this.questFormError = 'Quest ID must contain only lowercase letters and underscores.';
+            return;
+        }
+        if (!this.questForm.name?.trim()) {
+            this.questFormError = 'Name is required.';
+            return;
+        }
+        if (!this.questForm.description?.trim()) {
+            this.questFormError = 'Description is required.';
+            return;
+        }
+        if (!this.questForm.category) {
+            this.questFormError = 'Category is required.';
+            return;
+        }
+        if (this.questForm.target <= 0) {
+            this.questFormError = 'Target must be greater than 0.';
+            return;
+        }
+        if (this.questForm.pointsReward < 0) {
+            this.questFormError = 'Points reward must be greater than or equal to 0.';
+            return;
+        }
+
+        this.isSavingQuest = true;
+        this.questFormError = '';
+        this.questFormSuccess = false;
+
+        if (this.isEditingQuest && this.editingQuestId !== null) {
+            // Update existing quest
+            const updateDto: UpdateQuestDefinitionDto = {
+                name: this.questForm.name,
+                description: this.questForm.description,
+                category: this.questForm.category,
+                isOneTime: this.questForm.isOneTime,
+                target: this.questForm.target,
+                pointsReward: this.questForm.pointsReward,
+                order: this.questForm.order,
+                isActive: this.questForm.isActive,
+            };
+
+            this.adminService.updateQuestDefinition(this.editingQuestId, updateDto).subscribe({
+                next: () => {
+                    this.questFormSuccess = true;
+                    this.isSavingQuest = false;
+                    this.showQuestForm = false;
+                    this.loadQuestDefinitions();
+                    setTimeout(() => { this.questFormSuccess = false; }, 5000);
+                },
+                error: (error) => {
+                    this.questFormError = error.message || 'Failed to update quest';
+                    this.isSavingQuest = false;
+                },
+            });
+        } else {
+            // Create new quest
+            this.adminService.createQuestDefinition(this.questForm).subscribe({
+                next: () => {
+                    this.questFormSuccess = true;
+                    this.isSavingQuest = false;
+                    this.showQuestForm = false;
+                    this.loadQuestDefinitions();
+                    setTimeout(() => { this.questFormSuccess = false; }, 5000);
+                },
+                error: (error) => {
+                    this.questFormError = error.message || 'Failed to create quest';
+                    this.isSavingQuest = false;
+                },
+            });
+        }
+    }
+
+    openDeleteQuestConfirm(questId: number): void {
+        this.deleteQuestId = questId;
+        this.showDeleteQuestConfirm = true;
+        this.deleteQuestError = '';
+    }
+
+    closeDeleteQuestConfirm(): void {
+        this.showDeleteQuestConfirm = false;
+        this.deleteQuestId = null;
+    }
+
+    deleteQuest(): void {
+        if (!this.deleteQuestId) return;
+
+        this.isDeletingQuest = true;
+        this.deleteQuestError = '';
+
+        this.adminService.deleteQuestDefinition(this.deleteQuestId).subscribe({
+            next: () => {
+                this.isDeletingQuest = false;
+                this.showDeleteQuestConfirm = false;
+                this.deleteQuestId = null;
+                this.loadQuestDefinitions();
+            },
+            error: (error) => {
+                this.deleteQuestError = error.message || 'Failed to delete quest';
+                this.isDeletingQuest = false;
+            },
+        });
+    }
+
+    toggleQuestActive(quest: QuestDefinitionDto): void {
+        this.togglingQuestId = quest.id;
+        this.adminService.toggleQuestActive(quest.id, !quest.isActive).subscribe({
+            next: (updated) => {
+                quest.isActive = updated.isActive;
+                this.togglingQuestId = null;
+                this.cdr.markForCheck();
+            },
+            error: (error) => {
+                this.togglingQuestId = null;
+                console.error('Failed to toggle quest:', error);
+            },
+        });
+    }
+
+    openViewQuestProgress(quest: QuestDefinitionDto): void {
+        this.viewQuestId = quest.questId;
+        this.isViewingQuest = true;
+        this.adminService.getQuestCompletedCount(quest.questId).subscribe({
+            next: (result) => {
+                this.viewQuestCompletedCount = result.completedCount;
+            },
+            error: (error) => {
+                console.error('Failed to get completed count:', error);
+            },
+        });
+    }
+
+    closeViewQuestProgress(): void {
+        this.isViewingQuest = false;
+        this.viewQuestId = null;
+    }
+
+    openResetQuestConfirm(): void {
+        this.showResetQuestConfirm = true;
+        this.resetQuestSuccess = '';
+        this.resetQuestError = '';
+    }
+
+    closeResetQuestConfirm(): void {
+        this.showResetQuestConfirm = false;
+    }
+
+    resetWeeklyQuests(): void {
+        this.isResettingQuests = true;
+        this.resetQuestSuccess = '';
+        this.resetQuestError = '';
+
+        this.adminService.resetWeeklyQuests().subscribe({
+            next: (result) => {
+                this.resetQuestSuccess = result.message;
+                this.isResettingQuests = false;
+                this.closeResetQuestConfirm();
+                setTimeout(() => { this.resetQuestSuccess = ''; }, 5000);
+            },
+            error: (error) => {
+                this.resetQuestError = error.message || 'Failed to reset weekly quests';
+                this.isResettingQuests = false;
+            },
+        });
+    }
+
+    getQuestCategoryEmoji(category: string): string {
+        const cat = QUEST_CATEGORIES.find(c => c.value === category);
+        return cat ? cat.label.split(' ')[0] : '❓';
+    }
+
+    getQuestCategoryColor(category: string): string {
+        switch (category) {
+            case 'Betting': return '#00d4ff';
+            case 'Engagement': return '#4caf50';
+            case 'Achievement': return '#ffc107';
+            default: return '#888';
+        }
+    }
+
+    // Expose QUEST_CATEGORIES to the template
+    get QUEST_CATEGORIES(): { value: string; label: string }[] {
+        return QUEST_CATEGORIES;
+    }
+
+    // Generate page numbers for pagination display
+    getQuestPageNumbers(): number[] {
+        const pages: number[] = [];
+        const total = this.questTotalPages;
+        const current = this.questPage;
+
+        if (total <= 7) {
+            for (let i = 1; i <= total; i++) pages.push(i);
+        } else {
+            pages.push(1);
+            if (current > 3) pages.push(-1); // ellipsis
+            const start = Math.max(2, current - 1);
+            const end = Math.min(total - 1, current + 1);
+            for (let i = start; i <= end; i++) pages.push(i);
+            if (current < total - 2) pages.push(-2); // ellipsis
+            pages.push(total);
+        }
+        return pages;
     }
 }

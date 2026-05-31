@@ -148,10 +148,10 @@ builder.Services.AddScoped<IOpenF1ApiClient, OpenF1Client>();
 // Register domain event publisher
 builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
 
-// Register background workers
+ // Register background workers
 builder.Services.AddHostedService<RaceStatusMonitorJob>();
-builder.Services.AddHostedService<F1BettingApp.API.Jobs.QuestResetBackgroundJob>();
 builder.Services.AddHostedService<UserStatisticsUpdaterJob>();
+builder.Services.AddHostedService<OpenF1SyncJob>();
 
 // Configure ASP.NET Core Identity for user management
 //builder.Services.AddIdentity<F1BettingApp.Domain.Entities.User, Microsoft.AspNetCore.Identity.IdentityRole<int>>()

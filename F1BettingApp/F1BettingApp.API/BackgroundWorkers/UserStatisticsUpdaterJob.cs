@@ -1,4 +1,5 @@
 using F1BettingApp.Application.Interfaces;
+using Microsoft.Extensions.DependencyInjection; // Dodano using
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -10,12 +11,12 @@ namespace F1BettingApp.API.BackgroundWorkers
     public class UserStatisticsUpdaterJob : BackgroundService
     {
         private readonly TimeSpan _updateInterval = TimeSpan.FromHours(1);
-        private readonly IUserService _userService;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<UserStatisticsUpdaterJob> _logger;
 
-        public UserStatisticsUpdaterJob(IUserService userService, ILogger<UserStatisticsUpdaterJob> logger)
+        public UserStatisticsUpdaterJob(IServiceScopeFactory scopeFactory, ILogger<UserStatisticsUpdaterJob> logger)
         {
-            _userService = userService;
+            _scopeFactory = scopeFactory;
             _logger = logger;
         }
 
@@ -27,13 +28,18 @@ namespace F1BettingApp.API.BackgroundWorkers
                 {
                     _logger.LogInformation("Starting user statistics update...");
 
-                    // Update statistics for all active users
-                    var activeUsers = await _userService.GetAllUsersAsync();
-                    foreach (var user in activeUsers.Items)
+                    using (var scope = _scopeFactory.CreateScope())
                     {
-                        await _userService.UpdateUserStatisticsCacheAsync(user.Id);
-                    }
+                        // Wyciągamy instancję IUserService przypisaną do tego konkretnego zakresu
+                        var userService = scope.ServiceProvider.GetRequiredService<IUserService>();
 
+                        // Update statistics for all active users
+                        var activeUsers = await userService.GetAllUsersAsync();
+                        foreach (var user in activeUsers.Items)
+                        {
+                            await userService.UpdateUserStatisticsCacheAsync(user.Id);
+                        }
+                    }
                     _logger.LogInformation("User statistics update completed.");
                 }
                 catch (Exception ex)

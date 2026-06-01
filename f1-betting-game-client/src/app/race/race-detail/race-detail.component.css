@@ -294,6 +294,12 @@
     min-width: 180px;
 }
 
+.driver-name {
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+}
+
 .fastest-lap-badge {
     display: inline-block;
     margin-left: 8px;
@@ -308,9 +314,20 @@
 }
 
 .team-cell {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px;
     color: #aaa;
     font-size: 14px;
     min-width: 140px;
+}
+
+.team-color-indicator {
+    width: 4px;
+    height: 20px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .points-cell {

@@ -522,7 +522,9 @@ namespace F1BettingApp.Application.Services
 
         public async Task<IEnumerable<DriverDto>> GetAllDriversAsync()
         {
-            var driversList = (await _driverRepository.GetAllAsync()).ToList();
+            var driversList = await _dbContext.Drivers
+                .Include(d => d.Team)
+                .ToListAsync();
             return driversList.Select(d => new DriverDto
             {
                 Id = d.Id,
@@ -830,20 +832,32 @@ namespace F1BettingApp.Application.Services
                 _dbContext.RaceResults.Add(raceResult);
             }
 
+            // Fetch drivers to get their associated TeamIds
+            var driverIdsForPositions = positions.Select(p => p.DriverId).ToList();
+            var driversForPositions = await _dbContext.Drivers
+                .Where(d => driverIdsForPositions.Contains(d.Id))
+                .ToListAsync();
+            var driverTeamMap = driversForPositions.ToDictionary(d => d.Id, d => d.TeamId);
+
             // Update positions
             raceResult.Positions.Clear();
             foreach (var pos in positions.OrderBy(p => p.Position))
             {
                 var points = CalculatePointsForPosition(pos.Position);
+                
+                // Get the correct TeamId or default to 0 if not found
+                var actualTeamId = driverTeamMap.TryGetValue(pos.DriverId, out var mappedTeamId) 
+                    ? mappedTeamId 
+                    : 0;
+
                 raceResult.Positions.Add(new RaceResultPosition
                 {
                     Position = pos.Position,
                     DriverId = pos.DriverId,
-                    TeamId = 0,
+                    TeamId = actualTeamId, // No longer hardcoded to 0
                     Points = points
                 });
             }
-
             raceResult.FastestLapDriverId = fastestLapDriverId;
             raceResult.UpdatedAt = DateTime.UtcNow;
 
@@ -852,18 +866,23 @@ namespace F1BettingApp.Application.Services
 
         public async Task<RaceResultDto?> GetStoredRaceResultAsync(int raceId)
         {
-            var currentSeason = DateTime.UtcNow.Year;
+            // var currentSeason = DateTime.UtcNow.Year;
 
             var raceResult = await _dbContext.RaceResults
                 .Include(r => r.Positions)
                 .Include(r => r.FastestLapDriver)
-                .Where(r => r.RaceId == raceId && r.Season == currentSeason)
+                // .Where(r => r.RaceId == raceId && r.Season == currentSeason)
+                .Where(r => r.RaceId == raceId)
+
                 .FirstOrDefaultAsync();
 
             if (raceResult == null)
                 return null;
 
-            var allDrivers = await _driverRepository.GetAllAsync();
+            // var allDrivers = await _driverRepository.GetAllAsync();
+            var allDrivers = await _dbContext.Drivers
+                .Include(d => d.Team)
+                .ToListAsync();
             var driverLookup = allDrivers.ToDictionary(d => d.Id, d => d);
 
             var positions = raceResult.Positions

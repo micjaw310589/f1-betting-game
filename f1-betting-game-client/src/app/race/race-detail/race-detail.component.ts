@@ -26,6 +26,20 @@ export class RaceDetailComponent implements OnInit {
   raceDetailData$!: Observable<RaceDetailData>;
   raceResult$!: Observable<RaceResultDto | null>; // <-- Change to Observable
 
+  private readonly TEAM_COLORS: Record<string, string> = {
+    'Red Bull Racing': '#367FA9',
+    'Ferrari': '#E80020',
+    'McLaren': '#FF8000',
+    'Mercedes': '#27F4D2',
+    'Aston Martin': '#229971',
+    'Alpine': '#0093CC',
+    'Haas F1 Team': '#B6BABD',
+    'RB': '#6692FF',
+    'Sauber': '#52E252',
+    'Williams': '#64C4FF',
+    'Audi': '#F50057'
+  };
+
   constructor(
     private activatedRoute: ActivatedRoute,
     private raceService: RaceService,
@@ -60,13 +74,13 @@ export class RaceDetailComponent implements OnInit {
     this.raceResult$ = this.raceDetailData$.pipe(
       switchMap((data) => {
         const status = data.details?.status?.toLowerCase();
-        const season = data.details?.season;
+        // const season = data.details?.season;
         const id = data.details?.id;
 
         // If the race is finished, fetch the results. Otherwise, return null.
         if (
           (status === 'finished' || status === 'resultsprocessed') && 
-          season !== undefined && 
+          // season !== undefined && 
           id !== undefined
         ) {
           return this.raceService.getStoredRaceResults(id).pipe(
@@ -104,5 +118,9 @@ export class RaceDetailComponent implements OnInit {
 
   formatOdds(odds: number): string {
     return odds.toFixed(2);
+  }
+
+  getTeamColor(teamName: string): string {
+    return this.TEAM_COLORS[teamName] || '#FFFFFF';
   }
 }

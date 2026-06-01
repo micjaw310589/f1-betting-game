@@ -86,13 +86,16 @@
                                                 <span class="pos-badge bronze">🥉</span>
                                             }
                                         </td>
-                                        <td class="driver-cell">
+                                        <td class="driver-name">
                                             {{ position.driverName }}
                                             @if (raceResult.fastestLapDriverId === position.driverId) {
                                                 <span class="fastest-lap-badge">⚡ FL</span>
                                             }
                                         </td>
-                                        <td class="team-cell">{{ position.teamName }}</td>
+                                        <td class="team-cell">
+                                            <span class="team-color-indicator" [style.background-color]="getTeamColor(position.teamName)"></span>
+                                            {{ position.teamName }}
+                                        </td>
                                         <td class="points-cell">{{ position.points }}</td>
                                     </tr>
                                 } @empty {

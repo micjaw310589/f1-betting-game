@@ -1,0 +1,481 @@
+.detail-container {
+  padding: 40px 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  font-family: var(--font-main);
+}
+
+.navigation-header {
+  margin-bottom: 25px;
+}
+
+.back-btn {
+  background: var(--color-card-bg-1);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-dim);
+  padding: 10px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 12px;
+  transform: skewX(var(--skew-x));
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background: var(--color-f1-red);
+  color: white;
+  border-color: var(--color-f1-red);
+}
+
+/* KARTA PROFILU */
+.driver-profile-card {
+  position: relative;
+  background: linear-gradient(145deg, var(--color-card-bg-1), var(--color-card-bg-2));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 30px;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+.profile-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+}
+
+.meta-info {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.team-badge, .season-badge {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  color: var(--color-text-subtle);
+}
+
+.season-badge {
+  background: rgba(225, 6, 0, 0.1);
+  color: var(--color-f1-red);
+}
+
+.driver-title-name {
+  font-size: 42px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: white;
+  margin: 0 0 30px 0;
+  letter-spacing: -1px;
+}
+
+/* STATS GRID */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.stat-box {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 20px;
+  border-radius: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 900;
+  color: white;
+}
+
+.box-pos { border-left: 3px solid var(--color-text-subtle); }
+.values-pts { color: #06d6a0; }
+.value-wins { color: #ffb703; }
+
+/* KARTY SEKCJI */
+.chart-section-card, .history-section-card {
+  background: var(--color-card-bg-1);
+  border: 1px solid var(--color-border);
+  padding: 25px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 30px;
+}
+
+.section-sub-title {
+  font-size: 18px;
+  text-transform: uppercase;
+  font-weight: 800;
+  margin-top: 0;
+  margin-bottom: 25px;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+/* WYKRES CSS */
+.custom-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 200px;
+  padding-top: 20px;
+  border-bottom: 2px solid var(--color-border);
+  gap: 15px;
+}
+
+.chart-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.chart-bar {
+  width: 100%;
+  max-width: 45px;
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: pointer;
+}
+
+.chart-bar:hover {
+  filter: brightness(1.2);
+}
+
+.bar-tooltip {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #000;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.chart-bar:hover .bar-tooltip {
+  opacity: 1;
+}
+
+.chart-label {
+  font-size: 10px;
+  color: var(--color-text-subtle);
+  margin-top: 10px;
+  text-align: center;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+/* TABELA HISTORII */
+.race-history-row:hover { background: rgba(255, 255, 255, 0.01); }
+.race-name-cell { font-weight: 700; color: #fff; }
+.points-gained { font-weight: 800; color: #06d6a0; }
+
+.pos-badge {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-dim);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-weight: 800;
+  font-size: 13px;
+}
+.podium-first { background: #ffb703; color: #000; }
+.podium-any { background: #fff; color: #000; }
+
+.empty-history {
+  padding: 30px !important;
+  color: var(--color-text-subtle);
+}
+
+/* Wymuszenie białego koloru loadera na ekranie profilu kierowcy */
+.loader-overlay {
+  text-align: center;
+  padding: 40px;
+  font-family: var(--font-main);
+  color: #ffffff !important; /* Gwarantuje czystą biel */
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* NOWA TABELA HISTORII WYŚCIGÓW */
+.f1-performance-table {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.f1-table-header {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px 20px;
+  border-bottom: 2px solid var(--color-border);
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--color-text-subtle);
+  letter-spacing: 1px;
+}
+
+.f1-table-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background-color 0.2s ease;
+}
+
+.f1-table-row:last-child {
+  border-bottom: none;
+}
+
+.f1-table-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Kolumny i ich proporcje szerokości */
+.col-gp {
+  flex: 2;
+  text-align: left;
+}
+
+.col-pos {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.col-pts {
+  flex: 1;
+  text-align: right;
+}
+
+/* Zawartość komórek */
+.race-name-cell {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.points-gained {
+  font-weight: 800;
+  color: #06d6a0;
+  font-size: 14px;
+}
+
+/* Nowe, dynamiczne odznaki pozycji (F1 podium style) */
+.pos-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-align: center;
+}
+
+.podium-first { 
+  background: #ffb703; 
+  color: #000000;
+  box-shadow: 0 0 10px rgba(255, 183, 3, 0.3);
+}
+
+.podium-second { 
+  background: #b6babd; 
+  color: #000000; 
+}
+
+.podium-third { 
+  background: #a45a2b; /* Głęboki, wyraźny brąz motorsportowy */
+  color: #ffffff; 
+  box-shadow: 0 0 8px rgba(164, 90, 43, 0.25);
+}
+.podium-any { 
+  background: rgba(255, 255, 255, 0.08); 
+  color: var(--color-text-dim); 
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.empty-history {
+  padding: 40px;
+  text-align: center;
+  color: var(--color-text-subtle);
+  font-size: 14px;
+}
+/* ==========================================================================
+   NOWY WYKRES LINIOWY (Z WYRÓWNANYMI ETYKIETAMI)
+   ========================================================================== */
+
+.chart-container-wrapper {
+  padding: 30px 20px 40px 20px; /* Zwiększony dolny padding na napisy */
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  margin-bottom: 30px;
+}
+
+.svg-chart-container {
+  position: relative;
+  height: 180px; /* Wysokość robocza wykresu */
+  width: 100%;
+}
+
+.line-chart-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.interactive-points-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Wyrównanie kolumn układu siatki */
+.chart-node-column {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0; /* Szerokość 0 sprawia, że kolumna jest idealną, cieniutką linią pionową */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Pionowa linia pomocnicza siatki pojawiająca się przy hoverze */
+.chart-node-column::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: background 0.2s;
+}
+
+.chart-node-column:hover::before {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.node-wrapper {
+  position: absolute;
+  transform: translate(-50%, 50%); /* Centrowanie kropki dokładnie w punkcie węzła */
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.chart-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #1a1a1a; /* Dopasowane do ciemnego tła karty */
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s ease-in-out;
+}
+
+.chart-dot:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Tooltip nad kropką */
+.bar-tooltip {
+  position: absolute;
+  top: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  color: #000000;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease, top 0.15s ease;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.chart-dot:hover .bar-tooltip {
+  opacity: 1;
+  top: -36px;
+}
+
+/* Podpisy pod wykresem (Nazwy GP) */
+.chart-label-line {
+  font-size: 10px;
+  color: var(--color-text-subtle);
+  position: absolute;
+  bottom: -30px; /* Przesunięcie poniżej krawędzi wykresu */
+  white-space: nowrap;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  width: 120px; /* Stałe bezpieczne pole tekstowe */
+}
+
+/* 1. ŚRODKOWE WYŚCIGI (Domyślne) - Środek tekstu idealnie pod kropką */
+.chart-node-column .chart-label-line {
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+/* 2. PIERWSZY WYŚCIG (np. Australian GP) - Tekst wyrównany do lewej, nie ucieka poza kontener */
+.chart-node-column:first-child .chart-label-line {
+  left: 0;
+  transform: translateX(0);
+  text-align: left;
+}
+
+/* 3. OSTATNI WYŚCIG (np. Japanese GP) - Tekst wyrównany do prawej, nie ucieka poza kontener */
+.chart-node-column:last-child .chart-label-line {
+  left: auto;
+  right: 0;
+  transform: translateX(0);
+  text-align: right;
+}

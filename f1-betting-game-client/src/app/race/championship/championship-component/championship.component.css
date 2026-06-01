@@ -1,0 +1,160 @@
+:host {
+  display: block;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+}
+
+.championship-container {
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: var(--font-main);
+}
+
+.championship-title {
+  font-size: 36px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #fff;
+  border-left: 6px solid var(--color-f1-red);
+  padding-left: 20px;
+  margin-bottom: 40px;
+  font-weight: 900;
+}
+
+.standings-card {
+  background: linear-gradient(145deg, var(--color-card-bg-1), var(--color-card-bg-2));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 25px;
+  border-bottom: 3px solid var(--color-border);
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.f1-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.f1-table th {
+  padding: 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-subtle);
+  border-bottom: 2px solid var(--color-border);
+  font-weight: 700;
+}
+
+.f1-table td {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 15px;
+  vertical-align: middle;
+}
+
+.driver-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.position-cell {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--color-text-subtle);
+  width: 60px;
+}
+
+.driver-name {
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.team-cell {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px;
+}
+
+.team-color-indicator {
+  width: 4px;
+  height: 20px;
+  border-radius: 2px;
+  display: inline-block;
+  flex-shrink: 0; /* Zabezpiecza pasek przed kurczeniem się */
+}
+.wins-cell {
+  color: #ffb703;
+  font-weight: 700;
+}
+
+.points-cell {
+  font-weight: 900;
+  color: #06d6a0;
+  font-size: 18px;
+}
+
+.last-updated {
+  margin-top: 20px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--color-text-subtle);
+}
+
+/* Ponowne użycie Twoich stylów globalnych dla loaderów i błędów */
+.loader-overlay {
+  text-align: center;
+  padding: 40px;
+  font-family: var(--font-main);
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.error-message {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.4);
+  color: #ff6b6b;
+  padding: 15px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 25px;
+  font-weight: bold;
+}
+
+/* Filtry jako sportowe przełączniki sezonów - przeniesione 1:1 z race-list */
+.filter-buttons {
+  margin-bottom: 40px;
+  display: flex;
+  gap: 15px;
+  border-bottom: 2px solid var(--color-card-bg-1);
+  padding-bottom: 20px;
+}
+
+.filter-buttons button {
+  padding: 11px 22px;
+  font-size: 13.5px;
+  cursor: pointer;
+  border: none;
+  background-color: var(--color-card-bg-1);
+  color: var(--color-text-dim);
+  font-weight: 800;
+  text-transform: uppercase;
+  transform: skewX(var(--skew-x));
+  transition: all 0.3s ease;
+}
+
+.filter-buttons button.active {
+  background-color: var(--color-f1-red);
+  color: white;
+  box-shadow: 0 0 15px rgba(225, 6, 0, 0.4);
+}
+
+.filter-buttons button:hover:not(.active) {
+  background-color: var(--color-border);
+  color: #fff;
+}

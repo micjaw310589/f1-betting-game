@@ -76,6 +76,43 @@ namespace F1BettingApp.Infrastructure.Migrations
                     b.ToTable("Bets");
                 });
 
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.DailyLoginStreak", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("ClaimedToday")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("CurrentStreak")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("LastLoginDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("DailyLoginStreaks");
+                });
+
             modelBuilder.Entity("F1BettingApp.Domain.Entities.Driver", b =>
                 {
                     b.Property<int>("Id")
@@ -183,6 +220,112 @@ namespace F1BettingApp.Infrastructure.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.PointHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ReferenceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PointHistories");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.QuestDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsOneTime")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Order")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("PointsReward")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("QuestId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Target")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestId")
+                        .IsUnique();
+
+                    b.ToTable("QuestDefinitions");
+                });
+
             modelBuilder.Entity("F1BettingApp.Domain.Entities.Race", b =>
                 {
                     b.Property<int>("Id")
@@ -235,6 +378,79 @@ namespace F1BettingApp.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Races");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.RaceResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<TimeSpan?>("FastLapTime")
+                        .HasColumnType("interval");
+
+                    b.Property<int?>("FastestLapDriverId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RaceId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Season")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FastestLapDriverId");
+
+                    b.HasIndex("RaceId")
+                        .IsUnique();
+
+                    b.ToTable("RaceResults");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.RaceResultPosition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DriverId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RaceResultId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("RaceResultId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("RaceResultPositions");
                 });
 
             modelBuilder.Entity("F1BettingApp.Domain.Entities.Result", b =>
@@ -397,6 +613,188 @@ namespace F1BettingApp.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("F1BettingGame.Domain.Entities.DriverChampionship", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DriverId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Season")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId", "Season")
+                        .IsUnique();
+
+                    b.ToTable("DriverChampionships");
+                });
+
+            modelBuilder.Entity("F1BettingGame.Domain.Entities.DriverChampionshipRace", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DriverChampionshipId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointsEarned")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RaceId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverChampionshipId");
+
+                    b.HasIndex("RaceId");
+
+                    b.ToTable("DriverChampionshipRaces");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.WeeklyQuestProgress", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsClaimed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsCompleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("PointsAwarded")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("Progress")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("QuestId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ReferenceId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Target")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WeekNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "QuestId", "WeekNumber", "Year")
+                        .IsUnique();
+
+                    b.ToTable("WeeklyQuestProgresses");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.UserBetStatisticsCache", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CurrentLoseStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentWinStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FavoriteDriverId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("LargestLoss")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("LargestWin")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LongestWinStreak")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LosingBets")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PushBets")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalAmountBet")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TotalBets")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TotalWinnings")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WinningBets")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserBetStatisticsCaches");
+                });
+
             modelBuilder.Entity("F1BettingApp.Domain.Entities.Bet", b =>
                 {
                     b.HasOne("F1BettingApp.Domain.Entities.Driver", null)
@@ -416,6 +814,17 @@ namespace F1BettingApp.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.DailyLoginStreak", b =>
+                {
+                    b.HasOne("F1BettingApp.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("F1BettingApp.Domain.Entities.Driver", b =>
@@ -459,6 +868,54 @@ namespace F1BettingApp.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.PointHistory", b =>
+                {
+                    b.HasOne("F1BettingApp.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.RaceResult", b =>
+                {
+                    b.HasOne("F1BettingApp.Domain.Entities.Driver", "FastestLapDriver")
+                        .WithMany()
+                        .HasForeignKey("FastestLapDriverId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("F1BettingApp.Domain.Entities.Race", "Race")
+                        .WithMany()
+                        .HasForeignKey("RaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FastestLapDriver");
+
+                    b.Navigation("Race");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.RaceResultPosition", b =>
+                {
+                    b.HasOne("F1BettingApp.Domain.Entities.Driver", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("F1BettingApp.Domain.Entities.RaceResult", "RaceResult")
+                        .WithMany("Positions")
+                        .HasForeignKey("RaceResultId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("RaceResult");
+                });
+
             modelBuilder.Entity("F1BettingApp.Domain.Entities.Result", b =>
                 {
                     b.HasOne("F1BettingApp.Domain.Entities.Driver", "Driver")
@@ -485,6 +942,58 @@ namespace F1BettingApp.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("F1BettingGame.Domain.Entities.DriverChampionship", b =>
+                {
+                    b.HasOne("F1BettingApp.Domain.Entities.Driver", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+                });
+
+            modelBuilder.Entity("F1BettingGame.Domain.Entities.DriverChampionshipRace", b =>
+                {
+                    b.HasOne("F1BettingGame.Domain.Entities.DriverChampionship", "DriverChampionship")
+                        .WithMany("RaceResults")
+                        .HasForeignKey("DriverChampionshipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("F1BettingApp.Domain.Entities.Race", "Race")
+                        .WithMany()
+                        .HasForeignKey("RaceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DriverChampionship");
+
+                    b.Navigation("Race");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.WeeklyQuestProgress", b =>
+                {
+                    b.HasOne("F1BettingApp.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.UserBetStatisticsCache", b =>
+                {
+                    b.HasOne("F1BettingApp.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("F1BettingApp.Domain.Entities.Driver", b =>
                 {
                     b.Navigation("Bets");
@@ -495,9 +1004,19 @@ namespace F1BettingApp.Infrastructure.Migrations
                     b.Navigation("Bets");
                 });
 
+            modelBuilder.Entity("F1BettingApp.Domain.Entities.RaceResult", b =>
+                {
+                    b.Navigation("Positions");
+                });
+
             modelBuilder.Entity("F1BettingApp.Domain.Entities.Team", b =>
                 {
                     b.Navigation("Drivers");
+                });
+
+            modelBuilder.Entity("F1BettingGame.Domain.Entities.DriverChampionship", b =>
+                {
+                    b.Navigation("RaceResults");
                 });
 #pragma warning restore 612, 618
         }

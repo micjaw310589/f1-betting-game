@@ -2,15 +2,17 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ProfileAndBetsResponse, ProfileService } from '../profile.service';
-import { BetHistoryResponseDto, BetHistoryDto, UserProfileDto } from '../profile.models';
+import { BetHistoryResponseDto, BetHistoryDto, DailyStreakResponse, PointHistoryResponseDto, QuestResponse, UserProfileDto } from '../profile.models';
 import { NavigationEnd, Router } from '@angular/router';
 import { RaceService } from '../../race/services/race.service';
 import { BetService } from '../../race/bets/bet.service';
+import { ToastService } from '../../shared/toast/toast.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './user-profile.component.html',
   styleUrls: ['./user-profile.component.css']
 })
@@ -21,6 +23,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
   profile: UserProfileDto | null = null;
   betHistory: BetHistoryResponseDto | null = null;
+
+  // New state properties for streak, quests, and point history
+  dailyStreak: DailyStreakResponse | null = null;
+  quests: QuestResponse[] = [];
+  pointHistory: PointHistoryResponseDto | null = null;
+  pointHistoryPage = 1;
+  pointHistoryPageSize = 10;
 
   // Pagination controls
   page = 1;
@@ -33,7 +42,8 @@ constructor(
   private router: Router,
   private cdr: ChangeDetectorRef,
   private raceService: RaceService,
-  private betService: BetService
+  private betService: BetService,
+  private toastService: ToastService
 ) {
   this.subscription.add( 
     this.router.events.subscribe((val) => {
@@ -72,12 +82,62 @@ load(): void {
         }
       });
 
+      // Load streak, quests, and point history
+      this.loadStreakAndQuests();
+      this.loadPointHistory();
+
       this.isLoading = false;
       this.cdr.detectChanges();
     },
     error: (err) => {
       this.hasError = true;
       this.isLoading = false;
+      this.cdr.detectChanges();
+    }
+  });
+}
+
+loadStreakAndQuests(): void {
+  this.profileService.getDailyStreak().subscribe({
+    next: (streak) => {
+      this.dailyStreak = streak;
+      this.cdr.detectChanges();
+
+      // Show toast only when daily reward was just claimed (not on every page load)
+      if (streak.claimedToday && streak.pointsToday && streak.currentStreak > 0) {
+        this.toastService.showDailyLogin(streak.currentStreak, streak.pointsToday);
+      }
+    },
+    error: () => {
+      // Streak data is optional - ignore errors
+    }
+  });
+
+  this.profileService.getQuests().subscribe({
+    next: (quests) => {
+      this.quests = quests;
+      this.cdr.detectChanges();
+
+      // Show toasts for newly completed quests (completed but not yet claimed)
+      const newQuests = quests.filter(q => q.isCompleted && !q.isClaimed);
+      for (const quest of newQuests) {
+        this.toastService.showPointsEarned(quest.name, quest.pointsReward);
+      }
+    },
+    error: () => {
+      // Quests data is optional - ignore errors
+    }
+  });
+}
+
+loadPointHistory(): void {
+  this.profileService.getPointHistory(this.pointHistoryPage, this.pointHistoryPageSize).subscribe({
+    next: (history) => {
+      this.pointHistory = history;
+      this.cdr.detectChanges();
+    },
+    error: () => {
+      this.pointHistory = { items: [], totalCount: 0, pageNumber: this.pointHistoryPage, pageSize: this.pointHistoryPageSize };
       this.cdr.detectChanges();
     }
   });
@@ -140,5 +200,45 @@ cancelBet(betId: number): void {
       error: () => window.alert('Failed to cancel bet.')
     })
   );
+}
+
+// Helper methods for the template
+
+getStreakMultiplier(streak: number): string {
+  if (streak >= 7) return '×2.5';
+  if (streak >= 5) return '×2';
+  if (streak >= 3) return '×1.5';
+  return '×1';
+}
+
+getCategoryColor(category: string): string {
+  switch (category.toLowerCase()) {
+    case 'betting': return '#ff6b6b';
+    case 'engagement': return '#4ecdc4';
+    case 'achievement': return '#ffd93d';
+    default: return '#888';
+  }
+}
+
+getPointsClass(points: number): string {
+  return points > 0 ? 'points-positive' : points < 0 ? 'points-negative' : '';
+}
+
+formatCategory(category: string): string {
+  // e.g. "DailyLogin" -> "Daily Login", "BetWin" -> "Bet Win"
+  return category.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
+}
+
+get hasMorePointHistory(): boolean {
+  return this.pointHistory?.hasNextPage ?? false;
+}
+
+get hasPreviousPointHistory(): boolean {
+  return this.pointHistory?.hasPreviousPage ?? false;
+}
+
+loadMorePointHistory(page: number): void {
+  this.pointHistoryPage = page;
+  this.loadPointHistory();
 }
 }

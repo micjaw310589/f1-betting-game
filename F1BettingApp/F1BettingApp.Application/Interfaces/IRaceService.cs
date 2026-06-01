@@ -115,5 +115,49 @@ namespace F1BettingApp.Application.Interfaces
         /// </summary>
         /// <returns>Collection of all driver DTOs.</returns>
         Task<IEnumerable<DriverDto>> GetAllDriversAsync();
+
+        /// <summary>
+        /// Pobiera klasyfikację generalną kierowców dla danego sezonu.
+        /// </summary>
+        Task<IEnumerable<DriverChampionshipDto>> GetDriverChampionshipStandingsAsync(int season);
+
+        /// <summary>
+        /// Pobiera szczegółową historię startów konkretnego kierowcy w danym sezonie.
+        /// </summary>
+        Task<DriverChampionshipDto?> GetDriverChampionshipDetailsAsync(int driverId, int season);
+
+        /// <summary>
+        /// Przelicza od nowa całą tabelę klasyfikacji dla wybranego sezonu (przydatne przy korektach).
+        /// </summary>
+        Task RecalculateChampionshipAsync(int season);
+
+        /// <summary>
+        /// Aktualizuje tabelę klasyfikacji o wyniki konkretnego wyścigu.
+        /// </summary>
+        Task UpdateChampionshipFromRaceResultsAsync(int raceId);
+
+        /// <summary>
+        /// Stores race results in the database for finished races from the current season.
+        /// Called after race completion or via admin override.
+        /// </summary>
+        /// <param name="raceId">The ID of the race.</param>
+        /// <param name="positions">List of position entries.</param>
+        /// <param name="fastestLapDriverId">Optional fastest lap driver ID.</param>
+        /// <returns>Task representing the asynchronous operation.</returns>
+        Task StoreRaceResultAsync(int raceId, List<PositionEntryDto> positions, int? fastestLapDriverId = null);
+
+        /// <summary>
+        /// Retrieves race results from the RaceResult entity (current season only).
+        /// Returns null if the race has no stored results or is not from the current season.
+        /// </summary>
+        /// <param name="raceId">The ID of the race.</param>
+        /// <returns>Race result DTO or null if not found.</returns>
+        Task<RaceResultDto?> GetStoredRaceResultAsync(int raceId);
+
+        /// <summary>
+        /// Purges race results for seasons older than the current season.
+        /// </summary>
+        /// <returns>Number of old results purged.</returns>
+        Task<int> PurgeOldSeasonResultsAsync();
     }
 }

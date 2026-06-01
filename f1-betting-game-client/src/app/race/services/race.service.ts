@@ -1,6 +1,6 @@
 import { environment } from '../../../environments/environment';
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, throwError, catchError, map, of } from 'rxjs';
 import {
   RaceSummaryDto,
@@ -9,6 +9,32 @@ import {
   PagedResult,
 } from '../models/race.models';
 import { DriverWithOdds } from '../bets/bet-placement/bet-placement.component';
+
+export interface PositionDto {
+  position: number;
+  driverId: number;
+  driverName: string;
+  teamId: number;
+  teamName: string;
+  points: number;
+  fastestLap?: number;
+}
+
+export interface RaceResultDto {
+  raceId: number;
+  raceName: string;
+  circuit: string;
+  country: string;
+  raceDate: Date;
+  winnerDriverId: number;
+  winnerDriverName: string;
+  winnerTeamId: number;
+  winnerTeamName: string;
+  fastestLapDriverId: number;
+  fastestLapDriverName: string;
+  fastestLapTime?: number;
+  positions: PositionDto[];
+}
 
 @Injectable({
   providedIn: 'root',
@@ -24,29 +50,32 @@ export class RaceService {
    * @param pageSize Items per page
    * @param filterType 'all', 'upcoming', 'past', or a specific RaceStatus value
    */
-  getRaceSummaries(page: number = 1, pageSize: number = 10, filterType: string = 'all'): Observable<PagedResult<RaceSummaryDto>> {
-    // Map frontend filterType to backend status parameter
-    // 'upcoming' maps to 'Scheduled', 'past' maps to 'Finished' (but backend filters exact status)
-    const statusMap: Record<string, string> = {
-      'all': '',
-      'upcoming': 'Scheduled',
-      'past': 'Finished',
-      'scheduled': 'Scheduled',
-      'in-progress': 'InProgress',
-      'results-processed': 'ResultsProcessed'
-    };
+getRaceSummaries(page: number = 1, pageSize: number = 10, filterType: string = 'all'): Observable<PagedResult<RaceSummaryDto>> {
+  // Mapujemy przyjazne nazwy filtrów na dokładne statusy z bazy
+const statusMap: Record<string, string> = {
+  'all': '',
+  'upcoming': 'Scheduled',
+  'live': 'InProgress',         // TUTAJ: Powiązanie zakładki Live bezpośrednio z InProgress
+  'past': 'Finished',           // Backend przechwyci to słowo i dorzuci też 'ResultsProcessed'
+  'scheduled': 'Scheduled',
+  'in-progress': 'InProgress',
+  'results-processed': 'ResultsProcessed'
+};
 
-    const status = statusMap[filterType] || '';
-    const params: any = { page, pageSize };
+  const status = statusMap[filterType] || '';
 
-    if (status) {
-      params.status = status;
-    }
+  let params = new HttpParams()
+    .set('page', page.toString())
+    .set('pageSize', pageSize.toString());
 
-    return this.http.get<PagedResult<RaceSummaryDto>>(this.API_URL, { params }).pipe(
-      catchError(this.handleError)
-    );
+  if (status) {
+    params = params.set('status', status);
   }
+
+  return this.http.get<PagedResult<RaceSummaryDto>>(this.API_URL, { params }).pipe(
+    catchError(this.handleError)
+  );
+}
 
   /**
    * Gets race details by race ID.
@@ -79,7 +108,7 @@ export class RaceService {
   getRaceOdds(raceId: number): Observable<Record<number, number>> {
     // Use the correct backend endpoint that actually exists
     return this.getUpcomingRacesWithOdds().pipe(
-      map(races => {
+      map((races: RaceDto[]) => {
         const race = races.find(r => r.id === raceId);
         if (race && race.odds) {
           // Convert Dictionary<int, decimal> to Record<number, number>
@@ -109,8 +138,18 @@ export class RaceService {
     return throwError(() => new Error(errorMessage));
   }
 
-  // W race.service.ts dodaj:
-getDriversWithOdds(raceId: number): Observable<DriverWithOdds[]> {
+  getDriversWithOdds(raceId: number): Observable<DriverWithOdds[]> {
     return this.http.get<DriverWithOdds[]>(`${this.API_URL}/${raceId}/drivers-with-odds`);
+  }
+
+  /**
+   * Gets stored race results from the RaceResult entity (current season only).
+   * @param raceId The ID of the race
+   * @returns Race result DTO or null if not found
+   */
+  getStoredRaceResults(raceId: number): Observable<RaceResultDto | null> {
+    return this.http.get<RaceResultDto | null>(`${this.API_URL}/${raceId}/stored-results`).pipe(
+      catchError(() => of(null))
+    );
   }
 }

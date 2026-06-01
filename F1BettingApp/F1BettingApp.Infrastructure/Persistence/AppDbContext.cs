@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
+using F1BettingGame.Domain.Entities;
 
 namespace F1BettingApp.Infrastructure.Persistence
 {
@@ -14,10 +15,20 @@ namespace F1BettingApp.Infrastructure.Persistence
         public DbSet<Bet> Bets { get; set; }
         public DbSet<Race> Races { get; set; }
         public DbSet<Result> Results { get; set; }
+        public DbSet<RaceResult> RaceResults { get; set; }
+        public DbSet<RaceResultPosition> RaceResultPositions { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<LeaderboardHistory> LeaderboardHistories { get; set; }
         public DbSet<Driver> Drivers { get; set; }
         public DbSet<Team> Teams { get; set; }
+
+        public DbSet<DriverChampionship> DriverChampionships { get; set; }
+        public DbSet<DriverChampionshipRace> DriverChampionshipRaces { get; set; }
+        public DbSet<DailyLoginStreak> DailyLoginStreaks { get; set; }
+        public DbSet<QuestDefinition> QuestDefinitions { get; set; }
+        public DbSet<WeeklyQuestProgress> WeeklyQuestProgresses { get; set; }
+        public DbSet<PointHistory> PointHistories { get; set; }
+        public DbSet<UserBetStatisticsCache> UserBetStatisticsCaches { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -157,6 +168,149 @@ namespace F1BettingApp.Infrastructure.Persistence
                 entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
                 entity.Property(t => t.Country).IsRequired().HasMaxLength(50);
                 entity.Property(t => t.OpenF1TeamId).IsRequired().HasMaxLength(50);
+            });
+
+            // Unikalny indeks zapobiegający dublowaniu kierowcy w tym samym sezonie
+            modelBuilder.Entity<DriverChampionship>()
+                .HasIndex(dc => new { dc.DriverId, dc.Season })
+                .IsUnique();
+
+            // Konfiguracja relacji jeden-do-wielu dla tabeli wyścigów w tabeli klasyfikacji
+            modelBuilder.Entity<DriverChampionshipRace>()
+                .HasOne(dcr => dcr.DriverChampionship)
+                .WithMany(dc => dc.RaceResults)
+                .HasForeignKey(dcr => dcr.DriverChampionshipId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DriverChampionshipRace>()
+                .HasOne(dcr => dcr.Race)
+                .WithMany() // Jeśli w encji Race nie potrzebujesz kolekcji DriverChampionshipRaces
+                .HasForeignKey(dcr => dcr.RaceId)
+                .OnDelete(DeleteBehavior.Restrict); // Blokujemy usuwanie wyścigu, jeśli są przypisane punkty
+
+            // Configure DailyLoginStreak entity
+            modelBuilder.Entity<DailyLoginStreak>(entity =>
+            {
+                entity.HasIndex(d => d.UserId).IsUnique();
+
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(d => d.CurrentStreak).HasDefaultValue(0);
+                entity.Property(d => d.LastLoginDate).HasColumnType("date");
+                entity.Property(d => d.ClaimedToday).HasDefaultValue(false);
+                entity.Property(d => d.UpdatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure QuestDefinition entity
+            modelBuilder.Entity<QuestDefinition>(entity =>
+            {
+                entity.HasIndex(q => q.QuestId).IsUnique();
+                entity.Property(q => q.QuestId).IsRequired().HasMaxLength(50);
+                entity.Property(q => q.Name).IsRequired().HasMaxLength(100);
+                entity.Property(q => q.Description).IsRequired();
+
+                // Map quest category enum to string
+                entity.Property(q => q.Category)
+                      .HasConversion(
+                          v => v.ToString(),
+                          v => (QuestCategory)Enum.Parse(typeof(QuestCategory), v));
+
+                entity.Property(q => q.IsActive).HasDefaultValue(true);
+                entity.Property(q => q.Order).HasDefaultValue(0);
+                entity.Property(q => q.CreatedAt).HasDefaultValueSql("now()");
+                entity.Property(q => q.UpdatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure WeeklyQuestProgress entity
+            modelBuilder.Entity<WeeklyQuestProgress>(entity =>
+            {
+                entity.HasIndex(w => new { w.UserId, w.QuestId, w.WeekNumber, w.Year }).IsUnique();
+
+                entity.HasOne(w => w.User)
+                      .WithMany()
+                      .HasForeignKey(w => w.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(w => w.QuestId).IsRequired().HasMaxLength(50);
+                entity.Property(w => w.Progress).HasDefaultValue(0);
+                entity.Property(w => w.Target).HasDefaultValue(0);
+                entity.Property(w => w.IsCompleted).HasDefaultValue(false);
+                entity.Property(w => w.PointsAwarded).HasDefaultValue(0);
+                entity.Property(w => w.IsClaimed).HasDefaultValue(false);
+                entity.Property(w => w.ReferenceId).HasMaxLength(50);
+                entity.Property(w => w.UpdatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure PointHistory entity
+            modelBuilder.Entity<PointHistory>(entity =>
+            {
+                entity.HasOne(ph => ph.User)
+                      .WithMany()
+                      .HasForeignKey(ph => ph.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(ph => ph.Category).IsRequired().HasMaxLength(50);
+                entity.Property(ph => ph.Description).IsRequired();
+                entity.Property(ph => ph.Source).IsRequired().HasMaxLength(20);
+                entity.Property(ph => ph.CreatedAt).HasDefaultValueSql("now()");
+            });
+
+            // Configure RaceResult entity
+            modelBuilder.Entity<RaceResult>(entity =>
+            {
+                entity.HasIndex(r => r.RaceId).IsUnique();
+                entity.Property(r => r.Season).IsRequired();
+                entity.Property(r => r.CreatedAt).HasDefaultValueSql("now()");
+                entity.Property(r => r.UpdatedAt).HasDefaultValueSql("now()");
+
+                entity.HasOne(r => r.Race)
+                      .WithMany()
+                      .HasForeignKey(r => r.RaceId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.FastestLapDriver)
+                      .WithMany()
+                      .HasForeignKey(r => r.FastestLapDriverId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configure RaceResultPosition entity
+            modelBuilder.Entity<RaceResultPosition>(entity =>
+            {
+                entity.HasOne(p => p.RaceResult)
+                      .WithMany(r => r.Positions)
+                      .HasForeignKey(p => p.RaceResultId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(p => p.Driver)
+                      .WithMany()
+                      .HasForeignKey(p => p.DriverId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(p => new { p.RaceResultId, p.Position }).IsUnique();
+            });
+
+            // Configure UserBetStatisticsCache entity
+            modelBuilder.Entity<UserBetStatisticsCache>(entity =>
+            {
+                entity.HasOne(c => c.User)
+                      .WithMany()
+                      .HasForeignKey(c => c.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(c => c.UserId).IsUnique();
+
+                entity.Property(c => c.TotalWinnings).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.TotalAmountBet).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LargestWin).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LargestLoss).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.LastUpdated)
+                      .HasConversion(
+                          v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
+                          v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
             });
         }
     }

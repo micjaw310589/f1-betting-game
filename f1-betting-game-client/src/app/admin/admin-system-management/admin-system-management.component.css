@@ -409,3 +409,291 @@ h4 {
     margin-top: 10px;
     font-weight: 600;
 }
+
+/* ======================== */
+/* Quest Management Styles  */
+/* ======================== */
+
+.quest-toolbar {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.quest-search {
+    flex: 1;
+    min-width: 200px;
+}
+
+.quest-search-input {
+    width: 100%;
+}
+
+.quest-filters {
+    min-width: 150px;
+}
+
+.quest-filter-select {
+    width: 100%;
+}
+
+.quest-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.btn-reset-weeks {
+    background: rgba(255, 152, 0, 0.15);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    color: #ff9800;
+    padding: 10px 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 11px;
+    cursor: pointer;
+    transform: skewX(var(--skew-x));
+    transition: all 0.2s ease;
+}
+
+.btn-reset-weeks:hover {
+    background: rgba(255, 152, 0, 0.25);
+    border-color: #ff9800;
+}
+
+.btn-reset-weeks span {
+    display: inline-block;
+    transform: skewX(15deg);
+}
+
+/* Quests Table */
+.quests-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 6px;
+    margin-top: 15px;
+}
+
+.quests-table th {
+    text-align: left;
+    padding: 12px 10px;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--color-f1-red);
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.quests-table td {
+    padding: 12px 10px;
+    background: var(--color-card-bg-2);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    color: #fff;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.quests-table tr:hover td {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.col-id { width: 50px; text-align: center; }
+.col-quest-id { width: 130px; }
+.col-name { min-width: 150px; }
+.col-category { width: 120px; }
+.col-type { width: 80px; }
+.col-target { width: 60px; text-align: center; }
+.col-reward { width: 80px; }
+.col-active { width: 80px; text-align: center; }
+.col-completed { width: 90px; text-align: center; }
+.col-actions { width: 280px; }
+
+.quests-table code {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 12px;
+    color: var(--color-f1-red);
+}
+
+/* Quest Category Badge */
+.quest-category-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #000;
+    text-transform: uppercase;
+}
+
+/* Status Badges */
+.status-active {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.status-inactive {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-dim);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Quest Action Buttons */
+.quest-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.btn-edit-quest,
+.btn-delete-quest,
+.btn-toggle-quest,
+.btn-view-quest {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 5px 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-edit-quest {
+    background: rgba(0, 212, 255, 0.1);
+    color: #00d4ff;
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
+.btn-edit-quest:hover {
+    background: rgba(0, 212, 255, 0.2);
+}
+
+.btn-delete-quest {
+    background: rgba(225, 6, 0, 0.1);
+    color: var(--color-f1-red);
+    border-color: rgba(225, 6, 0, 0.3);
+}
+
+.btn-delete-quest:hover {
+    background: rgba(225, 6, 0, 0.2);
+}
+
+.btn-toggle-quest {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.btn-toggle-quest:hover {
+    background: rgba(255, 193, 7, 0.2);
+}
+
+.btn-toggle-quest:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-view-quest {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.btn-view-quest:hover {
+    background: rgba(76, 175, 80, 0.2);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-pagination {
+    background: var(--color-card-bg-2);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: var(--color-f1-red);
+    color: #fff;
+    border-color: var(--color-f1-red);
+}
+
+.btn-pagination.active {
+    background: var(--color-f1-red);
+    color: #fff;
+    border-color: var(--color-f1-red);
+}
+
+.btn-pagination:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 12px;
+    color: var(--color-text-dim);
+    margin-left: 10px;
+}
+
+/* Form Hint */
+.form-hint {
+    font-size: 11px;
+    color: var(--color-text-dim);
+    margin-top: 4px;
+}
+
+/* Quest Progress Summary */
+.quest-progress-summary {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 20px 0;
+}
+
+.progress-stat {
+    text-align: center;
+}
+
+.progress-stat-value {
+    display: block;
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--color-f1-red);
+}
+
+.progress-stat-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+    font-weight: 800;
+    margin-top: 5px;
+}
+
+.info-text {
+    font-size: 13px;
+    color: var(--color-text-dim);
+    text-align: center;
+    margin-top: 15px;
+}

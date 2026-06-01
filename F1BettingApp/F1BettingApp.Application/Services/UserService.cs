@@ -18,25 +18,29 @@ namespace F1BettingApp.Application.Services
 {
     public class UserService : IUserService
     {
-        private readonly IRepository<User> _userRepository;
-        private readonly IRepository<Bet> _betRepository;
-        private readonly string _secretKey;
-        private readonly string _issuer;
-        private readonly string _audience;
-        private readonly JwtSecurityTokenHandler _tokenHandler;
+    private readonly IRepository<User> _userRepository;
+    private readonly IRepository<Bet> _betRepository;
+        private readonly IPointHistoryService _pointHistoryService;
+    private readonly IRepository<UserBetStatisticsCache> _statsCacheRepository;
+    private readonly string _secretKey;
+    private readonly string _issuer;
+    private readonly string _audience;
+    private readonly JwtSecurityTokenHandler _tokenHandler;
 
-        public UserService(
-            IRepository<User> userRepository,
-            IRepository<Bet> betRepository,
-            IConfiguration configuration)
-        {
-            _userRepository = userRepository;
-            _betRepository = betRepository;
-            _secretKey = configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-            _issuer = configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
-            _audience = configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
-            _tokenHandler = new JwtSecurityTokenHandler();
-        }
+    public UserService(
+        IRepository<User> userRepository,
+        IRepository<Bet> betRepository,
+        IRepository<UserBetStatisticsCache> statsCacheRepository,
+        IConfiguration configuration)
+    {
+        _userRepository = userRepository;
+        _betRepository = betRepository;
+        _statsCacheRepository = statsCacheRepository;
+        _secretKey = configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+        _issuer = configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
+        _audience = configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
+        _tokenHandler = new JwtSecurityTokenHandler();
+    }
 
         public async Task<UserDto> GetUserByIdAsync(int id)
         {
@@ -51,7 +55,6 @@ namespace F1BettingApp.Application.Services
                 Points = user.Points,
                 IsAdmin = user.IsAdmin,
                 IsActive = user.IsActive,
-                // ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
@@ -69,7 +72,6 @@ namespace F1BettingApp.Application.Services
                 Points = user.Points,
                 IsAdmin = user.IsAdmin,
                 IsActive = user.IsActive,
-                // ProfileImageUrl = user.ProfileImageUrl
             };
         }
 
@@ -91,16 +93,6 @@ namespace F1BettingApp.Application.Services
             var existingUsers = await _userRepository.GetAllAsync();
             if (existingUsers.Any(u => u.UserName == dto.Username)) throw new InvalidOperationException("Username already exists");
             if (existingUsers.Any(u => u.Email == dto.Email)) throw new InvalidOperationException("Email already exists");
-            // Znacznie lepsze podejście - pytamy bazę tylko o to, co nas interesuje
-            var users = await _userRepository.GetAllAsync(); 
-
-            // Zamiast pobierać wszystko, lepiej byłoby mieć metodę w repozytorium typu .AnyAsync()
-            // Ale skoro używamy generycznego IRepository, zróbmy to chociaż tak:
-            if (users.Any(u => u.UserName == dto.Username)) 
-                throw new InvalidOperationException("Username already exists");
-
-            if (users.Any(u => u.Email == dto.Email)) 
-                throw new InvalidOperationException("Email already exists");
 
             // Hash password before storing
             var hashedPassword = BCryptNet.HashPassword(dto.Password);
@@ -129,7 +121,6 @@ namespace F1BettingApp.Application.Services
                     Points = 0,
                     IsAdmin = user.IsAdmin,
                     IsActive = user.IsActive,
-                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -166,10 +157,6 @@ namespace F1BettingApp.Application.Services
             var accessToken = GenerateJwtToken(user);
             var refreshToken = GenerateRefreshToken();
 
-            // Store refresh token (in production, store in DB with expiration)
-            // Note: StoreRefreshTokenAsync method not found - using SaveChangesAsync instead
-            await _userRepository.SaveChangesAsync();
-
             return new AuthResponseDto
             {
                 IsSuccess = true,
@@ -185,7 +172,6 @@ namespace F1BettingApp.Application.Services
                     Points = user.Points,
                     IsAdmin = user.IsAdmin,
                     IsActive = user.IsActive,
-                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -202,14 +188,7 @@ namespace F1BettingApp.Application.Services
                 };
             }
 
-            // Note: Refresh tokens are not stored in database as per requirements
-            // This is a simplified implementation that doesn't validate against stored tokens
-            // In production, consider using a dedicated RefreshToken table
-            // For now, we'll just validate the token format and issue new tokens
-
             // Find user by email (simplified approach without refresh token storage)
-            // Note: We don't have the username/email in RefreshTokenDto, so we'll use a different approach
-            // For now, we'll just find any user (this is a simplified implementation)
             var users = await _userRepository.GetAllAsync();
             var user = users.FirstOrDefault();
 
@@ -232,40 +211,9 @@ namespace F1BettingApp.Application.Services
                 };
             }
 
-            // Validate the access token (optional but recommended)
-            try
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var validationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
-                    ValidIssuer = _issuer,
-                    ValidAudience = _audience,
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                // This will throw if token is invalid
-                tokenHandler.ValidateToken(dto.Token, validationParameters, out _);
-            }
-            catch (SecurityTokenException)
-            {
-                // Access token is invalid, but we'll still issue new tokens if refresh token is valid
-                // This is optional - you could require both tokens to be valid
-            }
-
             // Generate new tokens
             var newAccessToken = GenerateJwtToken(user);
             var newRefreshToken = GenerateRefreshToken();
-
-            // Note: Refresh tokens are not stored in database as per requirements
-            // In production, consider using a dedicated RefreshToken table
-            // For now, we just return new tokens without storing them
-            // await _userRepository.UpdateAsync(user);
-            // await _userRepository.SaveChangesAsync();
 
             return new AuthResponseDto
             {
@@ -282,7 +230,6 @@ namespace F1BettingApp.Application.Services
                     Points = user.Points,
                     IsAdmin = user.IsAdmin,
                     IsActive = user.IsActive,
-                    // ProfileImageUrl = user.ProfileImageUrl
                 }
             };
         }
@@ -415,6 +362,473 @@ namespace F1BettingApp.Application.Services
             };
         }
 
+        // --- Enhanced Statistics Methods ---
+        public async Task<EnhancedUserStatisticsDto> GetEnhancedUserStatisticsAsync(int userId)
+        {
+            var stats = await CalculateUserStatisticsFromBets(userId);
+
+            await UpdateStatisticsCache(userId, stats);
+
+            return stats;
+        }
+
+        public async Task<IEnumerable<BetHistoryDto>> GetBetHistoryAsync(int userId, int limit = 50, int offset = 0, BetStatus? status = null, int? driverId = null)
+        {
+            var bets = await _betRepository.GetAllAsync();
+            var userBets = bets.Where(b => b.UserId == userId);
+
+            // Apply filters
+            if (status.HasValue)
+            {
+                userBets = userBets.Where(b => b.Status == status.Value);
+            }
+
+            if (driverId.HasValue)
+            {
+                userBets = userBets.Where(b => b.DriverId == driverId.Value);
+            }
+
+            var betHistoryDtos = userBets.OrderByDescending(b => b.CreatedAt)
+                                        .Skip(offset)
+                                        .Take(limit)
+                                        .Select(b => new BetHistoryDto
+                                        {
+                                            Id = b.Id,
+                                            UserId = userId.ToString(),
+                                            RaceId = b.RaceId,
+                                            DriverId = b.DriverId,
+                                            Amount = b.Amount,
+                                            BetType = b.BetType,
+                                            Status = b.Status,
+                                            Winnings = b.Winnings,
+                                            CreatedAt = b.CreatedAt,
+                                            ResolvedAt = b.ResolvedAt
+                                        }).ToList();
+
+            return betHistoryDtos;
+        }
+
+        public async Task<UserBetAnalysisDto> GetUserBetAnalysisAsync(int userId)
+        {
+            var bets = await _betRepository.GetAllAsync();
+            var userBets = bets.Where(b => b.UserId == userId).ToList();
+
+            return await CalculateUserBetAnalysis(userBets, userId);
+        }
+
+        public async Task<EnhancedUserStatisticsDto> GetUserStatisticsByTimeRangeAsync(int userId, DateTime startDate, DateTime endDate)
+        {
+            var bets = await _betRepository.GetAllAsync();
+            var userBets = bets.Where(b => b.UserId == userId &&
+                                         b.CreatedAt >= startDate &&
+                                         b.CreatedAt <= endDate).ToList();
+
+            return await CalculateUserStatisticsFromBets(userId, userBets);
+        }
+
+        public async Task UpdateUserStatisticsCacheAsync(int userId)
+        {
+            var stats = await CalculateUserStatisticsFromBets(userId);
+            await UpdateStatisticsCache(userId, stats);
+        }
+
+        public async Task RecalculateAllUserStatisticsAsync()
+        {
+            var users = await _userRepository.GetAllAsync();
+            foreach (var user in users)
+            {
+                await UpdateUserStatisticsCacheAsync(user.Id);
+            }
+        }
+
+        // --- Private Helper Methods ---
+        private async Task<EnhancedUserStatisticsDto> CheckStatisticsCache(int userId)
+        {
+            try
+            {
+                // Check if cached statistics exist and are recent (within last hour)
+                var cachedStats = await _statsCacheRepository.GetAllAsync();
+                var userCache = cachedStats.FirstOrDefault(c => c.UserId == userId);
+
+                if (userCache != null && userCache.LastUpdated > DateTime.UtcNow.AddSeconds(-2))
+                {
+                    // Convert cache entity to DTO
+                    return new EnhancedUserStatisticsDto
+                    {
+                        UserId = userCache.UserId,
+                        Username = (await _userRepository.GetByIdAsync(userId))?.UserName ?? "Unknown",
+                        TotalBets = userCache.TotalBets,
+                        WinningBets = userCache.WinningBets,
+                        LosingBets = userCache.LosingBets,
+                        PushBets = userCache.PushBets,
+                        WinRate = userCache.TotalBets > 0 ? (decimal)userCache.WinningBets / userCache.TotalBets * 100 : 0,
+                        TotalWinnings = userCache.TotalWinnings,
+                        Points = (await _userRepository.GetByIdAsync(userId))?.Points ?? 0,
+                        Rank = 0, // TODO: Calculate rank
+                        ReturnOnInvestment = userCache.TotalAmountBet > 0 ? (userCache.TotalWinnings / userCache.TotalAmountBet) * 100 : 0,
+                        CurrentWinStreak = userCache.CurrentWinStreak,
+                        CurrentLoseStreak = userCache.CurrentLoseStreak,
+                        LongestWinStreak = userCache.LongestWinStreak,
+                        FavoriteDriverId = userCache.FavoriteDriverId,
+                        FavoriteDriverName = userCache.FavoriteDriverId > 0 ? "Driver " + userCache.FavoriteDriverId : "None",
+                        AverageBetAmount = userCache.TotalBets > 0 ? userCache.TotalAmountBet / userCache.TotalBets : 0,
+                        LargestWin = userCache.LargestWin,
+                        LargestLoss = userCache.LargestLoss,
+                        LastBetDate = null, // Not stored in cache
+                        TotalAmountBet = userCache.TotalAmountBet,
+                        BetsThisWeek = 0, // Not stored in cache
+                        BetsThisMonth = 0 // Not stored in cache
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail - fall through to calculate from bets
+                Console.Error.WriteLine($"Error checking statistics cache: {ex.Message}");
+            }
+
+            return null;
+        }
+
+        private async Task<EnhancedUserStatisticsDto> CalculateUserStatisticsFromBets(int userId, List<Bet> userBets = null)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return null;
+
+            // Get bets if not provided
+            if (userBets == null)
+            {
+                var allBets = await _betRepository.GetAllAsync();
+                userBets = allBets.Where(b => b.UserId == userId).ToList();
+            }
+
+            // Handle case when user has no bets
+            if (userBets.Count == 0)
+            {
+                return new EnhancedUserStatisticsDto
+                {
+                    UserId = userId,
+                    Username = user.UserName,
+                    TotalBets = 0,
+                    WinningBets = 0,
+                    LosingBets = 0,
+                    PushBets = 0,
+                    WinRate = 0,
+                    TotalWinnings = 0,
+                    Points = user.Points,
+                    Rank = 0,
+                    ReturnOnInvestment = 0,
+                    CurrentWinStreak = 0,
+                    CurrentLoseStreak = 0,
+                    LongestWinStreak = 0,
+                    FavoriteDriverId = 0,
+                    FavoriteDriverName = "None",
+                    AverageBetAmount = 0,
+                    LargestWin = 0,
+                    LargestLoss = 0,
+                    LastBetDate = null,
+                    TotalAmountBet = 0,
+                    BetsThisWeek = 0,
+                    BetsThisMonth = 0
+                };
+            }
+
+            // Calculate basic statistics
+            var totalBets = userBets.Count();
+            var winningBets = userBets.Count(b => b.Status == BetStatus.Won);
+            var losingBets = userBets.Count(b => b.Status == BetStatus.Lost);
+            var pushBets = userBets.Count(b => b.Status == BetStatus.Push);
+
+            // Calculate financial metrics
+            var totalWinnings = userBets.Where(b => b.Status == BetStatus.Won)
+                                       .Sum(b => b.Winnings);
+            var totalAmountBet = userBets.Sum(b => b.Amount);
+            var averageBetAmount = totalBets > 0 ? totalAmountBet / totalBets : 0m;
+
+            // Calculate streaks
+            var (currentWinStreak, currentLoseStreak, longestWinStreak) = CalculateStreaks(userBets);
+
+            // Calculate ROI
+            var roi = totalAmountBet > 0 ? (totalWinnings / totalAmountBet) * 100 : 0m;
+
+            // Find favorite driver
+            var (favoriteDriverId, favoriteDriverName) = FindFavoriteDriver(userBets);
+
+            // Find largest win/loss
+            var (largestWin, largestLoss) = FindLargestBets(userBets);
+
+            // Calculate time-based statistics
+            var lastBetDate = userBets.OrderByDescending(b => b.CreatedAt).FirstOrDefault()?.CreatedAt;
+            var betsThisWeek = userBets.Count(b => b.CreatedAt >= DateTime.UtcNow.AddDays(-7));
+            var betsThisMonth = userBets.Count(b => b.CreatedAt >= DateTime.UtcNow.AddDays(-30));
+
+            return new EnhancedUserStatisticsDto
+            {
+                UserId = userId,
+                Username = user.UserName,
+                TotalBets = totalBets,
+                WinningBets = winningBets,
+                LosingBets = losingBets,
+                PushBets = pushBets,
+                WinRate = totalBets > 0 ? (decimal)winningBets / totalBets * 100 : 0,
+                TotalWinnings = totalWinnings,
+                Points = user.Points,
+                Rank = 0, // TODO: Calculate rank
+                ReturnOnInvestment = roi,
+                CurrentWinStreak = currentWinStreak,
+                CurrentLoseStreak = currentLoseStreak,
+                LongestWinStreak = longestWinStreak,
+                FavoriteDriverId = favoriteDriverId,
+                FavoriteDriverName = favoriteDriverName,
+                AverageBetAmount = averageBetAmount,
+                LargestWin = largestWin,
+                LargestLoss = largestLoss,
+                LastBetDate = lastBetDate,
+                TotalAmountBet = totalAmountBet,
+                BetsThisWeek = betsThisWeek,
+                BetsThisMonth = betsThisMonth
+            };
+        }
+
+        private (int currentWinStreak, int currentLoseStreak, int longestWinStreak) CalculateStreaks(List<Bet> bets)
+        {
+            int currentWinStreak = 0;
+            int currentLoseStreak = 0;
+            int longestWinStreak = 0;
+
+            // Order by date to analyze streaks chronologically
+            var orderedBets = bets.OrderBy(b => b.CreatedAt).ToList();
+
+            foreach (var bet in orderedBets)
+            {
+                if (bet.Status == BetStatus.Won)
+                {
+                    currentWinStreak++;
+                    currentLoseStreak = 0;
+                    longestWinStreak = Math.Max(longestWinStreak, currentWinStreak);
+                }
+                else if (bet.Status == BetStatus.Lost)
+                {
+                    currentLoseStreak++;
+                    currentWinStreak = 0;
+                }
+                else // Push or other status
+                {
+                    currentWinStreak = 0;
+                    currentLoseStreak = 0;
+                }
+            }
+
+            return (currentWinStreak, currentLoseStreak, longestWinStreak);
+        }
+
+        private (int favoriteDriverId, string favoriteDriverName) FindFavoriteDriver(List<Bet> bets)
+        {
+            var driverBets = bets.GroupBy(b => b.DriverId)
+                                .Select(g => new {
+                                    DriverId = g.Key,
+                                    Count = g.Count()
+                                })
+                                .OrderByDescending(x => x.Count)
+                                .FirstOrDefault();
+
+            if (driverBets != null)
+            {
+                return (driverBets.DriverId, "Driver " + driverBets.DriverId);
+            }
+
+            return (0, "None");
+        }
+
+        private (decimal largestWin, decimal largestLoss) FindLargestBets(List<Bet> bets)
+        {
+            decimal largestWin = 0;
+            decimal largestLoss = 0;
+
+            foreach (var bet in bets)
+            {
+                if (bet.Status == BetStatus.Won && bet.Winnings > largestWin)
+                {
+                    largestWin = bet.Winnings;
+                }
+                else if (bet.Status == BetStatus.Lost && bet.Amount > largestLoss)
+                {
+                    largestLoss = bet.Amount;
+                }
+            }
+
+            return (largestWin, largestLoss);
+        }
+
+        private async Task UpdateStatisticsCache(int userId, EnhancedUserStatisticsDto stats)
+{
+    try
+    {
+        var cachedStats = await _statsCacheRepository.GetAllAsync();
+        var existingCache = cachedStats.FirstOrDefault(c => c.UserId == userId);
+
+        if (existingCache != null)
+        {
+            existingCache.TotalBets = stats.TotalBets;
+            existingCache.WinningBets = stats.WinningBets;
+            existingCache.LosingBets = stats.LosingBets;
+            existingCache.PushBets = stats.PushBets;
+            existingCache.TotalWinnings = stats.TotalWinnings;
+            existingCache.TotalAmountBet = stats.TotalAmountBet;
+            existingCache.CurrentWinStreak = stats.CurrentWinStreak;
+            existingCache.CurrentLoseStreak = stats.CurrentLoseStreak;
+            existingCache.LongestWinStreak = stats.LongestWinStreak;
+            existingCache.LastUpdated = DateTime.UtcNow;
+            existingCache.FavoriteDriverId = stats.FavoriteDriverId;
+            existingCache.LargestWin = stats.LargestWin;
+            existingCache.LargestLoss = stats.LargestLoss;
+
+            await _statsCacheRepository.UpdateAsync(existingCache);
+        }
+        else
+        {
+            var cacheEntity = new UserBetStatisticsCache
+            {
+                UserId = userId,
+                TotalBets = stats.TotalBets,
+                WinningBets = stats.WinningBets,
+                LosingBets = stats.LosingBets,
+                PushBets = stats.PushBets,
+                TotalWinnings = stats.TotalWinnings,
+                TotalAmountBet = stats.TotalAmountBet,
+                CurrentWinStreak = stats.CurrentWinStreak,
+                CurrentLoseStreak = stats.CurrentLoseStreak,
+                LongestWinStreak = stats.LongestWinStreak,
+                LastUpdated = DateTime.UtcNow,
+                FavoriteDriverId = stats.FavoriteDriverId,
+                LargestWin = stats.LargestWin,
+                LargestLoss = stats.LargestLoss
+            };
+
+            await _statsCacheRepository.AddAsync(cacheEntity);
+        }
+
+        await _statsCacheRepository.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error updating statistics cache: {ex.Message}");
+    }
+}
+
+        private async Task<UserBetAnalysisDto> CalculateUserBetAnalysis(List<Bet> userBets, int userId)
+        {
+            // Initialize analysis DTO
+            var analysis = new UserBetAnalysisDto
+            {
+                UserId = userId,
+                BetTypeAnalysis = new Dictionary<BetType, BetTypeAnalysisDto>(),
+                DriverAnalysis = new Dictionary<int, DriverAnalysisDto>(),
+                TeamAnalysis = new Dictionary<int, TeamAnalysisDto>(),
+                MonthlyAnalysis = new MonthlyAnalysisDto[12], // Last 12 months
+                TimeOfDayAnalysis = new TimeOfDayAnalysisDto()
+            };
+
+            // Group by bet type
+            var betTypeGroups = userBets.GroupBy(b => b.BetType);
+            foreach (var group in betTypeGroups)
+            {
+                var winningBets = group.Count(b => b.Status == BetStatus.Won);
+                var totalAmount = group.Sum(b => b.Amount);
+                var totalWinnings = group.Sum(b => b.Winnings);
+                var roi = totalAmount > 0 ? (totalWinnings / totalAmount) * 100 : 0;
+
+                analysis.BetTypeAnalysis[group.Key] = new BetTypeAnalysisDto
+                {
+                    TotalBets = group.Count(),
+                    WinningBets = winningBets,
+                    WinRate = group.Count() > 0 ? (decimal)winningBets / group.Count() * 100 : 0,
+                    TotalAmount = totalAmount,
+                    TotalWinnings = totalWinnings,
+                    ROI = roi
+                };
+            }
+
+            // Group by driver
+            var driverGroups = userBets.GroupBy(b => b.DriverId);
+            foreach (var group in driverGroups)
+            {
+                var driverName = "Driver " + group.Key;
+                var winningBets = group.Count(b => b.Status == BetStatus.Won);
+                var totalWinnings = group.Sum(b => b.Winnings);
+
+                analysis.DriverAnalysis[group.Key] = new DriverAnalysisDto
+                {
+                    DriverName = driverName,
+                    TotalBets = group.Count(),
+                    WinningBets = winningBets,
+                    WinRate = group.Count() > 0 ? (decimal)winningBets / group.Count() * 100 : 0,
+                    TotalWinnings = totalWinnings
+                };
+            }
+
+            // Monthly analysis for last 12 months
+            for (int i = 0; i < 12; i++)
+            {
+                var monthDate = DateTime.UtcNow.AddMonths(-i);
+                var monthlyBets = userBets.Where(b => b.CreatedAt.Year == monthDate.Year && b.CreatedAt.Month == monthDate.Month).ToList();
+                var winningBets = monthlyBets.Count(b => b.Status == BetStatus.Won);
+                var totalWinnings = monthlyBets.Sum(b => b.Winnings);
+
+                analysis.MonthlyAnalysis[i] = new MonthlyAnalysisDto
+                {
+                    Year = monthDate.Year,
+                    Month = monthDate.Month,
+                    TotalBets = monthlyBets.Count,
+                    WinningBets = winningBets,
+                    TotalWinnings = totalWinnings
+                };
+            }
+
+            // Time of day analysis
+            int morningBets = 0, afternoonBets = 0, eveningBets = 0, nightBets = 0;
+            int morningWins = 0, afternoonWins = 0, eveningWins = 0, nightWins = 0;
+
+            foreach (var bet in userBets)
+            {
+                var hour = bet.CreatedAt.Hour;
+                if (hour >= 6 && hour < 12) // Morning: 6AM - 12PM
+                {
+                    morningBets++;
+                    if (bet.Status == BetStatus.Won) morningWins++;
+                }
+                else if (hour >= 12 && hour < 18) // Afternoon: 12PM - 6PM
+                {
+                    afternoonBets++;
+                    if (bet.Status == BetStatus.Won) afternoonWins++;
+                }
+                else if (hour >= 18 && hour < 24) // Evening: 6PM - 12AM
+                {
+                    eveningBets++;
+                    if (bet.Status == BetStatus.Won) eveningWins++;
+                }
+                else // Night: 12AM - 6AM
+                {
+                    nightBets++;
+                    if (bet.Status == BetStatus.Won) nightWins++;
+                }
+            }
+
+            analysis.TimeOfDayAnalysis = new TimeOfDayAnalysisDto
+            {
+                MorningBets = morningBets,
+                AfternoonBets = afternoonBets,
+                EveningBets = eveningBets,
+                NightBets = nightBets,
+                MorningWinRate = morningBets > 0 ? (decimal)morningWins / morningBets * 100 : 0,
+                AfternoonWinRate = afternoonBets > 0 ? (decimal)afternoonWins / afternoonBets * 100 : 0,
+                EveningWinRate = eveningBets > 0 ? (decimal)eveningWins / eveningBets * 100 : 0,
+                NightWinRate = nightBets > 0 ? (decimal)nightWins / nightBets * 100 : 0
+            };
+
+            return analysis;
+        }
+
         private string GenerateJwtToken(User user)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
@@ -436,12 +850,6 @@ namespace F1BettingApp.Application.Services
             var token = new JwtSecurityToken(
                 issuer: _issuer,
                 audience: _audience,
-                // claims: new[]
-                // {
-                //     new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                //     new Claim(JwtRegisteredClaimNames.Name, user.UserName),
-                //     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
-                // },
                 claims: claims.ToArray(),
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials
@@ -536,6 +944,14 @@ namespace F1BettingApp.Application.Services
 
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveChangesAsync();
+
+            // Record point history for admin adjustment
+            await _pointHistoryService.RecordPointChangeAsync(
+                userId,
+                pointsDelta,
+                "AdminAdjustment",
+                reason ?? "Admin point adjustment",
+                "Admin");
 
             return new AdjustPointsResultDto
             {

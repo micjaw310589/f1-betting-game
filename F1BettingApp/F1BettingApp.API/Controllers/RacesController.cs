@@ -23,6 +23,7 @@ namespace F1BettingApp.API.Controllers
         private readonly IRaceService _raceService;
         private readonly ILogger<RacesController> _logger;
         private readonly IOptions<RaceCacheOptions> _cacheOptions;
+        private readonly IQuestService _questService;
 
         /// <summary>
         /// Cache options for race data
@@ -38,11 +39,13 @@ namespace F1BettingApp.API.Controllers
         public RacesController(
             IRaceService raceService,
             ILogger<RacesController> logger,
-            IOptions<RaceCacheOptions> cacheOptions)
+            IOptions<RaceCacheOptions> cacheOptions,
+            IQuestService questService)
         {
             _raceService = raceService;
             _logger = logger;
             _cacheOptions = cacheOptions;
+            _questService = questService;
         }
 
         /// <summary>
@@ -54,69 +57,85 @@ namespace F1BettingApp.API.Controllers
         /// <param name="season">Filter by season year</param>
         /// <param name="country">Filter by country</param>
         /// <returns>Paginated list of races</returns>
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PagedResult<RaceSummaryDto>>> GetRaces(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20,
-            [FromQuery] string status = null,
-            [FromQuery] int? season = null,
-            [FromQuery] string country = null)
+[HttpGet]
+[ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+public async Task<ActionResult<PagedResult<RaceSummaryDto>>> GetRaces(
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20,
+    [FromQuery] string status = null,
+    [FromQuery] int? season = null,
+    [FromQuery] string country = null)
+{
+    _logger.LogInformation("Getting races with parameters: Page={Page}, PageSize={PageSize}, Status={Status}, Season={Season}, Country={Country}",
+        page, pageSize, status, season, country);
+
+    try
+    {
+        var races = await _raceService.GetAllRacesAsync();
+
+        // --- TUTAJ JEST NAPRAWA LOGIKI STATUSÓW ---
+        IEnumerable<RaceDto> filteredRaces;
+
+        if (!string.IsNullOrEmpty(status) && status.Equals("Finished", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogInformation("Getting races with parameters: Page={Page}, PageSize={PageSize}, Status={Status}, Season={Season}, Country={Country}",
-                page, pageSize, status, season, country);
-
-            try
-            {
-                var races = await _raceService.GetAllRacesAsync();
-
-                // Apply filters
-                var filteredRaces = ApplyFilters(races, status, season, country);
-
-                // Calculate pagination
-                var totalItems = filteredRaces.Count();
-                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-                var startIndex = (page - 1) * pageSize;
-                var pagedRaces = filteredRaces.Skip(startIndex).Take(pageSize);
-
-                var result = new PagedResult<RaceSummaryDto>
-                {
-                    Items = pagedRaces.Select(r => new RaceSummaryDto
-                    {
-                        Id = r.Id,
-                        Name = r.Name,
-                        Circuit = r.Circuit,
-                        Country = r.Country,
-                        RaceDate = r.RaceDate,
-                        Status = r.Status,
-                        Season = r.Season,
-                        Flag = r.Flag
-                    }),
-                    Page = page,
-                    PageSize = pageSize,
-                    TotalItems = totalItems,
-                    TotalPages = totalPages
-                };
-
-                _logger.LogInformation("Races retrieved: Total={Total}, Page={Page}, PageSize={PageSize}",
-                    totalItems, page, pageSize);
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving races");
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new ErrorResponse
-                    {
-                        Error = "RACE_DATA_ERROR",
-                        Message = "An error occurred while retrieving races",
-                        Details = ex.Message
-                    });
-            }
+            // Jeśli użytkownik chce "Finished" (Past Races), to szukamy najpierw ignorując filtr statusu w ApplyFilters, 
+            // a potem ręcznie filtrujemy na oba przeszłe statusy: Finished oraz ResultsProcessed
+            var racesWithoutStatusFilter = ApplyFilters(races, null, season, country);
+            filteredRaces = racesWithoutStatusFilter.Where(r => 
+                r.Status.ToString().Equals("Finished", StringComparison.OrdinalIgnoreCase) || 
+                r.Status.ToString().Equals("ResultsProcessed", StringComparison.OrdinalIgnoreCase));
         }
+        else
+        {
+            // Dla wszystkich innych statusów (w tym InProgress dla Live oraz Scheduled dla Upcoming) 
+            // działamy standardowo, tak jak było wcześniej
+            filteredRaces = ApplyFilters(races, status, season, country);
+        }
+        // ------------------------------------------
 
+        // Calculate pagination (reszta kodu bez zmian)
+        var totalItems = filteredRaces.Count();
+        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+        var startIndex = (page - 1) * pageSize;
+        var pagedRaces = filteredRaces.Skip(startIndex).Take(pageSize);
+
+        var result = new PagedResult<RaceSummaryDto>
+        {
+            Items = pagedRaces.Select(r => new RaceSummaryDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Circuit = r.Circuit,
+                Country = r.Country,
+                RaceDate = r.RaceDate,
+                Status = r.Status,
+                Season = r.Season,
+                Flag = r.Flag
+            }),
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = totalItems,
+            TotalPages = totalPages
+        };
+
+        _logger.LogInformation("Races retrieved: Total={Total}, Page={Page}, PageSize={PageSize}",
+            totalItems, page, pageSize);
+
+        return Ok(result);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error retrieving races");
+        return StatusCode(StatusCodes.Status500InternalServerError,
+            new ErrorResponse
+            {
+                Error = "RACE_DATA_ERROR",
+                Message = "An error occurred while retrieving races",
+                Details = ex.Message
+            });
+    }
+}
         /// <summary>
         /// Get upcoming races only
         /// </summary>
@@ -189,6 +208,23 @@ namespace F1BettingApp.API.Controllers
                         Error = "RACE_NOT_FOUND",
                         Message = $"Race with ID {raceId} not found"
                     });
+                }
+
+                // Update quest progress for race page visit (engagement quests)
+                try
+                {
+                    // Get authenticated user ID if available
+                    var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
+                    {
+                        // race_explorer: +1 per unique race viewed
+                        await _questService.UpdateQuestProgressAsync(userId, "race_explorer", 1, raceId.ToString());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Quest progress updates should not block race page access
+                    _logger.LogDebug(ex, "Failed to update quest progress for race page visit, raceId={RaceId}", raceId);
                 }
 
                 var raceDetail = new RaceDetailDto
@@ -522,6 +558,195 @@ namespace F1BettingApp.API.Controllers
             _logger.LogInformation("Pobieranie kierowców z kursami dla wyścigu: {RaceId}", raceId);
             var results = await _raceService.GetDriversWithOddsForRaceAsync(raceId);
             return Ok(results);
+        }
+
+
+        /// <summary>
+        /// Get the driver championship standings for the current season.
+        /// </summary>
+        [HttpGet("championship/current")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<DriverChampionshipDto>>> GetCurrentChampionship()
+        {
+            int currentSeason = DateTime.UtcNow.Year;
+            _logger.LogInformation("Retrieving driver championship standings for the current season: {Season}", currentSeason);
+
+            try
+            {
+                var championship = await _raceService.GetDriverChampionshipStandingsAsync(currentSeason);
+                return Ok(championship);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving championship standings for season {Season}", currentSeason);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "CHAMPIONSHIP_DATA_ERROR",
+                        Message = "An error occurred while retrieving the current championship standings",
+                        Details = ex.Message
+                    });
+            }
+        }
+
+        /// <summary>
+        /// Get detailed race history and standings for a specific driver in the current season.
+        /// </summary>
+        [HttpGet("championship/driver/{driverId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<DriverChampionshipDto>> GetDriverChampionship(int driverId)
+        {
+            int currentSeason = DateTime.UtcNow.Year;
+            _logger.LogInformation("Retrieving championship history for driver ID: {DriverId} in season {Season}", driverId, currentSeason);
+
+            try
+            {
+                var details = await _raceService.GetDriverChampionshipDetailsAsync(driverId, currentSeason);
+                if (details == null)
+                {
+                    return NotFound(new ErrorResponse 
+                    { 
+                        Error = "DRIVER_CHAMPIONSHIP_NOT_FOUND", 
+                        Message = $"Championship data for driver ID {driverId} was not found for the {currentSeason} season." 
+                    });
+                }
+                return Ok(details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving championship details for driver ID: {DriverId}", driverId);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "CHAMPIONSHIP_DRIVER_ERROR",
+                        Message = "An error occurred while retrieving the driver's championship history",
+                        Details = ex.Message
+                    });
+            }
+        }
+
+        /// <summary>
+        /// Get the driver championship standings for a specific historical season.
+        /// </summary>
+        [HttpGet("championship/season/{season}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<DriverChampionshipDto>>> GetSeasonChampionship(int season)
+        {
+            _logger.LogInformation("Retrieving driver championship standings for season: {Season}", season);
+
+            try
+            {
+                var championship = await _raceService.GetDriverChampionshipStandingsAsync(season);
+                return Ok(championship);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving championship standings for season {Season}", season);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "CHAMPIONSHIP_SEASON_ERROR",
+                        Message = $"An error occurred while retrieving the championship standings for the {season} season.",
+                        Details = ex.Message
+                    });
+            }
+        }
+        
+
+        /// <summary>
+        /// Store race results automatically for a finished race (current season only).
+        /// </summary>
+        /// <param name="raceId">Race identifier</param>
+        /// <param name="dto">The race results data with positions and optional fastest lap.</param>
+        /// <returns>Success message</returns>
+        [HttpPost("{raceId}/results")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult> StoreRaceResults(int raceId, [FromBody] StoreRaceResultsDto dto)
+        {
+            _logger.LogInformation("Storing race results for race: {RaceId}", raceId);
+
+            try
+            {
+                await _raceService.StoreRaceResultAsync(raceId, dto.Positions, dto.FastestLapDriverId);
+
+                _logger.LogInformation("Race results stored successfully for: {RaceId}", raceId);
+
+                return Ok(new { message = "Race results stored successfully" });
+            }
+            catch (KeyNotFoundException)
+            {
+                _logger.LogWarning("Race not found while storing results: {RaceId}", raceId);
+                return NotFound(new ErrorResponse
+                {
+                    Error = "RACE_NOT_FOUND",
+                    Message = $"Race with ID {raceId} not found"
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid arguments while storing race results: {RaceId}", raceId);
+                return BadRequest(new ErrorResponse
+                {
+                    Error = "INVALID_INPUT",
+                    Message = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing race results: {RaceId}", raceId);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "RACE_DATA_ERROR",
+                        Message = "An error occurred while storing race results",
+                        Details = ex.Message
+                    });
+            }
+        }
+
+        /// <summary>
+        /// Get stored race results from the RaceResult entity (current season only).
+        /// Returns null-compatible result if no stored results exist.
+        /// </summary>
+        /// <param name="raceId">Race identifier</param>
+        /// <returns>Stored race result DTO or null</returns>
+        [HttpGet("{raceId}/stored-results")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<RaceResultDto?>> GetStoredRaceResults(int raceId)
+        {
+            _logger.LogInformation("Getting stored race results for race: {RaceId}", raceId);
+
+            try
+            {
+                var result = await _raceService.GetStoredRaceResultAsync(raceId);
+
+                if (result == null)
+                {
+                    _logger.LogInformation("No stored race results found for: {RaceId}", raceId);
+                    return Ok((object)null);
+                }
+
+                _logger.LogInformation("Stored race results retrieved for: {RaceId}", raceId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving stored race results: {RaceId}", raceId);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new ErrorResponse
+                    {
+                        Error = "RACE_DATA_ERROR",
+                        Message = "An error occurred while retrieving stored race results",
+                        Details = ex.Message
+                    });
+            }
         }
     }
 }

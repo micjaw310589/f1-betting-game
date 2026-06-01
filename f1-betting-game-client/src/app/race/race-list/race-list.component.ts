@@ -24,7 +24,7 @@ export class RaceListComponent implements OnInit, OnDestroy {
   // Pagination controls
   page = 1;
   pageSize = 9;
-  filterType: 'all' | 'upcoming' | 'past' = 'upcoming';
+  filterType: 'all' | 'upcoming' | 'past' |'live' = 'upcoming';
 
 
   ngOnInit(): void {
@@ -76,7 +76,7 @@ export class RaceListComponent implements OnInit, OnDestroy {
    * Filters the race list by category (Upcoming, Past, All).
    * @param filterType The type of filter to apply.
    */
-  filterRaces(filterType: 'all' | 'upcoming' | 'past'): void {
+  filterRaces(filterType: 'all' | 'upcoming' | 'past' | 'live'): void {
     this.filterType = filterType;
     this.page = 1; // Reset to the first page upon filtering
     this.loadRaceSummaries();
@@ -94,16 +94,15 @@ export class RaceListComponent implements OnInit, OnDestroy {
    * @param status The race status.
    * @returns The corresponding CSS class name.
    */
-  getStatusClass(status: 'Scheduled' | 'InProgress' | 'Finished' | 'ResultsProcessed'): string {
-    switch (status) {
-        case 'Scheduled': return 'status-scheduled';
-        case 'InProgress': return 'status-in-progress';
-        case 'Finished': return 'status-finished';
-        case 'ResultsProcessed': return 'status-results-processed';
-        default: return '';
-    }
+getStatusClass(status: 'Scheduled' | 'InProgress' | 'Finished' | 'ResultsProcessed'): string {
+  switch (status) {
+      case 'Scheduled': return 'scheduled';
+      case 'InProgress': return 'in-progress';
+      case 'Finished': return 'finished';
+      case 'ResultsProcessed': return 'results-processed'; // Poprawione: dopasowanie do klasy CSS
+      default: return '';
   }
-  
+}
   /**
    * Helper function to return a readable status text.
    * @param status The race status.

@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Transactions;
 using System.Collections.Generic;
 using System.Linq;
+using F1BettingGame.Domain.Entities;
 
 namespace F1BettingApp.Application.Services
 {
@@ -521,7 +522,9 @@ namespace F1BettingApp.Application.Services
 
         public async Task<IEnumerable<DriverDto>> GetAllDriversAsync()
         {
-            var driversList = (await _driverRepository.GetAllAsync()).ToList();
+            var driversList = await _dbContext.Drivers
+                .Include(d => d.Team)
+                .ToListAsync();
             return driversList.Select(d => new DriverDto
             {
                 Id = d.Id,
@@ -560,6 +563,394 @@ namespace F1BettingApp.Application.Services
             {
                 return 1.25m;
             }
+        }
+
+/// <summary>
+        /// Pobiera klasyfikację generalną kierowców dla danego sezonu posortowaną od 1. miejsca.
+        /// </summary>
+        public async Task<IEnumerable<DriverChampionshipDto>> GetDriverChampionshipStandingsAsync(int season)
+        {
+            return await _dbContext.DriverChampionships
+                .Include(dc => dc.Driver)
+                    .ThenInclude(d => d.Team)
+                .Include(dc => dc.RaceResults)
+                    .ThenInclude(r => r.Race)
+                .Where(dc => dc.Season == season)
+                .OrderBy(dc => dc.Position)
+                .Select(dc => new DriverChampionshipDto
+                {
+                    DriverId = dc.DriverId,
+                    DriverName = dc.Driver.Name,
+                    DriverCountry = dc.Driver.Country,
+                    TeamName = dc.Driver.Team != null ? dc.Driver.Team.Name : "No Team",
+                    Season = dc.Season,
+                    TotalPoints = dc.Points,
+                    Position = dc.Position,
+                    LastUpdated = dc.LastUpdated,
+                    RaceResults = dc.RaceResults
+                        .OrderBy(r => r.Race.Date)
+                        .Select(r => new DriverChampionshipRaceDto
+                        {
+                            RaceId = r.RaceId,
+                            RaceName = r.Race.Name,
+                            PointsEarned = r.PointsEarned,
+                            PositionInRace = r.Position
+                        }).ToList()
+                })
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Pobiera szczegółową historię startów konkretnego kierowcy w wybranym sezonie.
+        /// </summary>
+        public async Task<DriverChampionshipDto?> GetDriverChampionshipDetailsAsync(int driverId, int season)
+        {
+            return await _dbContext.DriverChampionships
+                .Include(dc => dc.Driver)
+                    .ThenInclude(d => d.Team)
+                .Include(dc => dc.RaceResults)
+                    .ThenInclude(r => r.Race)
+                .Where(dc => dc.DriverId == driverId && dc.Season == season)
+                .Select(dc => new DriverChampionshipDto
+                {
+                    DriverId = dc.DriverId,
+                    DriverName = dc.Driver.Name,
+                    DriverCountry = dc.Driver.Country,
+                    TeamName = dc.Driver.Team != null ? dc.Driver.Team.Name : "No Team",
+                    Season = dc.Season,
+                    TotalPoints = dc.Points,
+                    Position = dc.Position,
+                    LastUpdated = dc.LastUpdated,
+                    RaceResults = dc.RaceResults
+                        .OrderBy(r => r.Race.Date)
+                        .Select(r => new DriverChampionshipRaceDto
+                        {
+                            RaceId = r.RaceId,
+                            RaceName = r.Race.Name,
+                            PointsEarned = r.PointsEarned,
+                            PositionInRace = r.Position
+                        }).ToList()
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Aktualizuje tabelę klasyfikacji na podstawie wyników pojedynczego ukończonego wyścigu.
+        /// </summary>
+        public async Task UpdateChampionshipFromRaceResultsAsync(int raceId)
+        {
+            var race = await _dbContext.Races.FindAsync(raceId);
+            if (race == null) return;
+
+            // Pobierz wyniki dla tego wyścigu
+            var raceResults = await _dbContext.Results
+                .Where(r => r.RaceId == raceId)
+                .ToListAsync();
+
+            if (!raceResults.Any()) return;
+
+            foreach (var result in raceResults)
+            {
+                // Znajdź lub utwórz rekord klasyfikacji generalnej dla kierowcy w danym sezonie
+                var championshipEntry = await _dbContext.DriverChampionships
+                    .FirstOrDefaultAsync(dc => dc.DriverId == result.DriverId && dc.Season == race.Season);
+
+                if (championshipEntry == null)
+                {
+                    championshipEntry = new DriverChampionship
+                    {
+                        DriverId = result.DriverId,
+                        Season = race.Season,
+                        Points = 0,
+                        Position = 0,
+                        LastUpdated = DateTime.UtcNow
+                    };
+                    _dbContext.DriverChampionships.Add(championshipEntry);
+                    // Zapisujemy, aby wygenerować Id wymagane do powiązania tabeli wyścigów
+                    await _dbContext.SaveChangesAsync();
+                }
+
+                // Sprawdź, czy punkty z tego wyścigu nie zostały już przypadkowo dodane (idempotentność)
+                var alreadyProcessed = await _dbContext.DriverChampionshipRaces
+                    .AnyAsync(r => r.DriverChampionshipId == championshipEntry.Id && r.RaceId == raceId);
+
+                if (!alreadyProcessed)
+                {
+                    var raceEntry = new DriverChampionshipRace
+                    {
+                        DriverChampionshipId = championshipEntry.Id,
+                        RaceId = raceId,
+                        PointsEarned = result.Points,
+                        Position = result.Position
+                    };
+
+                    _dbContext.DriverChampionshipRaces.Add(raceEntry);
+                    championshipEntry.Points += result.Points;
+                    championshipEntry.LastUpdated = DateTime.UtcNow;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            // Po dodaniu punktów, przelicz pozycje wszystkich kierowców w tym sezonie
+            await RecalculatePositionsAsync(race.Season);
+        }
+
+        /// <summary>
+        /// Czyści i całkowicie od nowa generuje klasyfikację dla wybranego sezonu.
+        /// </summary>
+        public async Task RecalculateChampionshipAsync(int season)
+        {
+            // Usunięcie starych danych dla wybranego sezonu (Cascade usunie rekordy z tabeli DriverChampionshipRaces)
+            var existingEntries = await _dbContext.DriverChampionships
+                .Where(dc => dc.Season == season)
+                .ToListAsync();
+
+            _dbContext.DriverChampionships.RemoveRange(existingEntries);
+            await _dbContext.SaveChangesAsync();
+
+            // Pobranie wszystkich ukończonych wyścigów z tego sezonu, które mają przypisane wyniki
+            var races = await _dbContext.Races
+                .Where(r => r.Season == season)
+                .OrderBy(r => r.Date)
+                .ToListAsync();
+
+            foreach (var race in races)
+            {
+                var raceResults = await _dbContext.Results
+                    .Where(r => r.RaceId == race.Id)
+                    .ToListAsync();
+
+                foreach (var result in raceResults)
+                {
+                    var championshipEntry = await _dbContext.DriverChampionships
+                        .FirstOrDefaultAsync(dc => dc.DriverId == result.DriverId && dc.Season == season);
+
+                    if (championshipEntry == null)
+                    {
+                        championshipEntry = new DriverChampionship
+                        {
+                            DriverId = result.DriverId,
+                            Season = season,
+                            Points = 0,
+                            Position = 0,
+                            LastUpdated = DateTime.UtcNow
+                        };
+                        _dbContext.DriverChampionships.Add(championshipEntry);
+                        await _dbContext.SaveChangesAsync();
+                    }
+
+                    var raceEntry = new DriverChampionshipRace
+                    {
+                        DriverChampionshipId = championshipEntry.Id,
+                        RaceId = race.Id,
+                        PointsEarned = result.Points,
+                        Position = result.Position
+                    };
+
+                    _dbContext.DriverChampionshipRaces.Add(raceEntry);
+                    championshipEntry.Points += result.Points;
+                    championshipEntry.LastUpdated = DateTime.UtcNow;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            // Przydzielenie ostatecznych pozycji w tabeli
+            await RecalculatePositionsAsync(season);
+        }
+
+        /// <summary>
+        /// Prywatna metoda pomocnicza do sortowania kierowców i aktualizacji ich pozycji (1, 2, 3...) w bazie danych.
+        /// </summary>
+        private async Task RecalculatePositionsAsync(int season)
+        {
+            var standings = await _dbContext.DriverChampionships
+                .Where(dc => dc.Season == season)
+                .OrderByDescending(dc => dc.Points)
+                .ToListAsync();
+
+            int position = 1;
+            foreach (var entry in standings)
+            {
+                entry.Position = position++;
+                entry.LastUpdated = DateTime.UtcNow;
+            }
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        
+
+        public async Task StoreRaceResultAsync(int raceId, List<PositionEntryDto> positions, int? fastestLapDriverId = null)
+        {
+            var race = await _raceRepository.GetByIdAsync(raceId);
+            if (race == null)
+                throw new KeyNotFoundException($"Race with ID {raceId} not found.");
+
+            var currentSeason = DateTime.UtcNow.Year;
+
+            // Only store results for current season
+            if (race.Season != currentSeason)
+                return;
+
+            // Validate positions
+            if (positions == null || !positions.Any())
+                throw new ArgumentException("At least one position entry is required.");
+
+            foreach (var pos in positions)
+            {
+                if (pos.Position < 1)
+                    throw new ArgumentException($"Position must be at least 1.");
+                if (pos.DriverId <= 0)
+                    throw new ArgumentException($"Invalid driver ID: {pos.DriverId}. Must be greater than 0.");
+            }
+
+            // Validate no duplicate drivers
+            var driverIds = positions.Select(p => p.DriverId).ToList();
+            var duplicates = driverIds.GroupBy(d => d).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+            if (duplicates.Any())
+                throw new ArgumentException($"Drivers cannot appear in multiple positions: {string.Join(", ", duplicates)}");
+
+            if (fastestLapDriverId.HasValue && fastestLapDriverId.Value <= 0)
+                throw new ArgumentException($"Invalid fastest lap driver ID: {fastestLapDriverId.Value}. Must be greater than 0.");
+
+            var raceResult = await _dbContext.RaceResults
+                .Include(r => r.Positions)
+                .FirstOrDefaultAsync(r => r.RaceId == raceId);
+
+            if (raceResult == null)
+            {
+                raceResult = new RaceResult
+                {
+                    RaceId = raceId,
+                    Season = currentSeason,
+                    Positions = new List<RaceResultPosition>(),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _dbContext.RaceResults.Add(raceResult);
+            }
+
+            // Fetch drivers to get their associated TeamIds
+            var driverIdsForPositions = positions.Select(p => p.DriverId).ToList();
+            var driversForPositions = await _dbContext.Drivers
+                .Where(d => driverIdsForPositions.Contains(d.Id))
+                .ToListAsync();
+            var driverTeamMap = driversForPositions.ToDictionary(d => d.Id, d => d.TeamId);
+
+            // Update positions
+            raceResult.Positions.Clear();
+            foreach (var pos in positions.OrderBy(p => p.Position))
+            {
+                var points = CalculatePointsForPosition(pos.Position);
+                
+                // Get the correct TeamId or default to 0 if not found
+                var actualTeamId = driverTeamMap.TryGetValue(pos.DriverId, out var mappedTeamId) 
+                    ? mappedTeamId 
+                    : 0;
+
+                raceResult.Positions.Add(new RaceResultPosition
+                {
+                    Position = pos.Position,
+                    DriverId = pos.DriverId,
+                    TeamId = actualTeamId, // No longer hardcoded to 0
+                    Points = points
+                });
+            }
+            raceResult.FastestLapDriverId = fastestLapDriverId;
+            raceResult.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<RaceResultDto?> GetStoredRaceResultAsync(int raceId)
+        {
+            // var currentSeason = DateTime.UtcNow.Year;
+
+            var raceResult = await _dbContext.RaceResults
+                .Include(r => r.Positions)
+                .Include(r => r.FastestLapDriver)
+                // .Where(r => r.RaceId == raceId && r.Season == currentSeason)
+                .Where(r => r.RaceId == raceId)
+
+                .FirstOrDefaultAsync();
+
+            if (raceResult == null)
+                return null;
+
+            // var allDrivers = await _driverRepository.GetAllAsync();
+            var allDrivers = await _dbContext.Drivers
+                .Include(d => d.Team)
+                .ToListAsync();
+            var driverLookup = allDrivers.ToDictionary(d => d.Id, d => d);
+
+            var positions = raceResult.Positions
+                .OrderBy(p => p.Position)
+                .Select(p => new PositionDto
+                {
+                    Position = p.Position,
+                    DriverId = p.DriverId,
+                    DriverName = driverLookup.ContainsKey(p.DriverId) ? driverLookup[p.DriverId].Name : "Unknown",
+                    TeamId = p.TeamId,
+                    TeamName = driverLookup.ContainsKey(p.DriverId) ? driverLookup[p.DriverId].Team?.Name ?? "TBD" : "TBD",
+                    Points = p.Points,
+                    FastestLap = null
+                })
+                .ToList();
+
+            // Find winner (position 1)
+            var winnerPosition = positions.FirstOrDefault(p => p.Position == 1);
+            var winnerDriverId = winnerPosition?.DriverId ?? 0;
+            var winnerDriver = driverLookup.ContainsKey(winnerDriverId) ? driverLookup[winnerDriverId] : null;
+
+            // Find fastest lap driver
+            var fastestLapDriverId = raceResult.FastestLapDriverId ?? 0;
+            var fastestLapDriver = fastestLapDriverId > 0 && driverLookup.ContainsKey(fastestLapDriverId)
+                ? driverLookup[fastestLapDriverId]
+                : null;
+
+            // Mark positions with fastest lap indicator
+            foreach (var pos in positions)
+            {
+                if (pos.DriverId == fastestLapDriverId)
+                {
+                    pos.FastestLap = TimeSpan.Zero;
+                }
+            }
+
+            return new RaceResultDto
+            {
+                RaceId = raceResult.RaceId,
+                RaceName = raceResult.Race?.Name ?? "Unknown",
+                Circuit = raceResult.Race?.Circuit ?? "Unknown",
+                Country = raceResult.Race?.Country ?? "Unknown",
+                RaceDate = raceResult.Race?.Date ?? DateTime.UtcNow,
+                WinnerDriverId = winnerDriver?.Id ?? 0,
+                WinnerDriverName = winnerDriver?.Name ?? "TBD",
+                WinnerTeamId = winnerDriver?.TeamId ?? 0,
+                WinnerTeamName = winnerDriver?.Team?.Name ?? "TBD",
+                FastestLapDriverId = raceResult.FastestLapDriverId,
+                FastestLapDriverName = fastestLapDriver?.Name ?? "TBD",
+                FastestLapTime = raceResult.FastLapTime,
+                Positions = positions
+            };
+        }
+
+        public async Task<int> PurgeOldSeasonResultsAsync()
+        {
+            var currentSeason = DateTime.UtcNow.Year;
+            var oldResults = await _dbContext.RaceResults
+                .Where(r => r.Season < currentSeason)
+                .ToListAsync();
+
+            if (!oldResults.Any())
+                return 0;
+
+            var count = oldResults.Count;
+            _dbContext.RaceResults.RemoveRange(oldResults);
+            await _dbContext.SaveChangesAsync();
+            return count;
         }
     }
 }

@@ -2,6 +2,7 @@ using BCrypt.Net;
 using F1BettingApp.Domain.Entities;
 using F1BettingApp.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace F1BettingApp.Infrastructure.Persistence;
 
@@ -162,6 +163,338 @@ public static class SeedData
                     race.OpenF1RaceId,
                     2026);
                 await context.Races.AddAsync(f1Race);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        // ====================================================================
+        // SEED MOCK DATA FOR DRIVER CHAMPIONSHIP STANDINGS (Wielosezonowy: 2026, 2025, 2024)
+        // ====================================================================
+        if (!context.DriverChampionships.Any())
+        {
+            var drivers = await context.Drivers.ToListAsync();
+            var races2026 = await context.Races.Where(r => r.Season == 2026).OrderBy(r => r.Date).ToListAsync();
+
+            if (drivers.Any())
+            {
+                var driverDict = drivers.ToDictionary(d => d.Name);
+
+                // --- 1. SEZON 2026 (Wyścigi z oficjalnego kalendarza) ---
+                var gpAustralia = races2026.FirstOrDefault(r => r.OpenF1RaceId == "2026-aus");
+                var gpChina = races2026.FirstOrDefault(r => r.OpenF1RaceId == "2026-chi");
+                var gpJapan = races2026.FirstOrDefault(r => r.OpenF1RaceId == "2026-jpn");
+
+                var mockResults2026 = new List<(string DriverName, (int Pos, int Pts) Aus, (int Pos, int Pts) Chi, (int Pos, int Pts) Jpn)>
+                {
+                    ("Max Verstappen", (1, 25), (1, 25), (2, 18)),     // 68 pkt
+                    ("Charles Leclerc", (2, 18), (3, 15), (1, 25)),    // 58 pkt
+                    ("Lando Norris", (3, 15), (2, 18), (4, 12)),       // 45 pkt
+                    ("Lewis Hamilton", (4, 12), (4, 12), (3, 15)),     // 39 pkt
+                    ("George Russell", (5, 10), (5, 10), (5, 10))      // 30 pkt
+                };
+
+                foreach (var resultData in mockResults2026)
+                {
+                    if (driverDict.TryGetValue(resultData.DriverName, out var driver))
+                    {
+                        var championshipEntry = new F1BettingGame.Domain.Entities.DriverChampionship
+                        {
+                            DriverId = driver.Id,
+                            Season = 2026,
+                            Points = resultData.Aus.Pts + resultData.Chi.Pts + resultData.Jpn.Pts,
+                            Position = 0, 
+                            LastUpdated = DateTime.UtcNow.AddHours(-2),
+                            RaceResults = new List<F1BettingGame.Domain.Entities.DriverChampionshipRace>()
+                        };
+                        await context.DriverChampionships.AddAsync(championshipEntry);
+                        await context.SaveChangesAsync(); 
+
+                        if (gpAustralia != null)
+                        {
+                            await context.DriverChampionshipRaces.AddAsync(new F1BettingGame.Domain.Entities.DriverChampionshipRace
+                            {
+                                DriverChampionshipId = championshipEntry.Id,
+                                RaceId = gpAustralia.Id,
+                                PointsEarned = resultData.Aus.Pts,
+                                Position = resultData.Aus.Pos
+                            });
+                        }
+                        if (gpChina != null)
+                        {
+                            await context.DriverChampionshipRaces.AddAsync(new F1BettingGame.Domain.Entities.DriverChampionshipRace
+                            {
+                                DriverChampionshipId = championshipEntry.Id,
+                                RaceId = gpChina.Id,
+                                PointsEarned = resultData.Chi.Pts,
+                                Position = resultData.Chi.Pos
+                            });
+                        }
+                        if (gpJapan != null)
+                        {
+                            await context.DriverChampionshipRaces.AddAsync(new F1BettingGame.Domain.Entities.DriverChampionshipRace
+                            {
+                                DriverChampionshipId = championshipEntry.Id,
+                                RaceId = gpJapan.Id,
+                                PointsEarned = resultData.Jpn.Pts,
+                                Position = resultData.Jpn.Pos
+                            });
+                        }
+                    }
+                }
+
+                // --- 2. SEZON 2025 (Dane Historyczne) ---
+                // Tworzymy wirtualne wyścigi archiwalne dla 2025, żeby encje powiązane nie strzeliły errorem
+                var bhr2025 = new Race("Bahrain Grand Prix", new DateTime(2025, 3, 2, 0, 0, 0, DateTimeKind.Utc), "Sakhir", "Bahrain", "2025-bhr", 2025);
+                var mco2025 = new Race("Monaco Grand Prix", new DateTime(2025, 5, 25, 0, 0, 0, DateTimeKind.Utc), "Monte Carlo", "Monaco", "2025-mco", 2025);
+                await context.Races.AddRangeAsync(bhr2025, mco2025);
+                await context.SaveChangesAsync();
+
+                var mockResults2025 = new List<(string DriverName, (int Pos, int Pts) Bhr, (int Pos, int Pts) Mco)>
+                {
+                    ("Lando Norris", (1, 25), (1, 25)),       // 50 pkt - Lando mistrzem 2025!
+                    ("Max Verstappen", (2, 18), (2, 18)),     // 36 pkt
+                    ("Charles Leclerc", (3, 15), (4, 12)),    // 27 pkt
+                    ("Oscar Piastri", (4, 12), (3, 15))       // 27 pkt
+                };
+
+                foreach (var resultData in mockResults2025)
+                {
+                    if (driverDict.TryGetValue(resultData.DriverName, out var driver))
+                    {
+                        var championshipEntry = new F1BettingGame.Domain.Entities.DriverChampionship
+                        {
+                            DriverId = driver.Id,
+                            Season = 2025,
+                            Points = resultData.Bhr.Pts + resultData.Mco.Pts,
+                            Position = 0,
+                            LastUpdated = DateTime.UtcNow.AddDays(-180),
+                            RaceResults = new List<F1BettingGame.Domain.Entities.DriverChampionshipRace>()
+                        };
+                        await context.DriverChampionships.AddAsync(championshipEntry);
+                        await context.SaveChangesAsync();
+
+                        await context.DriverChampionshipRaces.AddAsync(new F1BettingGame.Domain.Entities.DriverChampionshipRace 
+                            { DriverChampionshipId = championshipEntry.Id, RaceId = bhr2025.Id, Position = resultData.Bhr.Pos, PointsEarned = resultData.Bhr.Pts });
+                        await context.DriverChampionshipRaces.AddAsync(new F1BettingGame.Domain.Entities.DriverChampionshipRace 
+                            { DriverChampionshipId = championshipEntry.Id, RaceId = mco2025.Id, Position = resultData.Mco.Pos, PointsEarned = resultData.Mco.Pts });
+                    }
+                }
+
+                // --- 3. SEZON 2024 (Dane Historyczne) ---
+                var dabi2024 = new Race("Abu Dhabi Grand Prix", new DateTime(2024, 11, 26, 0, 0, 0, DateTimeKind.Utc), "Yas Marina", "Abu Dhabi", "2024-abi", 2024);
+                await context.Races.AddAsync(dabi2024);
+                await context.SaveChangesAsync();
+
+                var mockResults2024 = new List<(string DriverName, (int Pos, int Pts) Abi)>
+                {
+                    ("Max Verstappen", (1, 25)),     // 25 pkt - Dominacja Maxa
+                    ("Lewis Hamilton", (2, 18)),     // 18 pkt
+                    ("George Russell", (3, 15))      // 15 pkt
+                };
+
+                foreach (var resultData in mockResults2024)
+                {
+                    if (driverDict.TryGetValue(resultData.DriverName, out var driver))
+                    {
+                        var championshipEntry = new F1BettingGame.Domain.Entities.DriverChampionship
+                        {
+                            DriverId = driver.Id,
+                            Season = 2024,
+                            Points = resultData.Abi.Pts,
+                            Position = 0,
+                            LastUpdated = DateTime.UtcNow.AddDays(-500),
+                            RaceResults = new List<F1BettingGame.Domain.Entities.DriverChampionshipRace>()
+                        };
+                        await context.DriverChampionships.AddAsync(championshipEntry);
+                        await context.SaveChangesAsync();
+
+                        await context.DriverChampionshipRaces.AddAsync(new F1BettingGame.Domain.Entities.DriverChampionshipRace 
+                            { DriverChampionshipId = championshipEntry.Id, RaceId = dabi2024.Id, Position = resultData.Abi.Pos, PointsEarned = resultData.Abi.Pts });
+                    }
+                }
+
+                await context.SaveChangesAsync();
+
+                // --- 4. AUTOMATYCZNE PRZELICZENIE POZYCJI DLA WSZYSTKICH SEZONÓW ---
+                var allSeasons = new[] { 2024, 2025, 2026 };
+                foreach (var currentSeason in allSeasons)
+                {
+                    var standings = await context.DriverChampionships
+                        .Where(dc => dc.Season == currentSeason)
+                        .OrderByDescending(dc => dc.Points)
+                        .ToListAsync();
+
+                    int currentPosition = 1;
+                    foreach (var entry in standings)
+                    {
+                        entry.Position = currentPosition++;
+                    }
+                }
+
+                await context.SaveChangesAsync();
+            }
+        }
+
+        // Seed quest definitions if not already seeded
+        if (!context.QuestDefinitions.Any())
+        {
+            var quests = new QuestDefinition[]
+            {
+                // --- Betting Quests ---
+                new QuestDefinition
+                {
+                    QuestId = "first_bet",
+                    Name = "First Checkered Flag",
+                    Description = "Place your first bet ever.",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = true,
+                    Target = 1,
+                    PointsReward = 200,
+                    IsActive = true,
+                    Order = 0
+                },
+                new QuestDefinition
+                {
+                    QuestId = "race_day_bettor",
+                    Name = "Race Day Bettor",
+                    Description = "Place at least 1 bet during a race weekend (Fri–Sun).",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = false,
+                    Target = 1,
+                    PointsReward = 50,
+                    IsActive = true,
+                    Order = 1
+                },
+                new QuestDefinition
+                {
+                    QuestId = "betting_marathon",
+                    Name = "Betting Marathon",
+                    Description = "Place 5 bets in a single week.",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = false,
+                    Target = 5,
+                    PointsReward = 150,
+                    IsActive = true,
+                    Order = 2
+                },
+                new QuestDefinition
+                {
+                    QuestId = "bold_move",
+                    Name = "Bold Move",
+                    Description = "Place a bet with 1000+ points stake in one go.",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = false,
+                    Target = 1,
+                    PointsReward = 75,
+                    IsActive = true,
+                    Order = 3
+                },
+                new QuestDefinition
+                {
+                    QuestId = "consistent_bettor",
+                    Name = "Consistent Bettor",
+                    Description = "Place at least 1 bet on 5 different days within a week.",
+                    Category = QuestCategory.Betting,
+                    IsOneTime = false,
+                    Target = 5,
+                    PointsReward = 200,
+                    IsActive = true,
+                    Order = 4
+                },
+                // --- Engagement Quests ---
+                new QuestDefinition
+                {
+                    QuestId = "login_streak_weekly",
+                    Name = "Pole Position",
+                    Description = "Log in 5 out of 7 days in a week.",
+                    Category = QuestCategory.Engagement,
+                    IsOneTime = false,
+                    Target = 5,
+                    PointsReward = 100,
+                    IsActive = true,
+                    Order = 5
+                },
+                new QuestDefinition
+                {
+                    QuestId = "race_weekend_ready",
+                    Name = "Race Weekend Ready",
+                    Description = "Log in on both Friday and Saturday of a race weekend.",
+                    Category = QuestCategory.Engagement,
+                    IsOneTime = false,
+                    Target = 1,
+                    PointsReward = 75,
+                    IsActive = true,
+                    Order = 6
+                },
+                new QuestDefinition
+                {
+                    QuestId = "race_explorer",
+                    Name = "Race Explorer",
+                    Description = "Visit race detail pages for 3 different races in a week.",
+                    Category = QuestCategory.Engagement,
+                    IsOneTime = false,
+                    Target = 3,
+                    PointsReward = 50,
+                    IsActive = true,
+                    Order = 7
+                },
+                // --- Achievement Quests ---
+                new QuestDefinition
+                {
+                    QuestId = "winning_streak",
+                    Name = "Winning Streak",
+                    Description = "Win 3 bets in a single week.",
+                    Category = QuestCategory.Achievement,
+                    IsOneTime = false,
+                    Target = 3,
+                    PointsReward = 300,
+                    IsActive = true,
+                    Order = 8
+                },
+                new QuestDefinition
+                {
+                    QuestId = "comeback_king",
+                    Name = "Comeback King",
+                    Description = "Win a bet after having 3 consecutive losing bets.",
+                    Category = QuestCategory.Achievement,
+                    IsOneTime = true,
+                    Target = 1,
+                    PointsReward = 150,
+                    IsActive = true,
+                    Order = 9
+                },
+                new QuestDefinition
+                {
+                    QuestId = "streak_master",
+                    Name = "Streak Master",
+                    Description = "Maintain a 7-day login streak.",
+                    Category = QuestCategory.Achievement,
+                    IsOneTime = true,
+                    Target = 1,
+                    PointsReward = 500,
+                    IsActive = true,
+                    Order = 10
+                },
+                new QuestDefinition
+                {
+                    QuestId = "top_10",
+                    Name = "Top 10",
+                    Description = "Finish in the top 10 of the leaderboard at any point during the week.",
+                    Category = QuestCategory.Achievement,
+                    IsOneTime = false,
+                    Target = 1,
+                    PointsReward = 250,
+                    IsActive = true,
+                    Order = 11
+                }
+            };
+
+            foreach (var quest in quests)
+            {
+                quest.CreatedAt = DateTime.UtcNow;
+                quest.UpdatedAt = DateTime.UtcNow;
+                await context.QuestDefinitions.AddAsync(quest);
             }
 
             await context.SaveChangesAsync();

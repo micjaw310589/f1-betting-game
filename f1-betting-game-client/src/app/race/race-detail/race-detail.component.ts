@@ -7,6 +7,8 @@ import { RaceDetailDto } from '../models/race.models';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
+import { PositionDto, RaceResultDto } from '../services/race.service';
+import { DurationPipe } from '../shared/duration.pipe';
 
 interface RaceDetailData {
   details: RaceDetailDto;
@@ -16,12 +18,27 @@ interface RaceDetailData {
 @Component({
   selector: 'app-race-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, DurationPipe],
   templateUrl: './race-detail.component.html',
   styleUrls: ['./race-detail.component.css'],
 })
 export class RaceDetailComponent implements OnInit {
   raceDetailData$!: Observable<RaceDetailData>;
+  raceResult$!: Observable<RaceResultDto | null>; // <-- Change to Observable
+
+  private readonly TEAM_COLORS: Record<string, string> = {
+    'Red Bull Racing': '#367FA9',
+    'Ferrari': '#E80020',
+    'McLaren': '#FF8000',
+    'Mercedes': '#27F4D2',
+    'Aston Martin': '#229971',
+    'Alpine': '#0093CC',
+    'Haas F1 Team': '#B6BABD',
+    'RB': '#6692FF',
+    'Sauber': '#52E252',
+    'Williams': '#64C4FF',
+    'Audi': '#F50057'
+  };
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -34,8 +51,9 @@ export class RaceDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // 1. Fetch the main detail data (No changes here)
     this.raceDetailData$ = this.activatedRoute.paramMap.pipe(
-      map(params => params.get('id')!),
+      map((params: ParamMap) => params.get('id')!),
       switchMap((raceId: string) => {
         const id = Number(raceId);
         return forkJoin({
@@ -45,15 +63,36 @@ export class RaceDetailComponent implements OnInit {
           )
         });
       }),
-      catchError(error => {
+      catchError((error: any) => {
         console.error('Error loading race details:', error);
-        // Return a minimal object so the template doesn't break
-        return of({
-          details: {} as RaceDetailDto,
-          odds: {} as Record<number, number>
-        });
+        return of({ details: {} as RaceDetailDto, odds: {} as Record<number, number> });
       }),
       shareReplay(1)
+    );
+
+    // 2. Reactively fetch results based on the main data
+    this.raceResult$ = this.raceDetailData$.pipe(
+      switchMap((data) => {
+        const status = data.details?.status?.toLowerCase();
+        // const season = data.details?.season;
+        const id = data.details?.id;
+
+        // If the race is finished, fetch the results. Otherwise, return null.
+        if (
+          (status === 'finished' || status === 'resultsprocessed') && 
+          // season !== undefined && 
+          id !== undefined
+        ) {
+          return this.raceService.getStoredRaceResults(id).pipe(
+            catchError((error: any) => {
+              console.error('Error loading race results:', error);
+              return of(null);
+            })
+          );
+        }
+        
+        return of(null);
+      })
     );
   }
 
@@ -79,5 +118,9 @@ export class RaceDetailComponent implements OnInit {
 
   formatOdds(odds: number): string {
     return odds.toFixed(2);
+  }
+
+  getTeamColor(teamName: string): string {
+    return this.TEAM_COLORS[teamName] || '#FFFFFF';
   }
 }

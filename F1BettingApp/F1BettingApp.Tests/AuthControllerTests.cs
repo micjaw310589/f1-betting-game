@@ -3,6 +3,7 @@
 using F1BettingApp.API.Controllers;
 using F1BettingApp.Application.DTOs;
 using F1BettingApp.Application.Interfaces;
+using F1BettingApp.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Moq;
@@ -20,12 +21,16 @@ namespace F1BettingApp.Tests
     public class AuthControllerTests
     {
         private readonly Mock<IUserService> _mockUserService;
+        private readonly Mock<IDailyLoginService> _mockDailyLoginService;
+        private readonly Mock<IQuestService> _mockQuestService;
         private readonly IConfiguration _configuration;
         private readonly AuthController _controller;
 
         public AuthControllerTests()
         {
             _mockUserService = new Mock<IUserService>();
+            _mockDailyLoginService = new Mock<IDailyLoginService>();
+            _mockQuestService = new Mock<IQuestService>();
 
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
@@ -36,7 +41,7 @@ namespace F1BettingApp.Tests
             });
 
             _configuration = configurationBuilder.Build();
-            _controller = new AuthController(_mockUserService.Object, _configuration);
+            _controller = new AuthController(_mockUserService.Object, _configuration, _mockDailyLoginService.Object, _mockQuestService.Object);
         }
 
         [Fact]

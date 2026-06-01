@@ -21,15 +21,18 @@ namespace F1BettingApp.API.Controllers
     {
         private readonly IRaceService _raceService;
         private readonly IBettingService _bettingService;
+        private readonly IQuestDefinitionService _questDefinitionService;
         private readonly ILogger<AdminController> _logger;
 
 public AdminController(
             IRaceService raceService,
             IBettingService bettingService,
+            IQuestDefinitionService questDefinitionService,
             ILogger<AdminController> logger)
         {
             _raceService = raceService;
             _bettingService = bettingService;
+            _questDefinitionService = questDefinitionService;
             _logger = logger;
         }
 
@@ -168,6 +171,14 @@ public AdminController(
                 }
 
                 await _raceService.OverrideRaceResultAsync(raceId, dto);
+
+                // Also store in RaceResult entity for current season
+                var currentSeason = DateTime.UtcNow.Year;
+                var race = await _raceService.GetRaceByIdAsync(raceId);
+                if (race != null && race.Season == currentSeason)
+                {
+                    await _raceService.StoreRaceResultAsync(raceId, dto.Positions, dto.FastestLapDriverId);
+                }
 
                 _logger.LogInformation(
                     "Race results overridden successfully: RaceId={RaceId}", raceId);
@@ -730,6 +741,219 @@ public AdminController(
                 {
                     Error = "BET_DELETION_FAILED",
                     Message = "Failed to delete bet",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        // ========================
+        // Quest Management Endpoints
+        // ========================
+
+        /// <summary>
+        /// Gets all quest definitions with optional filtering (admin only).
+        /// </summary>
+        /// <param name="isActive">Optional filter by active status.</param>
+        [HttpGet("quests")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<IEnumerable<QuestDto>>> GetAllQuestDefinitions([FromQuery] bool? isActive = null)
+        {
+            _logger.LogInformation("Admin fetching quest definitions: IsActive={IsActive}", isActive);
+
+            try
+            {
+                var quests = await _questDefinitionService.GetAllQuestDefinitionsAsync(isActive);
+                return Ok(quests);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching quest definitions");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "QUEST_DATA_ERROR",
+                    Message = "An error occurred while retrieving quest definitions",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Creates a new quest definition (admin only).
+        /// </summary>
+        /// <param name="dto">The quest creation data.</param>
+        [HttpPost("quests")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<QuestDto>> CreateQuestDefinition([FromBody] CreateQuestDto dto)
+        {
+            _logger.LogInformation("Admin creating quest: {QuestId}, {Name}", dto.QuestId, dto.Name);
+
+            try
+            {
+                var quest = await _questDefinitionService.CreateQuestDefinitionAsync(dto);
+
+                _logger.LogInformation("Quest created successfully: QuestId={QuestId}", quest.QuestId);
+
+                return CreatedAtAction(nameof(GetAllQuestDefinitions), new { }, quest);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Admin quest creation failed: Invalid input");
+                return BadRequest(new ErrorResponse
+                {
+                    Error = "INVALID_INPUT",
+                    Message = ex.Message,
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating quest definition");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "QUEST_CREATION_FAILED",
+                    Message = "Failed to create quest definition",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Updates an existing quest definition (admin only).
+        /// </summary>
+        /// <param name="id">The quest definition ID.</param>
+        /// <param name="dto">The quest update data.</param>
+        [HttpPut("quests/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<QuestDto>> UpdateQuestDefinition(int id, [FromBody] UpdateQuestDto dto)
+        {
+            _logger.LogInformation("Admin updating quest definition: Id={Id}", id);
+
+            try
+            {
+                var quest = await _questDefinitionService.UpdateQuestDefinitionAsync(id, dto);
+
+                _logger.LogInformation("Quest definition updated successfully: Id={Id}", id);
+
+                return Ok(quest);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Admin quest update failed: Quest not found, Id={Id}", id);
+                return NotFound(new ErrorResponse
+                {
+                    Error = "QUEST_NOT_FOUND",
+                    Message = ex.Message,
+                    Details = ex.Message
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Admin quest update failed: Invalid input, Id={Id}", id);
+                return BadRequest(new ErrorResponse
+                {
+                    Error = "INVALID_INPUT",
+                    Message = ex.Message,
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating quest definition: Id={Id}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "QUEST_UPDATE_FAILED",
+                    Message = "Failed to update quest definition",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Deletes a quest definition (admin only). Does not affect existing progress records.
+        /// </summary>
+        /// <param name="id">The quest definition ID.</param>
+        [HttpDelete("quests/{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> DeleteQuestDefinition(int id)
+        {
+            _logger.LogInformation("Admin deleting quest definition: Id={Id}", id);
+
+            try
+            {
+                await _questDefinitionService.DeleteQuestDefinitionAsync(id);
+
+                _logger.LogInformation("Quest definition deleted successfully: Id={Id}", id);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Admin quest deletion failed: Quest not found, Id={Id}", id);
+                return NotFound(new ErrorResponse
+                {
+                    Error = "QUEST_NOT_FOUND",
+                    Message = ex.Message,
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting quest definition: Id={Id}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "QUEST_DELETION_FAILED",
+                    Message = "Failed to delete quest definition",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Toggles a quest's active status (admin only).
+        /// </summary>
+        /// <param name="id">The quest definition ID.</param>
+        /// <param name="dto">The active status to set.</param>
+        [HttpPatch("quests/{id}/active")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<QuestDto>> ToggleQuestActive(int id, [FromBody] ToggleQuestActiveDto dto)
+        {
+            _logger.LogInformation("Admin toggling quest active status: Id={Id}, IsActive={IsActive}", id, dto.IsActive);
+
+            try
+            {
+                var quest = await _questDefinitionService.ToggleQuestActiveAsync(id, dto.IsActive);
+
+                _logger.LogInformation("Quest active status toggled successfully: Id={Id}, IsActive={IsActive}", id, dto.IsActive);
+
+                return Ok(quest);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Admin quest toggle failed: Quest not found, Id={Id}", id);
+                return NotFound(new ErrorResponse
+                {
+                    Error = "QUEST_NOT_FOUND",
+                    Message = ex.Message,
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling quest active status: Id={Id}", id);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Error = "QUEST_TOGGLE_FAILED",
+                    Message = "Failed to toggle quest active status",
                     Details = ex.Message
                 });
             }

@@ -62,7 +62,7 @@ namespace F1BettingApp.Domain.Entities
             }
             
             // Validate position range (1-20 for finishing positions, 0 for DNF)
-            if ((position != 0 && position < 1) || position > 20)
+            if ((position != 0 && position < 1) || position > 22)
             {
                 throw new ArgumentException("Position must be between 0 and 20.");
             }

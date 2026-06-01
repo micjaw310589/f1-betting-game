@@ -1,0 +1,79 @@
+<div class="quest-board">
+  <div class="quest-board-header">
+    <h2>🏁 Quest Board</h2>
+    <p>Complete challenges to earn points!</p>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading quests...</p>
+    </div>
+  } @else if (error) {
+    <div class="message error">
+      {{ error }}
+    </div>
+  } @else if (quests.length === 0) {
+    <div class="empty-state">
+      <p>No active quests available at the moment. Check back later!</p>
+    </div>
+  } @else {
+    @for (group of groupedQuests; track group.category) {
+      <div class="quest-category">
+        <h3 class="category-title" [style.borderLeftColor]="group.config.color">
+          {{ group.config.emoji }} {{ group.config.label }}
+        </h3>
+
+        <div class="quest-grid">
+          @for (quest of group.quests; track quest.questId) {
+            <div class="quest-card">
+              <div class="quest-card-header">
+                <h4 class="quest-name">{{ quest.name }}</h4>
+                <div class="quest-badges">
+                  <span class="badge badge-category" [style.backgroundColor]="group.config.color">
+                    {{ quest.category }}
+                  </span>
+                  <span class="badge badge-type">
+                    {{ getTypeBadge(quest.isOneTime) }}
+                  </span>
+                </div>
+              </div>
+
+              <p class="quest-description">{{ quest.description }}</p>
+
+              <div class="quest-reward">
+                <span class="reward-points">🏆 {{ quest.pointsReward }} pts</span>
+                <span class="reward-target">Target: {{ quest.target }}</span>
+              </div>
+
+              @if (isLoggedIn && quest.progress !== undefined) {
+                <div class="quest-progress-section">
+                  <div class="progress-bar-container">
+                    <div
+                      class="progress-bar"
+                      [style.width.%]="getProgressPercentage(quest.progress ?? 0, quest.target)"
+                      [style.backgroundColor]="getProgressColor(getQuestState(quest.progress, quest.target, quest.isCompleted, quest.isClaimed))"
+                    ></div>
+                  </div>
+                  <div class="progress-info">
+                    <span class="progress-text">
+                      {{ quest.progress ?? 0 }} / {{ quest.target }}
+                      <span class="progress-percent">({{ getProgressPercentage(quest.progress ?? 0, quest.target) }}%)</span>
+                    </span>
+                    @if (getQuestState(quest.progress, quest.target, quest.isCompleted ?? null, quest.isClaimed ?? null) === 'claimed') {
+                      <span class="status-badge status-claimed">Completed ✓</span>
+                    } @else if (getQuestState(quest.progress, quest.target, quest.isCompleted ?? null, quest.isClaimed ?? null) === 'completed') {
+                      <span class="status-badge status-completed">Complete!</span>
+                    } @else if (getQuestState(quest.progress, quest.target, quest.isCompleted ?? null, quest.isClaimed ?? null) === 'not-started') {
+                      <span class="status-badge status-not-started">Not started</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

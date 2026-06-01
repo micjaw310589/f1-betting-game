@@ -216,6 +216,119 @@ class Notification {
   + MarkAsRead() : void
 }
 
+' === Statistics DTOs ===
+class EnhancedUserStatisticsDto {
+  + UserId : int
+  + Username : string
+  + TotalBets : int
+  + WinningBets : int
+  + LosingBets : int
+  + PushBets : int
+  + WinRate : decimal
+  + TotalWinnings : decimal
+  + ReturnOnInvestment : decimal
+  + CurrentWinStreak : int
+  + CurrentLoseStreak : int
+  + LongestWinStreak : int
+  + FavoriteDriverId : int
+  + FavoriteDriverName : string
+  + AverageBetAmount : decimal
+  + LargestWin : decimal
+  + LargestLoss : decimal
+  + LastBetDate : DateTime?
+  + TotalAmountBet : decimal
+  + BetsThisWeek : int
+  + BetsThisMonth : int
+  + Points : int
+  + Rank : int
+}
+
+class UserBetStatisticsCache {
+  + Id : int
+  + UserId : int
+  + User : User
+  + TotalBets : int
+  + WinningBets : int
+  + LosingBets : int
+  + PushBets : int
+  + TotalWinnings : decimal
+  + TotalAmountBet : decimal
+  + CurrentWinStreak : int
+  + CurrentLoseStreak : int
+  + LongestWinStreak : int
+  + LastUpdated : DateTime
+  + FavoriteDriverId : int
+  + LargestWin : decimal
+  + LargestLoss : decimal
+}
+
+class BetHistoryDto {
+  + BetId : int
+  + RaceId : int
+  + RaceName : string
+  + RaceDate : DateTime
+  + DriverName : string
+  + TeamName : string
+  + BetType : BetType
+  + Amount : decimal
+  + PayoutAmount : decimal?
+  + Status : BetStatus
+  + PlacedAt : DateTime
+  + SettledAt : DateTime?
+  + Odds : decimal?
+  + DriverPosition : int?
+}
+
+class UserBetAnalysisDto {
+  + UserId : int
+  + BetTypeAnalysis : Dictionary<BetType, BetTypeAnalysisDto>
+  + DriverAnalysis : Dictionary<int, DriverAnalysisDto>
+  + TeamAnalysis : Dictionary<int, TeamAnalysisDto>
+  + MonthlyAnalysis : MonthlyAnalysisDto[]
+  + TimeOfDayAnalysis : TimeOfDayAnalysisDto
+}
+
+class BetTypeAnalysisDto {
+  + TotalBets : int
+  + WinningBets : int
+  + WinRate : decimal
+  + TotalAmount : decimal
+  + TotalWinnings : decimal
+  + ROI : decimal
+}
+
+class DriverAnalysisDto {
+  + DriverName : string
+  + TotalBets : int
+  + WinningBets : int
+  + WinRate : decimal
+  + TotalWinnings : decimal
+}
+
+class MonthlyAnalysisDto {
+  + Year : int
+  + Month : int
+  + TotalBets : int
+  + WinningBets : int
+  + TotalWinnings : decimal
+}
+
+class TimeOfDayAnalysisDto {
+  + HourOfDay : int
+  + TotalBets : int
+  + WinningBets : int
+  + WinRate : decimal
+  + AverageBetAmount : decimal
+}
+
+class TeamAnalysisDto {
+  + TeamName : string
+  + TotalBets : int
+  + WinningBets : int
+  + WinRate : decimal
+  + TotalWinnings : decimal
+}
+
 ' === Enums ===
 enum BetStatus {
   Pending
@@ -256,12 +369,21 @@ User "1" -- "*" Bet : places >
 User "1" -- "*" Notification : receives >
 User "1" -- "*" LeaderboardHistory : tracked in >
 User "1" -- "*" Result : tied to >
+User "1" -- "1" UserBetStatisticsCache : has >
 Race "1" -- "*" Bet : for >
 Race "1" -- "*" Result : has >
 Race "1" -- "*" LeaderboardHistory : records >
 Team "1" -- "*" Driver : has >
 Driver "1" -- "*" Bet : selected in >
 Driver "1" -- "*" Result : achieved by >
+EnhancedUserStatisticsDto "1" -- "1" User : represents >
+UserBetStatisticsCache "1" -- "1" User : caches for >
+BetHistoryDto "1" -- "1" Bet : represents >
+UserBetAnalysisDto "1" -- "*" BetTypeAnalysisDto : contains >
+UserBetAnalysisDto "1" -- "*" DriverAnalysisDto : contains >
+UserBetAnalysisDto "1" -- "*" TeamAnalysisDto : contains >
+UserBetAnalysisDto "1" -- "*" MonthlyAnalysisDto : contains >
+UserBetAnalysisDto "1" -- "1" TimeOfDayAnalysisDto : contains >
 
 ' === Authentication Relationships ===
 AuthController "1" -- "1" JWTService : uses >

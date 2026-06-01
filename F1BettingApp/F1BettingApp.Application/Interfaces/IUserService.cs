@@ -1,4 +1,7 @@
 using F1BettingApp.Application.DTOs;
+using F1BettingApp.Domain.Enums;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace F1BettingApp.Application.Interfaces
@@ -105,6 +108,54 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
         /// <returns>Paginated bet history DTO</returns>
         Task<BetHistoryResponseDto> GetUserBetHistoryAsync(int userId, int page = 1, int pageSize = 20);
+
+        // --- Enhanced Statistics Methods ---
+        /// <summary>
+        /// Gets enhanced statistics for a user
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <returns>Enhanced user statistics DTO</returns>
+        Task<EnhancedUserStatisticsDto> GetEnhancedUserStatisticsAsync(int userId);
+
+        /// <summary>
+        /// Gets bet history for a user with filtering and pagination
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="limit">Number of items to return (default: 50)</param>
+        /// <param name="offset">Offset for pagination (default: 0)</param>
+        /// <param name="status">Optional filter by bet status</param>
+        /// <param name="driverId">Optional filter by driver ID</param>
+        /// <returns>Collection of bet history DTOs</returns>
+        Task<IEnumerable<BetHistoryDto>> GetBetHistoryAsync(int userId, int limit = 50, int offset = 0, BetStatus? status = null, int? driverId = null);
+
+        /// <summary>
+        /// Gets comprehensive bet analysis for a user
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <returns>User bet analysis DTO</returns>
+        Task<UserBetAnalysisDto> GetUserBetAnalysisAsync(int userId);
+
+        /// <summary>
+        /// Gets user statistics for a specific time range
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="startDate">Start date of the range</param>
+        /// <param name="endDate">End date of the range</param>
+        /// <returns>Enhanced user statistics DTO for the time range</returns>
+        Task<EnhancedUserStatisticsDto> GetUserStatisticsByTimeRangeAsync(int userId, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Updates the statistics cache for a user
+        /// </summary>
+        /// <param name="userId">The ID of the user</param>
+        /// <returns>Task representing the asynchronous operation</returns>
+        Task UpdateUserStatisticsCacheAsync(int userId);
+
+        /// <summary>
+        /// Recalculates statistics for all users
+        /// </summary>
+        /// <returns>Task representing the asynchronous operation</returns>
+        Task RecalculateAllUserStatisticsAsync();
 
         // --- Admin Methods ---
 

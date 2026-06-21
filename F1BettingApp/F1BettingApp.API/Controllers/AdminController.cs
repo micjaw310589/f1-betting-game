@@ -173,9 +173,10 @@ public AdminController(
                 await _raceService.OverrideRaceResultAsync(raceId, dto);
 
                 // Also store in RaceResult entity for current season
-                var currentSeason = DateTime.UtcNow.Year;
+                // var currentSeason = DateTime.UtcNow.Year;
                 var race = await _raceService.GetRaceByIdAsync(raceId);
-                if (race != null && race.Season == currentSeason)
+                // if (race != null && race.Season == currentSeason)
+                if (race != null)
                 {
                     await _raceService.StoreRaceResultAsync(raceId, dto.Positions, dto.FastestLapDriverId);
                 }

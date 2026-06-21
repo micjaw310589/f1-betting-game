@@ -10,6 +10,7 @@ using System.Transactions;
 using System.Collections.Generic;
 using System.Linq;
 using F1BettingGame.Domain.Entities;
+using System.Runtime.InteropServices;
 
 namespace F1BettingApp.Application.Services
 {
@@ -788,11 +789,11 @@ namespace F1BettingApp.Application.Services
             if (race == null)
                 throw new KeyNotFoundException($"Race with ID {raceId} not found.");
 
-            var currentSeason = DateTime.UtcNow.Year;
+            // var currentSeason = DateTime.UtcNow.Year;
 
-            // Only store results for current season
-            if (race.Season != currentSeason)
-                return;
+            // // Only store results for current season
+            // if (race.Season != currentSeason)
+            //     return;
 
             // Validate positions
             if (positions == null || !positions.Any())
@@ -824,7 +825,7 @@ namespace F1BettingApp.Application.Services
                 raceResult = new RaceResult
                 {
                     RaceId = raceId,
-                    Season = currentSeason,
+                    Season = race.Season,
                     Positions = new List<RaceResultPosition>(),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -937,20 +938,5 @@ namespace F1BettingApp.Application.Services
             };
         }
 
-        public async Task<int> PurgeOldSeasonResultsAsync()
-        {
-            var currentSeason = DateTime.UtcNow.Year;
-            var oldResults = await _dbContext.RaceResults
-                .Where(r => r.Season < currentSeason)
-                .ToListAsync();
-
-            if (!oldResults.Any())
-                return 0;
-
-            var count = oldResults.Count;
-            _dbContext.RaceResults.RemoveRange(oldResults);
-            await _dbContext.SaveChangesAsync();
-            return count;
-        }
     }
 }

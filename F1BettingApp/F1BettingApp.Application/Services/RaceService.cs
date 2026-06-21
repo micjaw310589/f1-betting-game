@@ -125,7 +125,11 @@ namespace F1BettingApp.Application.Services
                                     openF1Race.Id,
                                     openF1Race.Season
                                 );
-
+ 
+                                // Infer status from race date (OpenF1 doesn't provide explicit status)
+                                var now = DateTime.UtcNow;
+                                race.Status = openF1Race.Date > now ? RaceStatus.Scheduled : RaceStatus.Finished;
+ 
                                 await _raceRepository.AddAsync(race);
                                 created++;
                             }
@@ -137,7 +141,11 @@ namespace F1BettingApp.Application.Services
                                 existingRace.Circuit = openF1Race.Circuit;
                                 existingRace.Country = openF1Race.Country;
                                 existingRace.Season = openF1Race.Season;
-
+ 
+                                // Recalculate status based on updated date unless manually overridden
+                                var now = DateTime.UtcNow;
+                                existingRace.Status = openF1Race.Date > now ? RaceStatus.Scheduled : RaceStatus.Finished;
+ 
                                 await _raceRepository.UpdateAsync(existingRace);
                                 updated++;
                             }

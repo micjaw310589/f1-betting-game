@@ -15,6 +15,8 @@ namespace F1BettingApp.Infrastructure.OpenF1
         Task<IEnumerable<OpenF1Race>> GetUpcomingRacesAsync();
         Task<IEnumerable<OpenF1Race>> GetPastRacesAsync();
         Task<IEnumerable<OpenF1TeamData>> GetTeamsAsync(string raceId);
+
+        Task<IEnumerable<OpenF1ChampionshipDriverData>> GetDriverChampionshipStandingsAsync(string sessionKey);
     }
 
     public class OpenF1Race
@@ -52,5 +54,16 @@ namespace F1BettingApp.Infrastructure.OpenF1
     {
         public string TeamName { get; set; } = string.Empty;
         public string TeamColour { get; set; } = string.Empty; // Hex kolor zespołu z OpenF1
+    }
+
+public class OpenF1ChampionshipDriverData
+    {
+        public int DriverNumber { get; set; }
+        public int MeetingKey { get; set; }
+        public double? PointsCurrent { get; set; } // double? toleruje połówki punktów i nulle
+        public double? PointsStart { get; set; }   // double?
+        public int? PositionCurrent { get; set; }  // int? toleruje nulle
+        public int? PositionStart { get; set; }    // int?
+        public int SessionKey { get; set; }
     }
 }

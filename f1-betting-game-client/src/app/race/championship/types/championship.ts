@@ -7,15 +7,12 @@ export interface DriverChampionshipRaceDto {
 }
 
 export interface DriverChampionshipDto {
-  id: number;
   driverId: number;
   driverName: string;
+  driverCountry?: string;
   teamName: string;
   season: number;
-  points: number;
+  totalPoints: number; // Zmapowane z pola TotalPoints z backendu
   position: number;
-  wins: number;
-  podiums: number;
   lastUpdated: Date;
-  raceResults?: DriverChampionshipRaceDto[];
 }

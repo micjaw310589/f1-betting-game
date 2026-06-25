@@ -12,105 +12,65 @@
   }
 
   @if (!isLoading && driverData) {
-    <!-- PROFIL KIEROWCY -->
     <div class="driver-profile-card">
       <div class="profile-accent" [style.background-color]="getTeamColor(driverData.teamName)"></div>
-      <div class="profile-main">
-        <div class="meta-info">
-          <span class="team-badge">{{ driverData.teamName }}</span>
-          <span class="season-badge">Season {{ driverData.season }}</span>
-        </div>
-        <h1 class="driver-title-name">{{ driverData.driverName }}</h1>
-      </div>
       
-      <!-- GRID ZE STATYSTYKAMI -->
-      <div class="stats-grid">
-        <div class="stat-box box-pos">
-          <div class="stat-label">Championship P10</div>
-          <div class="stat-value">#{{ driverData.position }}</div>
+      <div class="profile-layout">
+        <div class="profile-main-info">
+          <div class="meta-info">
+            <span class="team-badge" [style.border-left]="'3px solid ' + getTeamColor(driverData.teamName)">
+              {{ driverData.teamName }}
+            </span>
+            <span class="season-badge">Season {{ driverData.season }}</span>
+          </div>
+          <h1 class="driver-title-name">{{ driverData.driverName }}</h1>
+          
+          <div class="driver-sub-meta">
+            <span class="country-label">Representing:</span>
+            <strong class="country-value">{{ driverData.driverCountry || 'Unknown' }}</strong>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="stat-label">Total Points</div>
-          <div class="stat-value values-pts">{{ driverData.points }}</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Grand Prix Wins</div>
-          <div class="stat-value value-wins">{{ driverData.wins }}</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Podiums</div>
-          <div class="stat-value">{{ driverData.podiums }}</div>
+
+        <div class="big-position-watermark" [style.color]="getTeamColor(driverData.teamName)">
+          P{{ driverData.position > 0 ? driverData.position : '—' }}
         </div>
       </div>
     </div>
 
-    <!-- WIZUALIZACJA PROGRESJI PUNKTOWEJ -->
-@if (pointsProgression.length > 0) {
-      <div class="chart-section-card">
-        <h2 class="section-sub-title">Points Progression</h2>
-        
-        <div class="chart-container-wrapper">
-          <div class="svg-chart-container">
-            <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="line-chart-svg">
-              <polyline
-                fill="none"
-                [attr.stroke]="getTeamColor(driverData.teamName)"
-                stroke-width="1"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                [attr.points]="getSvgPoints()" />
-            </svg>
+    <div class="history-section-card">
+      <h2 class="section-sub-title">Championship Metrics</h2>
+      
+      <div class="stats-grid">
+        <div class="stat-box box-pos" [style.border-left-color]="getTeamColor(driverData.teamName)">
+          <div class="stat-label">Championship Position</div>
+          <div class="stat-value">
+            {{ (driverData.position > 0 && driverData.position <= 22) ? '#' + driverData.position : '—' }}
+            <span class="stat-status-badge" [ngClass]="{
+              'badge-podium': driverData.position > 0 && driverData.position <= 3,
+              'badge-top10': driverData.position > 3 && driverData.position <= 10,
+              'badge-lower': driverData.position > 10
+            }">
+              {{ driverData.position > 0 && driverData.position <= 3 ? 'Podium' : (driverData.position <= 10 ? 'Top 10' : 'Grid') }}
+            </span>
+          </div>
+        </div>
 
-            <div class="interactive-points-layer">
-              @for (point of pointsProgression; track point.raceName; let i = $index; let total = $count) {
-                <div class="chart-node-column" [style.left.%]="(i / (total - 1 || 1)) * 100">
-                  <div class="node-wrapper" [style.bottom.%]="(point.totalPoints / driverData.points) * 100">
-                    <div class="chart-dot" [style.background-color]="getTeamColor(driverData.teamName)">
-                      <span class="bar-tooltip">{{ point.totalPoints }} PTS</span>
-                    </div>
-                  </div>
-                  <div class="chart-label-line">{{ point.raceName }}</div>
-                </div>
-              }
-            </div>
+        <div class="stat-box">
+          <div class="stat-label">Total Points Accumulation</div>
+          <div class="stat-value values-pts">{{ driverData.totalPoints }} <span class="unit">PTS</span></div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-label">Est. Form Factor</div>
+          <div class="stat-value value-wins" style="color: #ffb703;">
+            {{ (driverData.totalPoints / 12).toFixed(1) }} 
+            <span class="unit" style="font-size: 14px; color: var(--color-text-subtle);">AVG / GP</span>
           </div>
         </div>
       </div>
-    }
 
-    <!-- HISTORIA WYŚCIGÓW KROK PO KROKU -->
-    <!-- HISTORIA WYŚCIGÓW KROK PO KROKU -->
-    <div class="history-section-card">
-      <h2 class="section-sub-title">Race-by-Race Performance</h2>
-      
-      <div class="f1-performance-table">
-        <!-- Nagłówek Tabeli -->
-        <div class="f1-table-header">
-          <div class="col-gp">Grand Prix</div>
-          <div class="col-pos">Finished Position</div>
-          <div class="col-pts">Points Gained</div>
-        </div>
-
-        <!-- Wiersze z danymi -->
-        @for (race of driverData.raceResults; track race.raceId) {
-          <div class="f1-table-row">
-            <div class="col-gp race-name-cell">{{ race.raceName }}</div>
-            <div class="col-pos">
-              <span class="pos-badge" 
-                    [class.podium-first]="race.position === 1" 
-                    [class.podium-second]="race.position === 2"
-                    [class.podium-third]="race.position === 3"
-                    [class.podium-any]="race.position > 3">
-                P{{ race.position }}
-              </span>
-            </div>
-            <div class="col-pts points-gained">+{{ race.pointsEarned }} PTS</div>
-          </div>
-        } @empty {
-          <div class="empty-history">
-            No races registered for this driver yet.
-          </div>
-        }
+      <div class="profile-footer-sync">
+        Data integrity verified via OpenF1. Last database write: {{ driverData.lastUpdated | date: 'medium' }}
       </div>
     </div>
   }

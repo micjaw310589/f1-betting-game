@@ -41,8 +41,8 @@ namespace F1BettingApp.Application.Services
 
         public async Task<PagedResult<QuestDto>> GetPagedQuestDefinitionsAsync(int page, int pageSize, bool? isActive = null, string? searchTerm = null)
         {
-            var query = await _questDefinitionRepository.GetAllAsync(isActive, searchTerm);
-            var totalItems = await query.CountAsync();
+            var query = (await _questDefinitionRepository.GetAllAsync(isActive, searchTerm));
+            var totalItems = query.Count();
             var totalPages = pageSize > 0 ? (int)Math.Ceiling(totalItems / (double)pageSize) : 0;
 
             var items = await query
@@ -50,17 +50,12 @@ namespace F1BettingApp.Application.Services
                 .Take(pageSize)
                 .ToListAsync();
 
-            // Batch load completed counts for all items
+            // Load completed counts for all items (sequentially to avoid DbContext concurrency issues)
             var completedCounts = new Dictionary<string, int>();
-            var countTasks = items.Select(async quest =>
+            foreach (var quest in items)
             {
                 var count = await _weeklyQuestProgressRepository.GetCompletedCountByQuestIdAsync(quest.QuestId);
-                return (quest.QuestId, count);
-            });
-            var countResults = await Task.WhenAll(countTasks);
-            foreach (var (questId, count) in countResults)
-            {
-                completedCounts[questId] = count;
+                completedCounts[quest.QuestId] = count;
             }
 
             var result = new PagedResult<QuestDto>

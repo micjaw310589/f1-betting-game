@@ -45,6 +45,24 @@ namespace F1BettingApp.Application.Interfaces
         Task UpdateQuestProgressAsync(int userId, string questId, int amount, string? additionalContext = null);
 
         /// <summary>
+        /// Gets all active quest definitions by category.
+        /// </summary>
+        /// <param name="category">The quest category (e.g., "Betting", "Engagement", "Achievement").</param>
+        /// <returns>List of active quest definitions in the specified category.</returns>
+        Task<List<QuestDto>> GetAllActiveByCategoryAsync(string category);
+
+        /// <summary>
+        /// Updates progress for active quests in a category that are triggered by a specific event type.
+        /// This allows category-based flows such as bet placement, race views, and login activity to trigger quests.
+        /// </summary>
+        /// <param name="userId">The user ID.</param>
+        /// <param name="category">The quest category to evaluate.</param>
+        /// <param name="eventType">The trigger event type (e.g. "BetPlaced", "Login", "RaceViewed", "BetWon").</param>
+        /// <param name="amount">The amount to increment progress by.</param>
+        /// <param name="additionalContext">Optional context such as race ID or date for special quests.</param>
+        Task UpdateQuestProgressByCategoryEventAsync(int userId, string category, string eventType, int amount = 1, string? additionalContext = null);
+
+        /// <summary>
         /// Gets a single quest definition by its QuestId.
         /// </summary>
         /// <param name="questId">The quest identifier.</param>

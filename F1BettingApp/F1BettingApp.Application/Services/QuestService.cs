@@ -48,7 +48,7 @@ namespace F1BettingApp.Application.Services
         public async Task<QuestResponseDto> GetActiveQuestsAsync(int userId)
         {
             var quests = await _questDefinitionRepository.GetAllAsync(isActive: true);
-            var questList = await quests.ToListAsync();
+            var questList = quests.ToList();
 
             var result = new QuestResponseDto();
 
@@ -108,6 +108,71 @@ namespace F1BettingApp.Application.Services
                 Target = quest.Target,
                 PointsReward = quest.PointsReward,
                 IsActive = quest.IsActive
+            };
+        }
+
+        public async Task<List<QuestDto>> GetAllActiveByCategoryAsync(string category)
+        {
+            var quests = await _questDefinitionRepository.GetAllAsync(isActive: true);
+            var questList = quests.ToList();
+
+            return questList
+                .Where(q => q.Category.ToString() == category)
+                .Select(q => new QuestDto
+                {
+                    QuestId = q.QuestId,
+                    Name = q.Name,
+                    Description = q.Description,
+                    Category = q.Category.ToString(),
+                    IsOneTime = q.IsOneTime,
+                    Target = q.Target,
+                    PointsReward = q.PointsReward,
+                    IsActive = q.IsActive
+                })
+                .ToList();
+        }
+
+        public async Task UpdateQuestProgressByCategoryEventAsync(int userId, string category, string eventType, int amount = 1, string? additionalContext = null)
+        {
+            if (!Enum.TryParse<QuestCategory>(category, true, out var categoryEnum))
+            {
+                return;
+            }
+
+            var quests = await _questDefinitionRepository.GetAllAsync(isActive: true);
+            var questList = await quests.Where(q => q.Category == categoryEnum).ToListAsync();
+
+            foreach (var quest in questList)
+            {
+                if (!QuestMatchesEvent(quest, eventType))
+                {
+                    continue;
+                }
+
+                var questAmount = amount;
+                if (quest.QuestId == "comeback_king" && eventType.Equals("BetWon", StringComparison.OrdinalIgnoreCase))
+                {
+                    questAmount = 1;
+                }
+
+                await UpdateQuestProgressAsync(userId, quest.QuestId, questAmount, additionalContext);
+            }
+        }
+
+        private static bool QuestMatchesEvent(QuestDefinition quest, string eventType)
+        {
+            if (string.IsNullOrWhiteSpace(eventType))
+            {
+                return false;
+            }
+
+            return eventType.Trim().ToLowerInvariant() switch
+            {
+                "betplaced" => quest.Category == QuestCategory.Betting,
+                "betwon" => quest.Category == QuestCategory.Achievement && (quest.QuestId == "winning_streak" || quest.QuestId == "comeback_king"),
+                "raceviewed" => quest.Category == QuestCategory.Engagement && quest.QuestId == "race_explorer",
+                "login" => quest.Category == QuestCategory.Engagement && (quest.QuestId == "first_login" || quest.QuestId == "login_streak_weekly"),
+                _ => false,
             };
         }
 

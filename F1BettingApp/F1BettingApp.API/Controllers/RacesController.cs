@@ -217,8 +217,8 @@ public async Task<ActionResult<PagedResult<RaceSummaryDto>>> GetRaces(
                     var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                     if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
                     {
-                        // race_explorer: +1 per unique race viewed
-                        await _questService.UpdateQuestProgressAsync(userId, "race_explorer", 1, raceId.ToString());
+                        // Track race page views for engagement quests
+                        await _questService.UpdateQuestProgressByCategoryEventAsync(userId, "Engagement", "RaceViewed", 1, raceId.ToString());
                     }
                 }
                 catch (Exception ex)

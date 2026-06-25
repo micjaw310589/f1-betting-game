@@ -8,28 +8,18 @@ import { DriverChampionshipDto } from './types/championship';
   providedIn: 'root'
 })
 export class ChampionshipService {
-  private readonly API_URL = `${environment.apiUrl}/races/championship`;
+  // Gwarantujemy, że prefiks to /api/races, tak jak zdefiniowano w RacesController.cs
+  private readonly apiUrl = `${environment.apiUrl}/races`; 
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Pobiera aktualną klasyfikację generalną kierowców
-   */
+  // Pobiera 20 rekordów z bazy danych dla bieżącego sezonu 2026
   getCurrentStandings(): Observable<DriverChampionshipDto[]> {
-    return this.http.get<DriverChampionshipDto[]>(`${this.API_URL}/current`);
+    return this.http.get<DriverChampionshipDto[]>(`${this.apiUrl}/championship/current`);
   }
 
-  /**
-   * NOWA METODA: Pobiera klasyfikację generalną dla wybranego sezonu z backendu
-   */
-  getSeasonStandings(season: number): Observable<DriverChampionshipDto[]> {
-    return this.http.get<DriverChampionshipDto[]>(`${this.API_URL}/season/${season}`);
-  }
-
-  /**
-   * Pobiera szczegółową historię wyścigów danego kierowcy
-   */
+  // Pobiera szczegóły kierowcy z bazy danych
   getDriverDetails(driverId: number): Observable<DriverChampionshipDto> {
-    return this.http.get<DriverChampionshipDto>(`${this.API_URL}/driver/${driverId}`);
+    return this.http.get<DriverChampionshipDto>(`${this.apiUrl}/championship/driver/${driverId}`);
   }
 }

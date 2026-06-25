@@ -143,6 +143,39 @@ namespace F1BettingApp.Infrastructure.OpenF1
             public int RetryDelaySeconds { get; set; } = 5;
         }
 
+public async Task<IEnumerable<OpenF1ChampionshipDriverData>> GetDriverChampionshipStandingsAsync(string sessionKey)
+        {
+            var response = await _httpClient.GetAsync($"v1/championship_drivers?session_key={sessionKey}");
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            var standings = JsonSerializer.Deserialize<List<OpenF1ChampionshipDriverResponse>>(json, _jsonOptions);
+
+            if (standings == null) return [];
+
+            return standings.Select(s => new OpenF1ChampionshipDriverData
+            {
+                DriverNumber = s.DriverNumber,
+                MeetingKey = s.MeetingKey,
+                PointsCurrent = s.PointsCurrent,
+                PointsStart = s.PointsStart,
+                PositionCurrent = s.PositionCurrent,
+                PositionStart = s.PositionStart,
+                SessionKey = s.SessionKey
+            });
+        }
+
+// Dodaj do prywatnych klas na dole OpenF1Client:
+private class OpenF1ChampionshipDriverResponse
+        {
+            [JsonPropertyName("driver_number")] public int DriverNumber { get; set; }
+            [JsonPropertyName("meeting_key")] public int MeetingKey { get; set; }
+            [JsonPropertyName("points_current")] public double? PointsCurrent { get; set; } // double?
+            [JsonPropertyName("points_start")] public double? PointsStart { get; set; }     // double?
+            [JsonPropertyName("position_current")] public int? PositionCurrent { get; set; } // int?
+            [JsonPropertyName("position_start")] public int? PositionStart { get; set; }     // int?
+            [JsonPropertyName("session_key")] public int SessionKey { get; set; }
+        }
+
         // DTOs dopasowane precyzyjnie pod strukturę obiektów JSON z v1 OpenF1 API
         private class OpenF1SessionResponse
         {

@@ -1,17 +1,6 @@
 <div class="championship-container">
   <h1 class="championship-title">Drivers' Championship</h1>
 
-  <!-- SPORTOWE PRZEŁĄCZNIKI SEZONÓW W STYLU RACE-LIST -->
-  <div class="filter-buttons">
-    @for (seasonYear of availableSeasons; track seasonYear) {
-      <button 
-        (click)="changeSeason(seasonYear)" 
-        [class.active]="selectedSeason === seasonYear">
-        Season {{ seasonYear }}
-      </button>
-    }
-  </div>
-
   @if (isLoading) {
     <div class="loader-overlay">Loading standings...</div>
   }
@@ -31,30 +20,27 @@
               <th class="text-center">Pos</th>
               <th>Driver</th>
               <th>Team</th>
-              <th class="text-center">Wins</th>
-              <th class="text-center">Podiums</th>
               <th class="text-right">Points</th>
             </tr>
           </thead>
           <tbody>
-            @for (row of standings; track row.driverId) {
-<tr class="driver-row" [routerLink]="['/championship/driver', row.driverId]" style="cursor: pointer;">
-      <td class="text-center position-cell">{{ row.position }}</td>
-      <td class="driver-name">
-        <a class="driver-link">{{ row.driverName }}</a>
-      </td>
-      <td class="team-cell">
-        <span class="team-color-indicator" [style.background-color]="getTeamColor(row.teamName)"></span>
-        {{ row.teamName }}
-      </td>
-      <td class="text-center wins-cell">{{ row.wins > 0 ? row.wins : '-' }}</td>
-      <td class="text-center">{{ row.podiums }}</td>
-      <td class="text-right points-cell">{{ row.points }} PTS</td>
-    </tr>
+            @for (row of standings; track row.driverId; let i = $index) {
+              <tr class="driver-row" [routerLink]="['/championship/driver', row.driverId]" style="cursor: pointer;">
+                <!-- POPRAWKA: i + 1 gwarantuje równe pozycje 1, 2, 3... na podium -->
+                <td class="text-center position-cell">{{ row.position }}</td>
+                <td class="driver-name">
+                  <a class="driver-link">{{ row.driverName }}</a>
+                </td>
+                <td class="team-cell">
+                  <span class="team-color-indicator" [style.background-color]="getTeamColor(row.teamName)"></span>
+                  {{ row.teamName }}
+                </td>
+                <td class="text-right points-cell">{{ row.totalPoints }} PTS</td>
+              </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="text-center" style="padding: 30px; color: var(--color-text-subtle);">
-                  No standings found for the {{ selectedSeason }} season.
+                <td colspan="4" class="text-center" style="padding: 30px; color: var(--color-text-subtle);">
+                  No standings found in the database.
                 </td>
               </tr>
             }

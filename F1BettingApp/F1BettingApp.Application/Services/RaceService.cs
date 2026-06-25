@@ -575,15 +575,13 @@ namespace F1BettingApp.Application.Services
         }
 
 /// <summary>
-        /// Pobiera klasyfikację generalną kierowców dla danego sezonu posortowaną od 1. miejsca.
+        /// Pobiera uproszczoną klasyfikację generalną kierowców dla danego sezonu bezpośrednio z bazy.
         /// </summary>
         public async Task<IEnumerable<DriverChampionshipDto>> GetDriverChampionshipStandingsAsync(int season)
         {
             return await _dbContext.DriverChampionships
                 .Include(dc => dc.Driver)
                     .ThenInclude(d => d.Team)
-                .Include(dc => dc.RaceResults)
-                    .ThenInclude(r => r.Race)
                 .Where(dc => dc.Season == season)
                 .OrderBy(dc => dc.Position)
                 .Select(dc => new DriverChampionshipDto
@@ -593,32 +591,22 @@ namespace F1BettingApp.Application.Services
                     DriverCountry = dc.Driver.Country,
                     TeamName = dc.Driver.Team != null ? dc.Driver.Team.Name : "No Team",
                     Season = dc.Season,
-                    TotalPoints = dc.Points,
+                    TotalPoints = dc.Points, // Zmapowane pod points_current z bazy
                     Position = dc.Position,
                     LastUpdated = dc.LastUpdated,
-                    RaceResults = dc.RaceResults
-                        .OrderBy(r => r.Race.Date)
-                        .Select(r => new DriverChampionshipRaceDto
-                        {
-                            RaceId = r.RaceId,
-                            RaceName = r.Race.Name,
-                            PointsEarned = r.PointsEarned,
-                            PositionInRace = r.Position
-                        }).ToList()
+                    RaceResults = new List<DriverChampionshipRaceDto>() // Usunięte ciężkie ładowanie relacji
                 })
                 .ToListAsync();
         }
 
         /// <summary>
-        /// Pobiera szczegółową historię startów konkretnego kierowcy w wybranym sezonie.
+        /// Pobiera uproszczone szczegóły klasyfikacji konkretnego kierowcy.
         /// </summary>
         public async Task<DriverChampionshipDto?> GetDriverChampionshipDetailsAsync(int driverId, int season)
         {
             return await _dbContext.DriverChampionships
                 .Include(dc => dc.Driver)
                     .ThenInclude(d => d.Team)
-                .Include(dc => dc.RaceResults)
-                    .ThenInclude(r => r.Race)
                 .Where(dc => dc.DriverId == driverId && dc.Season == season)
                 .Select(dc => new DriverChampionshipDto
                 {
@@ -630,19 +618,77 @@ namespace F1BettingApp.Application.Services
                     TotalPoints = dc.Points,
                     Position = dc.Position,
                     LastUpdated = dc.LastUpdated,
-                    RaceResults = dc.RaceResults
-                        .OrderBy(r => r.Race.Date)
-                        .Select(r => new DriverChampionshipRaceDto
-                        {
-                            RaceId = r.RaceId,
-                            RaceName = r.Race.Name,
-                            PointsEarned = r.PointsEarned,
-                            PositionInRace = r.Position
-                        }).ToList()
+                    RaceResults = new List<DriverChampionshipRaceDto>()
                 })
                 .FirstOrDefaultAsync();
         }
 
+  public async Task SyncChampionshipFromOpenF1Async(int season)
+        {
+            // Przekazujemy "latest" jako klucz sesji zgodnie z dokumentacją OpenF1
+            string sessionKey = "latest";
+
+            // 1. Pobieramy aktualną klasyfikację punktową (zwraca same numery startowe)
+            var apiStandings = await _openF1ApiClient.GetDriverChampionshipStandingsAsync(sessionKey);
+            if (apiStandings == null || !apiStandings.Any()) return;
+
+            // 2. Pobieramy mapowanie numerów na imiona i nazwiska kierowców z tej samej najnowszej sesji
+            var openF1Drivers = await _openF1ApiClient.GetDriversAsync(sessionKey);
+            var openF1DriverLookup = openF1Drivers
+                .GroupBy(d => d.DriverNumber)
+                .ToDictionary(g => g.Key, g => g.First().DriverName);
+
+            // 3. Pobieramy wszystkich kierowców z Twojej bazy lokalnej
+            var dbDrivers = await _dbContext.Drivers.ToListAsync();
+            
+            foreach (var apiDriverData in apiStandings)
+            {
+                // Sprawdzamy, jak ten numer z F1 nazywa się tekstowo (np. 1 -> "Max Verstappen")
+                if (!openF1DriverLookup.TryGetValue(apiDriverData.DriverNumber, out var officialFullName))
+                {
+                    continue; 
+                }
+
+                // Szukamy kierowcy w Twojej bazie porównując tekstowo jego Imię i Nazwisko
+                var driver = dbDrivers.FirstOrDefault(d => d.Name.Equals(officialFullName, StringComparison.OrdinalIgnoreCase));
+                
+                // ZABEZPIECZENIE: Jeśli nie znalazło idealnie, sprawdzamy czy nazwisko z bazy zawiera się w tym z API
+                if (driver == null)
+                {
+                    driver = dbDrivers.FirstOrDefault(d => officialFullName.Contains(d.Name, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (driver == null) continue; 
+
+                // 4. Zapisujemy lub aktualizujemy rekord w bazie danych
+                var championshipEntry = await _dbContext.DriverChampionships
+                    .FirstOrDefaultAsync(dc => dc.DriverId == driver.Id && dc.Season == season);
+
+                if (championshipEntry == null)
+                {
+                    championshipEntry = new DriverChampionship
+                    {
+                        DriverId = driver.Id,
+                        Season = season,
+                        Points = (int)Math.Round(apiDriverData.PointsCurrent ?? 0),
+                        Position = apiDriverData.PositionCurrent ?? 0,
+                        LastUpdated = DateTime.UtcNow
+                    };
+                    _dbContext.DriverChampionships.Add(championshipEntry);
+                }
+                else
+                {
+                    championshipEntry.Points = (int)Math.Round(apiDriverData.PointsCurrent ?? 0);
+                    championshipEntry.Position = apiDriverData.PositionCurrent ?? 0;
+                    championshipEntry.LastUpdated = DateTime.UtcNow;
+                    _dbContext.DriverChampionships.Update(championshipEntry);
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+        }
+        // Metody RecalculateChampionshipAsync i UpdateChampionshipFromRaceResultsAsync 
+        // można teraz usunąć lub zostawić jako fallback dla ręcznych modyfikacji.
         /// <summary>
         /// Aktualizuje tabelę klasyfikacji na podstawie wyników pojedynczego ukończonego wyścigu.
         /// </summary>

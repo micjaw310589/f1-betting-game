@@ -153,5 +153,7 @@ namespace F1BettingApp.Application.Interfaces
         /// <param name="raceId">The ID of the race.</param>
         /// <returns>Race result DTO or null if not found.</returns>
         Task<RaceResultDto?> GetStoredRaceResultAsync(int raceId);
+
+        Task SyncChampionshipFromOpenF1Async(int season);
     }
 }

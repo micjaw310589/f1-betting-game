@@ -82,8 +82,9 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
 
         public async Task ResetWeekAsync(int userId, int weekNumber, int year)
         {
+            // Only reset INCOMPLETE progress records; preserve completed and claimed quests
             var records = await _dbSet
-                .Where(p => p.UserId == userId && p.WeekNumber == weekNumber && p.Year == year)
+                .Where(p => p.UserId == userId && p.WeekNumber == weekNumber && p.Year == year && !p.IsCompleted)
                 .ToListAsync();
 
             foreach (var record in records)
@@ -119,8 +120,9 @@ namespace F1BettingApp.Infrastructure.Persistence.Repositories
 
         public async Task<int> ResetAllWeeksAsync(int weekNumber, int year)
         {
+            // Only reset INCOMPLETE progress records; preserve completed and claimed quests
             var records = await _dbSet
-                .Where(p => p.WeekNumber == weekNumber && p.Year == year)
+                .Where(p => p.WeekNumber == weekNumber && p.Year == year && !p.IsCompleted)
                 .ToListAsync();
 
             foreach (var record in records)

@@ -143,21 +143,23 @@ private readonly IBetRepositoryExtensions _betRepository;
             race.TotalAmount = (race.TotalAmount ?? 0m) + dto.Amount;
             await _raceRepository.UpdateAsync(race);
 
-            // Update quest progress for betting-related quests
+            // Update quest progress for all active Betting category quests
             try
             {
-                await _questService.UpdateQuestProgressAsync(userId, "first_bet", 1);
-                await _questService.UpdateQuestProgressAsync(userId, "betting_marathon", 1);
-                // race_day_bettor: +1 if the race is on Fri/Sat/Sun
+                await _questService.UpdateQuestProgressByCategoryEventAsync(userId, "Betting", "BetPlaced", 1);
+
+                // Special handling for race_day_bettor: +1 if the race is on Fri/Sat/Sun
                 if (_questService.IsRaceWeekendDay(race.Date))
                 {
                     await _questService.UpdateQuestProgressAsync(userId, "race_day_bettor", 1);
                 }
+
                 // bold_move: +1 if stake >= 1000
                 if (dto.Amount >= 1000)
                 {
                     await _questService.UpdateQuestProgressAsync(userId, "bold_move", 1);
                 }
+
                 // For consistent_bettor, we pass the date to check uniqueness
                 var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
                 await _questService.UpdateQuestProgressAsync(userId, "consistent_bettor", 1, today);
@@ -407,16 +409,10 @@ private readonly IBetRepositoryExtensions _betRepository;
                         }
                     }
 
-                    // Update winning_streak for each user who won
+                    // Update achievement quests for users who won
                     foreach (var (userId, winCount) in winsByUser)
                     {
-                        await _questService.UpdateQuestProgressAsync(userId, "winning_streak", winCount);
-                    }
-
-                    // Update comeback_king for users who won (first win after losses)
-                    foreach (var (userId, _) in winsByUser)
-                    {
-                        await _questService.UpdateQuestProgressAsync(userId, "comeback_king", 1);
+                        await _questService.UpdateQuestProgressByCategoryEventAsync(userId, "Achievement", "BetWon", winCount);
                     }
                 }
                 catch (Exception ex)

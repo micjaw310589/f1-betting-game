@@ -144,11 +144,11 @@ namespace F1BettingApp.API.Controllers
                     {
                         await _dailyLoginService.ProcessDailyLoginAsync(userId.Value);
 
-                        // Update quest progress for login-related quests
+                        // Update quest progress for login-related engagement quests
                         try
                         {
-                            await _questService.UpdateQuestProgressAsync(userId.Value, "first_login", 1);
-                            await _questService.UpdateQuestProgressAsync(userId.Value, "login_streak_weekly", 1);
+                            await _questService.UpdateQuestProgressByCategoryEventAsync(userId.Value, "Engagement", "Login", 1);
+
                             // streak_master: awards one-time when streak hits 7
                             var streakInfo = await _dailyLoginService.GetStreakInfoAsync(userId.Value);
                             if (streakInfo != null && streakInfo.CurrentStreak >= 7)

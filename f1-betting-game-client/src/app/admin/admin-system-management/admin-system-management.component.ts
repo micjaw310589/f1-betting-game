@@ -850,6 +850,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
                     this.questFormSuccess = true;
                     this.isSavingQuest = false;
                     this.showQuestForm = false;
+                    this.cdr.markForCheck();
                     this.loadQuestDefinitions();
                     setTimeout(() => { this.questFormSuccess = false; }, 5000);
                 },
@@ -865,6 +866,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
                     this.questFormSuccess = true;
                     this.isSavingQuest = false;
                     this.showQuestForm = false;
+                    this.cdr.markForCheck();
                     this.loadQuestDefinitions();
                     setTimeout(() => { this.questFormSuccess = false; }, 5000);
                 },
@@ -960,6 +962,7 @@ export class AdminSystemManagementComponent implements OnInit, OnDestroy {
                 this.resetQuestSuccess = result.message;
                 this.isResettingQuests = false;
                 this.closeResetQuestConfirm();
+                this.cdr.markForCheck();
                 setTimeout(() => { this.resetQuestSuccess = ''; }, 5000);
             },
             error: (error) => {

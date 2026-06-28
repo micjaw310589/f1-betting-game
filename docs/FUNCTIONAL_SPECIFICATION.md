@@ -8,7 +8,6 @@ W niniejszym dokumencie zastosowano następujące definicje i skróty terminolog
 * **OpenF1 API** – Zewnętrzny publiczny interfejs programistyczny aplikacji (API), stanowiący jedyne źródło prawdy dla danych dotyczących kalendarza F1, wyników wyścigów, klasyfikacji generalnej oraz szczegółów dotyczących kierowców i zespołów.
 * **Status wyścigu (Race Status)** – Stan, w jakim znajduje się dany wyścig w bazie danych systemu. Dopuszczalne wartości to: *Scheduled* (Zaplanowany), *Finished* (Zakończony), *ResultsProcessed* (Rozliczony).
 * **Status zakładu (Bet Status)** – Stan, w jakim znajduje się zakład użytkownika. Dopuszczalne wartości to: *Pending* (Oczekujący), *Won* (Wygrany), *Lost* (Przegrany), *Cancelled* (Anulowany).
-<!-- * **Tabela liderów (Leaderboard)** – Globalny oraz okresowy ranking użytkowników uporządkowany malejąco według sumy posiadanych wirtualnych punktów. -->
 * **Sezon (Season)** – Okres rywalizacji pokrywający się zazwyczaj z rzeczywistym rokiem kalendarzowym lub sezonem Mistrzostw Świata Formuły 1, kończący się resetem kont i tabeli przez Administratora.
 * **JWT (JSON Web Token)** – Standard bezpiecznego przekazywania informacji autoryzacyjnych użytkownika pomiędzy frontendem (Angular) a backendem (ASP.NET Core) w postaci podpisanego cyfrowo tokenu.
 * **ROI (Return on Investment)** – Wskaźnik zwrotu z inwestycji punktowej, określający efektywność obstawiania użytkownika, wyrażony w procentach.

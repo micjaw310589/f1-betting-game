@@ -26,14 +26,14 @@ W procesie tworzenia, wdrażania oraz eksploatacji systemu F1 Betting Game zdefi
 1. **Gracze (Zarejestrowani Użytkownicy)** – Osoby fizyczne korzystające z aplikacji za pośrednictwem przeglądarek internetowych. Ich celem jest zabawa, testowanie wiedzy o F1, zdobywanie punktów oraz analiza własnych statystyk.
 2. **Administratorzy Systemu** – Osoby odpowiedzialne za utrzymanie ciągłości działania platformy, moderację użytkowników, nadzór nad poprawnością rozliczeń zakładów oraz zarządzanie parametrami globalnymi systemu (np. reset sezonu, manualne korekty).
 3. **Zewnętrzny Dostawca Danych (OpenF1 API)** – Podmiot dostarczający publiczne, darmowe API z danymi telemetrycznymi i wynikowymi Formuły 1, którego stabilność i struktura danych mają bezpośredni wpływ na automatyczne procesy aplikacji.
-4. **Właściciel Projektu / Deweloperzy** – Zespół odpowiedzialny za techniczną implementację, skalowalność, bezpieczeństwo danych oraz rozwój kodu zgodnie z przyjętą architekturą (Clean Architecture, modułowość Angular).
+4. **Właściciel Projektu / Deweloperzy** – Zespół odpowiedzialny za techniczną implementację, skalowalność, bezpieczeństwo danych oraz rozwój kodu zgodnie z przyjętą architekturą.
 
 ## 4. Aktorzy
-System wchodzi w interakcję z trzema głównymi aktorami (dwoma ludzkimi oraz jednym systemowym):
-* **Gość (Użytkownik Niezalogowany)** – Może przeglądać publiczne sekcje aplikacji, takie jak kalendarz wyścigów, szczegóły torów czy tablicę zadań (bez podglądu postępów). Nie ma możliwości obstawiania ani wglądu w profil.
-* **Gracz (Użytkownik Zalogowany)** – Posiada pełen dostęp do funkcji gry: obstawianie wyścigów przed ich rozpoczęciem, zarządzanie własnym profilem, przeglądanie historii zakładów, odbieranie bonusów za dzienne logowanie, śledzenie postępów w zadaniach oraz analiza zaawansowanych statystyk ROI/skuteczności.
+System wchodzi w interakcję z czterema głównymi aktorami (trzema ludzkimi oraz jednym systemowym):
+* **Gość (Użytkownik Niezalogowany)** – Może przeglądać publiczne sekcje aplikacji: kalendarz wyścigów, klasyfikacja kierowców, tablicę zadań (ale bez podglądu postępów). Nie ma możliwości obstawiania ani wglądu w profil.
+* **Gracz (Użytkownik Zalogowany)** – Posiada pełen dostęp do funkcji gry: obstawianie wyścigów przed ich rozpoczęciem, dostęp do szczegółów własnego profilu, przeglądanie historii zakładów, odbieranie bonusów za dzienne logowanie, śledzenie postępów w zadaniach oraz analiza własnych statystyk.
 * **Administrator** – Posiada uprawnienia Gracza oraz pełen dostęp do zabezpieczonego panelu `/admin/*`. Może przeglądać i blokować konta użytkowników, korygować salda, anulować zakłady z błędnymi kursami, ręcznie wymusić synchronizację danych oraz nadpisać oficjalne wyniki wyścigu w sytuacjach awaryjnych.
-* **System (Background Workers / Automatyczne Joby)** – Cykliczne procesy działające w tle backendu (Race Status Monitor, Result Processing Job, Data Synchronization Jobs). Odpowiadają za pobieranie danych z OpenF1 API, wykrywanie zakończenia wyścigów, automatyczne rozliczanie zakładów, modyfikację sald, aktualizację tabeli liderów oraz wysyłanie powiadomień.
+* **System** – Cykliczne procesy działające w tle backendu. Odpowiadają za pobieranie danych z OpenF1 API, wykrywanie zakończenia wyścigów, automatyczne rozliczanie zakładów, modyfikację sald, aktualizację tabeli liderów oraz wysyłanie powiadomień.
 
 ## 5. Scenariusze
 Poniżej przedstawiono kluczowe scenariusze użycia systemu (Use Cases) opisujące interakcje aktorów z aplikacją:

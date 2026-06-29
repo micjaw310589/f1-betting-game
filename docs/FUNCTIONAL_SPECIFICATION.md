@@ -66,138 +66,99 @@ Poniżej przedstawiono kluczowe scenariusze użycia systemu (Use Cases) opisują
 ## 6. Wymagania funkcjonalne
 Sekcja zawiera szczegółowy opis wymagań funkcjonalnych systemu z podziałem na 13 modułów i komponentów technicznych zdefiniowanych w architekturze aplikacji:
 
-### 6.1 Przeglądanie listy wyścigów (`RaceListComponent`)
+### 6.1 Przeglądanie listy wyścigów
 * **Opis**: Użytkownik (zarówno zalogowany, jak i gość) musi mieć możliwość przeglądania pełnego kalendarza wyścigów Formuły 1 zaimportowanego z OpenF1 API.
 * **Wymagania szczegółowe**:
-  * Prezentacja wyścigów w formie czytelnej listy lub kafelków, zawierających: nazwę Grand Prix, nazwę toru (circuit), datę i godzinę rozpoczęcia oraz aktualny status.
+  * Prezentacja wyścigów w formie czytelnej listy lub kafelków, zawierających: nazwę Grand Prix, nazwę toru (circuit), datę odbycia oraz aktualny status (*Scheduled*/*Finished*/*ResultsProcessed*).
+  * Dla wyścigów o statusie *Scheduled* powinien znajdować się przycisk przekierowujący do formularza utworzenia zakładu dla danego wyścigu. Dla wyścigów o innych statusach przycisk ten ma być ukryty.
   * Udostępnienie paska filtrowania z zakładkami: "Wszystkie", "Nadchodzące" (status *Scheduled*), "Zakończone" (status *Finished* lub *ResultsProcessed*).
-  * Implementacja paginacji danych oraz mechanizmu "wirtualnej listy" (virtual scrolling) w celu optymalizacji renderowania przy dużej liczbie rekordów w sezonie.
-* **Kryteria akceptacji**:
-  * Filtry działają natychmiastowo, poprawnie separując wyścigi na podstawie daty systemowej i statusu w bazie danych.
-  * W przypadku braku rekordów spełniających kryteria, komponent wyświetla wycentrowany komunikat: *"Brak dostępnych wyścigów"*.
-  * **Obsługa Edge Case (Błąd API / Bazy)**: W przypadku awarii sieci lub braku odpowiedzi serwera, lista ukrywa pusty stan, wyświetla dedykowany alert o błędzie połączenia oraz udostępnia widoczny przycisk *"Ponów próbę"*, który ponownie inicjuje żądanie HTTP.
+  * Implementacja paginacji danych w celu optymalizacji renderowania przy dużej liczbie rekordów w sezonie.
 
-### 6.2 Wyświetlanie szczegółów wyścigu (`RaceDetailComponent`)
-* **Opis**: Wyświetlenie kompletnych, pogłębionych informacji o konkretnym weekendzie wyścigowym wybranym przez użytkownika.
+### 6.2 Wyświetlanie szczegółów wyścigu
+* **Opis**: Wyświetlenie dodatkowych informacji o konkretnym weekendzie wyścigowym wybranym przez użytkownika.
 * **Wymagania szczegółowe**:
-  * Widok musi prezentować: pełną nazwę wydarzenia, mapę/schemat toru (opcjonalnie jako asset), szczegółowy harmonogram (treningi, kwalifikacje, sprint, wyścig główny) dostosowany do strefy czasowej użytkownika.
-  * Komponent stanowi kontener, który dla wyścigów nadchodzących osadza moduł zawierania zakładów (`BetPlacementComponent`), a dla wyścigów zakończonych – moduł prezentacji oficjalnych wyników.
-* **Kryteria akceptacji**:
-  * Wszystkie daty sesji są poprawnie sformatowane i wyświetlane zgodnie z lokalnymi ustawieniami regionalnymi przeglądarki.
-  * **Obsługa Edge Case (Nieprawidłowy URL / ID)**: Jeżeli użytkownik ręcznie zmodyfikuje pasek adresu URL i wprowadzi nieistniejące ID wyścigu (np. `/races/99999` lub `/races/abc`), system nie może wygenerować błędu skryptu (crash aplikacji). Router Angular musi przechwycić błąd unikalnego identyfikatora, wyświetlić komunikat o braku zasobu i automatycznie przekierować użytkownika na stronę błędu 404 lub powrócić do listy wyścigów z komunikatem typu Toast.
+  * Widok musi prezentować: pełną nazwę wydarzenia, status, nazwę toru, sezon oraz datę odbycia wyścigu.
+  * Dla wyścigów nadchodzących osadza moduł zawierania przycisk przekierowujący do formularza utworzenia zakładu. Dla wyścigów zakończonych (*Finished*/*ResultsProcessed*) zamiast tego przycisku jest wyświetlana prezentacja oficjalnych wyników.
 
-### 6.3 Obstawianie zakładów (`BetPlacementComponent`)
+### 6.3 Obstawianie zakładów
 * **Opis**: Interfejs formularza umożliwiający graczom alokację posiadanych wirtualnych punktów na konkretne zdarzenia w nadchodzącym wyścigu.
 * **Wymagania szczegółowe**:
-  * Formularz udostępnia pola wyboru dla kierowców i zespołów pobieranych dynamicznie z bazy (synchronizacja z OpenF1).
-  * Rodzaje typowań: Wygrany, TOP 3 (podium), Najszybsze okrążenie (Fastest Lap), Pozycje w TOP 10, Liczba DNF.
-  * Dynamiczne prezentowanie aktualnego wskaźnika kursu oraz wyliczenie potencjalnej wygranej w punktach na podstawie wprowadzonej stawki przed zatwierdzeniem.
-* **Kryteria akceptacji**:
-  * Każde pomyślne zatwierdzenie formularza wysyła transakcję do backendu, która natychmiast odejmuje zadeklarowaną stawkę punktową z salda użytkownika w pamięci aplikacji i bazie danych.
-  * **Obsługa Edge Case (Typowanie po czasie / Zablokowanie)**: Jeśli użytkownik otworzy formularz przed wyścigiem, ale kliknie "Zatwierdź" po rzeczywistej godzinie startu sesji, backend odrzuca żądanie z błędem walidacji. Na froncie przycisk "Obstaw" staje się natychmiast nieaktywny (*disabled*), a nad nim pojawia się czerwony komunikat: *"Obstawianie tego wyścigu zostało zamknięte"*.
-  * **Obsługa Edge Case (Użytkownik Niezalogowany)**: Próba wejścia w interakcję z formularzem przez użytkownika niezalogowanego skutkuje natychmiastowym przerwaniem operacji, zapisaniem intencji powrotu (ReturnURL) i przekierowaniem na ekran logowania.
+  * Formularz udostępnia pola wyboru dla kierowców i zespołów pobieranych z bazy.
+  * Rodzaje typowań: wygrany, miejsce w TOP 3, miejsce w TOP 10, najszybsze okrążenie (Fastest Lap).
+  * Prezentowanie aktualnego wskaźnika kursu oraz wyliczenie potencjalnej wygranej w punktach na podstawie wprowadzonej stawki przed zatwierdzeniem.
 
-### 6.4 Zarządzanie profilem użytkownika (`UserProfileComponent`)
+### 6.4 Zarządzanie profilem użytkownika
 * **Opis**: Centralny kokpit (dashboard) użytkownika prezentujący jego status w grze, tożsamość oraz postępy w grywalizacji.
 * **Wymagania szczegółowe**:
-  * Prezentacja: Nazwy użytkownika, adresu e-mail, aktualnego całkowitego salda punktów wirtualnych.
-  * Wyświetlanie sekcji z podsumowaniem aktywnych zadań (Quests) i informacją o statusie dziennego bonusu za logowanie (Daily Streak Info).
-* **Kryteria akceptacji**:
-  * Wszystkie dane profilowe oraz stan konta są aktualne i pobierane przy każdym wejściu na widok.
-  * **Obsługa Edge Case (Brak aktywnych wyzwań)**: Jeśli w danym okresie system nie posiada włączonych zadań dla gracza, sekcja zadań nie może pozostać pusta ani zaburzać układu graficznego – system wyświetla dedykowany element zastępczy (placeholder) z tekstem: *"Brak aktywnych zadań w tym tygodniu"*.
-  * **Obsługa Edge Case (Błąd połączenia z API)**: W przypadku awarii komunikacji sieciowej podczas pobierania profilu, aplikacja blokuje interfejs maską błędu z informacją o problemie technicznym oraz wyświetla przycisk ponownego ładowania.
+  * Prezentacja: Nazwy użytkownika, adresu e-mail, aktualnego całkowitego salda punktów wirtualnych, daty utworzenia konta.
+  * Wyświetlanie sekcji z podsumowaniem aktywnych zadań (Quests), z informacją o statusie dziennego bonusu za logowanie (Daily Streak Info), historii zmian salda użytkownika oraz historii zakładów.
+  * Przekierowanie do widoków: zaawansowanej historii zakładów (z filtrami), statystyk użytkownika, danych analitycznych.
 
-### 6.5 Historia zakładów użytkownika (`UserBetsComponent`)
-* **ID**: RF-PROF-02
-* **Nazwa**: Przegląd historii zakładów.
-* **Opis**: Chronologiczna ewidencja wszystkich kuponów i zakładów zawartych przez danego użytkownika od momentu utworzenia konta.
-* **Kryteria akceptacji**:
-  * Lista obsługuje pełne stronicowanie (paginację po stronie serwera – Server-Side Pagination) w celu minimalizacji zużycia pamięci.
-  * Gracz ma do dyspozycji filtry statusu: "Wszystkie", "Wygrane" (*Won*), "Przegrane" (*Lost*), "Oczekujące" (*Pending*), "Anulowane" (*Withdrawn*/*Cancelled*).
-  * **Obsługa Edge Case (Pusta historia)**: Jeśli nowy użytkownik wchodzi do tego modułu po raz pierwszy i nie zawarł jeszcze żadnego zakładu, system ukrywa nagłówki tabeli i generuje czytelny komunikat: *"Nie posiadasz jeszcze historii zakładów. Przejdź do kalendarza, aby obstawić najbliższy wyścig"*.
-  * **Obsługa Edge Case (Awaria bazy danych)**: Błąd ładowania danych skutkuje wyświetleniem komunikatu: *"Wystąpił problem podczas pobierania danych o zakładach. Spróbuj ponownie później"*.
+### 6.5 Historia zakładów użytkownika
+* **Opis**: Chronologiczna ewidencja wszystkich zakładów zawartych przez danego użytkownika od momentu utworzenia konta.
+* **Wymagania szczegółowe**:
+  * Widok wyświetla: Listę zakładów użytkownika oraz formularz do ich filtrowania.
+  * Lista obsługuje pełne stronicowanie po stronie serwera w celu minimalizacji zużycia pamięci.
+  * Gracz ma do dyspozycji filtry statusu: "Wszystkie", "Wygrane" (*Won*), "Przegrane" (*Lost*), "Oczekujące" (*Pending*), "Anulowane" (*Cancelled*).
+  * Możliwość eksportu historii do pliku CSV.
 
-### 6.6 Statystyki i Analityka (`UserStatsComponent` & `UserAnalyticsComponent`)
+### 6.6 Statystyki i Analityka
 * **Opis**: Moduł dostarczający użytkownikowi matematycznej i statystycznej analizy jego zachowań oraz skuteczności w typowaniu wyników.
 * **Wymagania szczegółowe**:
-  * Kalkulacja i prezentacja wskaźników: Procent wygranych (Win Rate), całkowity wskaźnik zwrotu (ROI), najdłuższa seria zwycięstw (Winning Streak).
-  * Wizualizacja rozkładu zysków i strat w podziale na kierowców, zespoły konstruktorów oraz tory wyścigowe za pomocą wykresów lub tabel rankingowych.
-  * Możliwość filtrowania statystyk według zakresu dat (TimeRangePicker).
-* **Kryteria akceptacji**:
-  * Wszystkie obliczenia matematyczne muszą być odporne na błędy logiczne i prezentowane w przejrzysty sposób.
-  * **Obsługa Edge Case (Brak danych / Nowe konto)**: W przypadku braku zawartych lub rozliczonych zakładów (brak dzielnika w operacjach matematycznych), system chroni aplikację przed krytycznym błędem `Division by zero`. Wszystkie wskaźniki procentowe (Win Rate, ROI) muszą w takim scenariuszu bezpiecznie wyświetlać wartość `"0%"` lub komunikat `"Brak danych do kalkulacji"`.
-  * **Obsługa Edge Case (Nieprawidłowy zakres dat)**: Jeśli w filtrze czasu użytkownik wybierze datę końcową wcześniejszą niż data początkowa, mechanizm walidacji formularza na frontendzie blokuje wysyłanie zapytania, podświetla pola na czerwono i wyświetla komunikat: *"Data końcowa nie może być wcześniejsza niż data początkowa"*.
+  * Kalkulacja i prezentacja wskaźników: Procent wygranych (Win Rate), całkowity wskaźnik zwrotu (ROI).
+  * Wizualizacja rozkładu zysków i strat w podziale na kierowców, rodzaj zakładu, czas dnia oraz miesiąc za pomocą tabel.
 
-### 6.7 Uwierzytelnianie użytkownika (`LoginComponent` & `RegisterComponent`)
+### 6.7 Uwierzytelnianie użytkownika
 * **Opis**: Moduł odpowiedzialny za kontrolę dostępu do systemu, rejestrację nowych kont i bezpieczne logowanie.
 * **Wymagania szczegółowe**:
-  * Formularz rejestracji wymaga podania unikalnej nazwy użytkownika, poprawnego adresu e-mail oraz silnego hasła spełniającego kryteria bezpieczeństwa (min. 8 znaków, cyfra, znak specjalny, wielka litera).
-  * Formularz logowania uwierzytelnia użytkownika na podstawie e-maila i hasła, zwracając token JWT i Refresh Token.
-  * Klient Angular bezpiecznie przechowuje tokeny w pamięci aplikacji lub bezpiecznych ciasteczkach (Secure/SameSite Cookies).
-* **Kryteria akceptacji**:
-  * Walidacja pól (np. poprawność formatu e-mail regex, zgodność haseł) odbywa się w czasie rzeczywistym przed aktywacją przycisku wysyłania.
-  * **Obsługa Edge Case (Błędne poświadczenia)**: Wprowadzenie złego hasła lub e-maila skutkuje wyświetleniem komunikatu błędu z backendu: *"Nieprawidłowy adres e-mail lub hasło"*. Pola formularza nie są czyszczone, umożliwiając szybką poprawkę.
-  * **Obsługa Edge Case (Zajęty adres e-mail)**: Próba rejestracji na e-mail istniejący w bazie zwraca kod 400 z komunikatem: *"Ten adres e-mail jest już zarejestrowany w systemie"*.
-  * **Obsługa Edge Case (Utrata sieci podczas autoryzacji)**: Odcięcie internetu w trakcie wysyłania formularza generuje dedykowany komunikat o braku stabilnego połączenia sieciowego.
+  * Formularz rejestracji wymaga podania unikalnej nazwy użytkownika, poprawnego adresu e-mail oraz silnego hasła spełniającego kryteria bezpieczeństwa (przynajmniej wymóg min. 8 znaków).
+  * Formularz logowania uwierzytelnia użytkownika na podstawie e-maila i hasła.
+  * Walidacja pól (np. poprawność formatu e-mail regex, zgodność haseł) odbywa się w czasie rzeczywistym przed wciśnięciem przycisku "Log In"/"Register".
+  * Obsługa Edge Case (Błędne poświadczenia): Wprowadzenie złego hasła lub e-maila skutkuje wyświetleniem komunikatu błędu o nieprawidłowych danych logowania. Pola formularza nie są czyszczone, umożliwiając szybką poprawkę.
+  * Obsługa Edge Case (Zajęty adres e-mail): Próba rejestracji na e-mail istniejący w bazie zwraca komunikat o tym, że e-mail jest już zajęty.
 
-### 6.8 Zarządzanie sesją i bezpieczeństwo (`AuthInterceptor`)
-* **Opis**: Przechwytywacz HTTP (Interceptor) działający na poziomie rdzenia aplikacji, automatyzujący zarządzanie nagłówkami bezpieczeństwa.
-* **Wymagania szczegółowe**:
-  * Interceptor automatycznie wstrzykuje nagłówek `Authorization: Bearer <JWT_TOKEN>` do każdego zapytania wychodzącego do chronionych punktów końcowych API.
-  * Implementacja nasłuchiwania błędów odpowiedzi – w przypadku przechwycenia kodu HTTP 401 (Unauthorized), interceptor wstrzymuje wykonywanie kolejnych zapytań i inicjuje asynchroniczne żądanie do punktu `/api/auth/refresh` w celu odświeżenia sesji za pomocą Refresh Tokena.
-* **Kryteria akceptacji**:
-  * Po udanym odświeżeniu pierwotne zapytanie HTTP, które zwróciło błąd 401, jest ponawiane z nowym tokenem JWT, a użytkownik nie doświadcza przerwy w pracy z aplikacją.
-  * **Obsługa Edge Case (Wygasły token odświeżania)**: Jeśli proces odświeżania tokena nie powiedzie się (np. Refresh Token również wygasł lub został unieważniony), interceptor musi natychmiast wyczyścić lokalny stan sesji, wywołać procedurę wylogowania i przekierować użytkownika do ekranu logowania z komunikatem Toast: *"Sesja wygasła. Zaloguj się ponownie"*.
-  * **Obsługa Edge Case (Pętla zapytań / Zapobieganie deadlockom)**: W przypadku jednoczesnego wysłania wielu zapytań asynchronicznych (np. 5 żądań na raz przy ładowaniu pulpitu), interceptor musi użyć flagi blokującej `isRefreshing` oraz obiektu `Subject`. Pierwsze zapytanie inicjuje odświeżanie, a pozostałe 4 oczekują na nowy token, zapobiegając wygenerowaniu lawiny powtarzalnych żądań odświeżenia sesji i przeciążeniu serwera.
-
-### 6.9 Zarządzanie użytkownikami (`AdminUserManagementComponent`)
+### 6.8 Zarządzanie użytkownikami
 * **Opis**: Panel administracyjny dedykowany do kontroli kont użytkowników i moderacji społeczności gry.
 * **Wymagania szczegółowe**:
-  * Wyświetlanie pełnej listy zarejestrowanych użytkowników z wyszukiwarką po nazwie i adresie e-mail oraz filtrami statusu konta (Aktywne, Zablokowane, Zawieszone).
-  * Udostępnienie akcji moderacyjnych: "Zawieś konto" (określenie ram czasowych), "Zablokuj permanentnie", "Koryguj saldo punktów".
-* **Kryteria akceptacji**:
-  * Każda akcja modyfikująca status użytkownika jest natychmiast odzwierciedlana w bazie danych i skutkuje unieważnieniem tokenów JWT sesji zbanowanego użytkownika.
-  * **Obsługa Edge Case (Autoblokada)**: System posiada twarde zabezpieczenie uniemożliwiające zalogowanemu administratorowi wykonanie akcji zablokowania, zawieszenia lub usunięcia uprawnień administratora wobec samego siebie lub innych kont z rolą `SuperAdmin`. Przycisk akcji dla tych pozycji jest ukryty lub nieaktywny.
-  * **Obsługa Edge Case (Błąd pobierania danych)**: Awaria bazy danych generuje komunikat z opcją przeładowania struktury tabeli.
+  * Wyświetlanie pełnej listy zarejestrowanych użytkowników z wyszukiwarką po nazwie i adresie e-mail oraz filtrami statusu konta (Aktywne lub Zawieszone).
+  * Udostępnienie akcji moderacyjnych: korekta salda punktów użytkownika, zawieszenie konta użytkownika.
+  * Obsługa Edge Case (Autoblokada): System posiada twarde zabezpieczenie uniemożliwiające zalogowanemu administratorowi wykonanie akcji zablokowania, zawieszenia lub usunięcia uprawnień administratora wobec samego siebie lub innych kont z rolą `SuperAdmin`. Przycisk akcji dla tych pozycji jest ukryty lub nieaktywny.
 
-### 6.10 Zarządzanie systemem (`AdminSystemManagementComponent`)
+### 6.9 Zarządzanie systemem
 * **Opis**: Konsola operacyjna pozwalająca na ręczną kontrolę stanów integracji oraz danych sportowych.
 * **Wymagania szczegółowe**:
-  * Udostępnienie przycisków do manualnego wyzwolenia zadań synchronizacji (Sync Wyścigów, Sync Klasyfikacji, Sync Kierowców).
+  * Udostępnienie przycisku do manualnego wyzwolenia zadania synchronizacji systemu z API OpenF1.
   * Interfejs do wprowadzania ręcznych korekt lub wpisania oficjalnych wyników wyścigu w przypadku awarii API OpenF1 (formularz Override).
-  * Dostęp do wbudowanego modułu przeglądania logów systemowych i błędów synchronizacji.
-* **Kryteria akceptacji**:
-  * Ręczne wprowadzenie wyników uruchamia kaskadowe rozliczenie zakładów graczy dokładnie tak samo, jak automatyczny proces tła.
-  * **Obsługa Edge Case (Nadpisywanie w trakcie rozliczeń)**: Jeśli administrator próbuje wywołać funkcję manualnego nadpisania wyników (*Override*) dla wyścigu, którego status wskazuje na trwający proces automatycznego rozliczania zakładów przez serwer, system przerywa akcję, wyświetla ostrzeżenie w oknie modalnym i wymaga wpisania specjalnego kodu autoryzacyjnego lub jawnego potwierdzenia, zapobiegając uszkodzeniu spójności relacji bazodanowych.
 
-### 6.11 Zarządzanie zakładami (`AdminBetManagementComponent`)
+### 6.10 Zarządzanie zakładami
 * **Opis**: Narzędzie nadzorcze pozwalające na monitorowanie globalnego wolumenu zakładów i eliminowanie błędów kursowych.
 * **Wymagania szczegółowe**:
-  * Widok prezentujący zestawienie wszystkich zakładów zawartych w systemie z możliwością filtrowania po ID wyścigu, ID użytkownika oraz statusie.
+  * Widok prezentujący zestawienie wszystkich zakładów zawartych w systemie z możliwością filtrowania po nazwie użytkownika oraz statusie zakładu.
   * Funkcja bezpiecznego anulowania kuponu ze statusem *Pending* przed rozliczeniem wyścigu.
-* **Kryteria akceptacji**:
   * Anulowanie zakładu skutkuje bezwarunkowym zwrotem 100% postawionych punktów wirtualnych na konto gracza.
-  * **Obsługa Edge Case (Blokada anulowania rozliczonego zakładu)**: Jeśli zakład posiada już status *Won* lub *Lost* (został formalnie rozliczony), przycisk "Anuluj" obok tego rekordu zostaje permanentnie zablokowany. Próba przesłania żądania anulowania rozliczonego zakładu bezpośrednio na endpoint API zwraca błąd krytyczny biznesowy, informując, że rozliczonych transakcji nie można cofnąć bez procedury korekty salda w module użytkowników.
+  * Obsługa Edge Case (Blokada anulowania rozliczonego zakładu): Jeśli zakład posiada już status *Won* lub *Lost* (został formalnie rozliczony), przycisk "Anuluj" obok tego rekordu zostaje permanentnie zablokowany. Próba przesłania żądania anulowania rozliczonego zakładu bezpośrednio na endpoint API zwraca błąd krytyczny biznesowy, informując, że rozliczonych transakcji nie można cofnąć bez procedury korekty salda w module użytkowników.
+ 
+### 6.11 Zarządzenie zadaniami (Quests)
+  * **Opis**: Narzędzie nadzorcze służące do monitorowania, tworzenia, edycji i usuwania zadań (Quests).
+  * **Wymagania szczegółowe**:
+    * Widok prezentujący zestawienie wszystkich istniejących zadań.
+    * Możliwość edycji, usunięcia, wyłączenia oraz sprawdzenia postępów każdego z zadań.
+    * Filtrowanie listy zadań według statusu oraz nazwy zadania.
+    * Możliwość utworzenia nowego zadania.
+    * Możliwość zresetowania zadań tygodniowych.
 
-### 6.12 Bezpieczeństwo panelu (`adminGuard`)
-* **Opis**: Programistyczna ochrona zasobów administracyjnych przed nieuprawnionym dostępem (zarówno z poziomu UI, jak i manipulacji routingiem).
+### 6.12 Bezpieczeństwo panelu
+* **Opis**: Programistyczna ochrona zasobów administracyjnych przed nieuprawnionym dostępem.
 * **Wymagania szczegółowe**:
-  * Implementacja mechanizmu `CanActivate` zintegrowanego z modułem routingu Angular dla ścieżki `/admin`.
-  * Guard dekoduje token JWT zapisany w sesji i weryfikuje obecność wartości `Admin` w tablicy ról użytkownika.
-* **Kryteria akceptacji**:
   * Dostęp do zasobów panelu jest przyznawany wyłącznie użytkownikom posiadającym rolę administracyjną.
-  * **Obsługa Edge Case (Próba nieautoryzowanego dostępu)**: Jeżeli zwykły gracz lub użytkownik niezalogowany spróbuje ręcznie wpisać w przeglądarce adres `/admin/system` lub `/admin/users`, `adminGuard` natychmiast przerywa renderowanie komponentu, anuluje nawigację, wywołuje alert systemowy typu Toast z treścią: *"Brak wymaganych uprawnień do wyświetlenia tej strony"* i automatycznie przekierowuje użytkownika na bezpieczną stronę główną (dashboard).
+  * Obsługa Edge Case (Próba nieautoryzowanego dostępu): Jeżeli zwykły gracz lub użytkownik niezalogowany spróbuje ręcznie wpisać w przeglądarce adres `/admin/system` lub `/admin/users`, to system natychmiast przerywa renderowanie komponentu, anuluje nawigację i automatycznie przekierowuje użytkownika na stronę logowania.
 
-### 6.13 Tablica zadań (`QuestBoardComponent`)
+### 6.13 Tablica zadań
 * **Opis**: Centralny moduł grywalizacji prezentujący graczom dostępne misje krótko- i długoterminowe.
 * **Wymagania szczegółowe**:
   * Wyświetlanie kafelków zadań z podziałem na zakładki tematyczne: *Betting* (zadania związane z obstawianiem), *Engagement* (regularność logowania), *Achievement* (kamienie milowe punktowe).
   * Każde zadanie prezentuje: nazwę, opis warunków, ikonę statusu, wartość nagrody punktowej oraz graficzny pasek postępu (np. "Postaw 3 zakłady na GP: 2/3").
-* **Kryteria akceptacji**:
-  * Dane są automatycznie odświeżane w tle w określonych interwałach czasowych, aby zapewnić aktualny podgląd postępu.
-  * **Obsługa Edge Case (Nowy sezon / Brak zadań)**: W sytuacji wyczyszczenia bazy danych lub braku aktywnych definicji zadań w bazie, komponent ukrywa paski postępu i wyświetla komunikat: *"No active quests available"*.
-  * **Obsługa Edge Case (Błąd dzielenia przez zero w konfiguracji serwera)**: Jeśli administrator popełni błąd w konfiguracji bazy danych i zdefiniuje zadanie z parametrem docelowym (target) równym `0` (np. wymagana liczba zakładów = 0), frontend musi obsłużyć tę sytuację – pasek postępu bezpiecznie przyjmuje wartość 100% lub 0% (zależnie od logiki biznesowej), uniemożliwiając wystąpienie błędu `NaN` (Not a Number) lub wygaszenie komponentu.
-  * **Obsługa Edge Case (Użytkownik Niezalogowany)**: Jeśli widok zostanie wywołany przez gościa, system poprawnie renderuje nazwy zadań i opisy nagród, ale ukrywa wszystkie elementy powiązane z postępem indywidualnym (progress bar, stan licznika) i wyświetla informację: *"Zaloguj się, aby zacząć realizować zadania i zdobywać punkty"*.
+  * Obsługa Edge Case (Użytkownik Niezalogowany): Jeśli widok zostanie wywołany przez gościa, system poprawnie renderuje nazwy zadań i opisy nagród, ale ukrywa wszystkie elementy powiązane z postępem indywidualnym (progress bar, stan licznika).
 
 ---
 
@@ -216,10 +177,9 @@ Reguły biznesowe definiują logikę działania gry i algorytmy obliczeniowe pla
 ## 8. Zakres projektu
 
 ### 8.1 W zakresie (In Scope)
-* Projekt i implementacja responsywnej aplikacji webowej (RWD) obsługującej komputery stacjonarne, laptopy oraz urządzenia mobilne.
-* Implementacja kluczowych modułów frontendowych i odpowiadających im punktów końcowych API opisanych w niniejszej specyfikacji.
+* Projekt i implementacja aplikacji webowej obsługującej komputery stacjonarne, laptopy oraz opcjonalnie urządzenia mobilne.
 * Pełna automatyzacja pobierania danych kalendarza, kierowców, zespołów i wyników za pośrednictwem cyklicznej integracji z zewnętrznym systemem OpenF1 API.
-* Moduł grywalizacji: system naliczania punktów, obsługa tabeli liderów, tablica zadań (Quests), dzienne bonusy (Daily Streak).
+* Moduł grywalizacji: system naliczania punktów, tablica zadań (Quests), dzienne bonusy (Daily Streak).
 * Bezpieczny system uwierzytelniania.
 * Panel administracyjny umożliwiający zarządzanie użytkownikami (blokowanie, korekta salda), zakładami (anulowanie) oraz systemem (nadpisanie wyników, manualny sync).
 
@@ -249,29 +209,13 @@ W tabeli przedstawiono zidentyfikowane ryzyka projektowe wraz z odpowiadającymi
 ## 10. Wymagania niefunkcjonalne
 
 ### 10.1 Wydajność (Performance)
-* **Czas ładowania strony (Page Load Time)** – Czas renderowania i pełnej gotowości interfejsu dla kluczowych widoków (Dashboard, Lista Wyścigów) nie może przekroczyć 2 sekund przy przepustowości łączą sieciowego na poziomie 3G. (Dla wersji roboczej osadzonej na darmowych serwisach hostingowych czas ten będzie wydłużony do nawet 1 minuty z powodu tzw. "spin-down" serwera).
+* **Czas ładowania strony (Page Load Time)** – Czas renderowania i pełnej gotowości interfejsu dla kluczowych widoków (Dashboard, Lista Wyścigów) nie może przekroczyć 2 sekund przy przepustowości łączą sieciowego na poziomie 3G. (Nie dotyczy wersji roboczej osadzonej na darmowych serwisach hostingowych: czas ten będzie wydłużony do nawet 1 minuty z powodu tzw. "spin-down" serwera).
 * **Czas odpowiedzi API (API Response Time)** – 95% wszystkich zapytań HTTP kierowanych do backendu musi zostać obsłużonych w czasie poniżej 500 ms (wyłączając zapytania bezpośrednio przekierowywane asynchronicznie do zewnętrznego API).
-* **Współbieżność (Concurrency)** – System w konfiguracji bazowej musi bezawaryjnie obsługiwać minimum 1000 zalogowanych użytkowników jednocześnie wykonujących operacje w bazie danych podczas weekendu wyścigowego. (Ponownie - niewykonalne na darmowym hostingu).
+* **Współbieżność (Concurrency)** – System w konfiguracji bazowej musi bezawaryjnie obsługiwać minimum 1000 zalogowanych użytkowników jednocześnie wykonujących operacje w bazie danych podczas weekendu wyścigowego. (Nie dotyczy wersji roboczej przez ograniczenia darmowej wersji hostingu).
 
 ### 10.2 Bezpieczeństwo (Security)
 * **Ochrona haseł** – Hasła użytkowników podlegają bezwzględnemu haszowaniu przed zapisem w bazie danych. Wprowadzanie otwartego tekstu do bazy jest zabronione.
 * **Szyfrowanie komunikacji** – Całość ruchu sieciowego pomiędzy klientem a serwerem API musi być szyfrowana przy użyciu protokołu HTTPS (TLS 1.3). Żądania HTTP bez szyfrowania są automatycznie przekierowywane.
-* **Autoryzacja** – Przechowywanie tokenów autoryzacyjnych JWT musi odbywać się w sposób uniemożliwiający ataki typu XSS i CSRF.
 
 ### 10.3 Niezawodność (Reliability)
 * **Dostępność (Uptime)** – Docelowy wskaźnik dostępności platformy w skali roku wynosi 99.9% (z wyłączeniem planowanych okien serwisowych zapowiadanych z wyprzedzeniem).
-
-### 10.4 Użyteczność (Usability) i Dostępność
-* **Responsywność (RWD)** – Układ graficzny aplikacji musi płynnie dostosowywać się do rozdzielczości ekranu w przedziale od 320px (małe smartfony) do 2560px (monitory UltraWide).
-
-### 10.5 Konserwowalność (Maintainability)
-* **Architektura Kodu** – Backend musi ściśle przestrzegać zasad czystej architektury (Clean Architecture) z wyraźnym podziałem na warstwy: Domain, Application, Infrastructure, Presentation. Frontend Angular musi być zorganizowany modułowo z wydzieleniem modułów ładowanych leniwie (*Lazy Loading*).
-* **Testy Automatyczne** – Pokrycie kodu testami jednostkowymi i integracyjnymi dla kluczowej logiki biznesowej (obliczanie punktów, walidacja zakładów, interceptor) musi wynosić minimum 80%.
-
----
-
-## 11. Wdrożenie systemu
-Aplikacja zostanie wdrożona w oparciu o architekturę kontenerową za pomocą narzędzia **Docker** i pliku konfiguracyjnego `docker-compose.yml`. W skład środowiska wchodzą:
-* Kontener Frontendu – Serwer Nginx serwujący skompilowaną do czystego HTML/JS/CSS aplikację Angular.
-* Kontener Backend API – Środowisko uruchomieniowe .NET 8 dla aplikacji ASP.NET Core.
-* Kontener Bazy Danych – Instancja serwera bazodanowego PostgreSQL.

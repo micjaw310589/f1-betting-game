@@ -4,7 +4,7 @@
 W niniejszym dokumencie zastosowano następujące definicje i skróty terminologii branżowej oraz systemowej:
 * **Wirtualne punkty (Virtual Points)** – Wewnętrzna waluta gry przydzielana użytkownikom po rejestracji (stan początkowy: 10 000 punktów), służąca wyłącznie do zawierania zakładów wewnątrz platformy. Punkty te nie posiadają żadnej wartości pieniężnej i nie mogą być wymieniane na prawdziwą walutę.
 * **Typ zakładu (Bet Type)** – Zdefiniowana kategoria przewidywania wyniku sportowego (np. zwycięzca wyścigu, TOP 3 kierowców, TOP 10 kierowców, najszybsze okrążenie).
-* **Kurs (Odds)** – Współczynnik obliczany w czasie rzeczywistym na podstawie wzorców obstawiania przez użytkowników, określający mnożnik wygranej punktowej w przypadku poprawnego wytypowania wyniku.
+* **Kurs (Odds)** – Stały współczynnik określający mnożnik wygranej punktowej w przypadku poprawnego wytypowania wyniku.
 * **OpenF1 API** – Zewnętrzny publiczny interfejs programistyczny aplikacji (API), stanowiący jedyne źródło prawdy dla danych dotyczących kalendarza F1, wyników wyścigów, klasyfikacji generalnej oraz szczegółów dotyczących kierowców i zespołów.
 * **Status wyścigu (Race Status)** – Stan, w jakim znajduje się dany wyścig w bazie danych systemu. Dopuszczalne wartości to: *Scheduled* (Zaplanowany), *Finished* (Zakończony), *ResultsProcessed* (Rozliczony).
 * **Status zakładu (Bet Status)** – Stan, w jakim znajduje się zakład użytkownika. Dopuszczalne wartości to: *Pending* (Oczekujący), *Won* (Wygrany), *Lost* (Przegrany), *Cancelled* (Anulowany).

@@ -38,35 +38,30 @@ System wchodzi w interakcję z czterema głównymi aktorami (trzema ludzkimi ora
 Poniżej przedstawiono kluczowe scenariusze użycia systemu (Use Cases) opisujące interakcje aktorów z aplikacją:
 
 ### Scenariusz 1: Obstawienie nowego zakładu (Gracz)
-1. Gracz loguje się do systemu i przechodzi do modułu kalendarza wyścigów.
+1. Gracz loguje się do systemu i przechodzi do modułu kalendarza wyścigów (Races).
 2. Gracz wybiera nadchodzący wyścig o statusie *Scheduled*.
-3. System wyświetla komponent `BetPlacementComponent` zawierający formularz z dostępnymi typami zakładów (Zwycięzca, TOP 3, Fastest Lap itp.) oraz aktualnymi kursami.
+3. System wyświetla komponent zawierający formularz z dostępnymi typami zakładów oraz aktualnymi kursami.
 4. Gracz uzupełnia swoje typy i wprowadza stawkę punktową (w ramach dostępnego salda konta).
 5. Gracz klika przycisk "Place Bet".
 6. System przeprowadza walidację (czy wyścig się nie rozpoczął, czy stawka <= saldo).
 7. System zapisuje zakład w bazie ze statusem *Pending*, potrąca punkty z salda gracza i wyświetla komunikat o sukcesie.
 
 ### Scenariusz 2: Automatyczne rozliczenie wyścigu po jego zakończeniu (System)
-1. Proces tła *Race Status Monitor* co 5 minut sprawdza stan rzeczywistego wyścigu w OpenF1 API.
-2. Wykryte zostaje zakończenie wyścigu – system zmienia wewnętrzny status na *Finished*.
-3. Uruchamiany jest *Result Processing Job*, który pobiera oficjalne wyniki (pozycje kierowców, najszybsze okrążenie, DNF).
+1. System w tle co 5 minut sprawdza stan rzeczywistego wyścigu w OpenF1 API.
+2. Wykryte zostaje zakończenie wyścigu – system zmienia wewnętrzny status wyścigu na *Finished*.
+3. Automatycznie po wykryciu zakończenia wyścigu system pobiera oficjalne wyniki.
 4. System wyszukuje w bazie danych wszystkie zakłady o statusie *Pending* powiązane z tym wyścigiem.
 5. Dla każdego zakładu system porównuje typowania użytkownika z oficjalnymi wynikami:
-   - W przypadku pełnego trafienia oblicza wygraną: `stawka * kurs`.
-   - W przypadku zakładu wielopozycyjnego (np. podium) oblicza częściową wygraną zgodnie z regułami biznesowymi.
+   - W przypadku trafienia zmienia status na *Won* i aktualizuje saldo użytkownika o oblicza wygraną: `stawka * kurs`.
    - W przypadku braku trafienia zmienia status na *Lost*.
-6. System aktualizuje saldo punktowe użytkowników, którzy wygrali, oraz zmienia statusy zakładów na *Won* lub *Lost*.
-7. System przelicza pozycje w tabeli liderów (`LeaderboardHistory`).
-8. Zmiana statusu wyścigu na *ResultsProcessed* kończy proces. Po zalogowaniu użytkownicy otrzymują powiadomienia o rozliczeniu.
+6. Zmiana statusu wyścigu na *ResultsProcessed* kończy proces. Użytkownicy mogą sprawdzić statusy swoich zakładów w swoim profilu.
 
 ### Scenariusz 3: Interwencja Administratora w przypadku błędu kursu (Administrator)
-1. Administrator loguje się i wchodzi do panelu administracyjnego pod adres `/admin/bets`.
-2. Za pomocą filtrów odnajduje nierozliczone zakłady (*Pending*) dla wybranego wyścigu, w których doszło do awarii algorytmu generowania kursów (np. kurs wyniósł 500.0 zamiast 5.0).
-3. Administrator klika opcję "Anuluj zakład" przy błędnych pozycjach.
-4. System wyświetla okno modalne z żądaniem potwierdzenia i podania przyczyny.
-5. Po zatwierdzeniu system zmienia status zakładu na *Cancelled*.
-6. Wirtualne punkty stanowiące stawkę anulowanego zakładu zostają automatycznie zwrócone na konta poszkodowanych graczy.
-7. System zapisuje zdarzenie w logach audytowych.
+1. Administrator loguje się i wchodzi do panelu administracyjnego systemu a następnie do zakładki "Bets".
+3. Za pomocą filtrów odnajduje nierozliczone zakłady (*Pending*) dla wybranego wyścigu, w których doszło do awarii algorytmu generowania kursów (np. kurs wyniósł 500.0 zamiast 5.0).
+4. Administrator klika opcję "Anuluj zakład" przy błędnych pozycjach.
+5. System wyświetla okno modalne z żądaniem potwierdzenia.
+6. Po zatwierdzeniu system usuwa zakład.
 
 ## 6. Wymagania funkcjonalne
 Sekcja zawiera szczegółowy opis wymagań funkcjonalnych systemu z podziałem na 13 modułów i komponentów technicznych zdefiniowanych w architekturze aplikacji:

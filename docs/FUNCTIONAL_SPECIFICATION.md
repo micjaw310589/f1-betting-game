@@ -12,7 +12,6 @@ W niniejszym dokumencie zastosowano następujące definicje i skróty terminolog
 * **JWT (JSON Web Token)** – Standard bezpiecznego przekazywania informacji autoryzacyjnych użytkownika pomiędzy frontendem a backendem w postaci podpisanego cyfrowo tokenu.
 * **ROI (Return on Investment)** – Wskaźnik zwrotu z inwestycji punktowej, określający efektywność obstawiania użytkownika, wyrażony w procentach.
 * **DNF (Did Not Finish)** – Status kierowcy, który rozpoczął wyścig, lecz nie ukończył go z powodu awarii mechanicznej, wypadku lub innej sytuacji losowej.
-* **Pit Stop** – Zjazd kierowcy do alei serwisowej w celu wymiany opon lub dokonania napraw. Czas trwania najszybszego pit stopu zespołu stanowi jedną z kategorii zakładów.
 * **Zadanie/Wyzwanie (Quest)** – Aktywne wyzwanie systemowe podzielone na kategorie (Betting, Engagement, Achievement), którego ukończenie nagradzane jest dodatkowymi wirtualnymi punktami.
 * **Interceptor HTTP (AuthInterceptor)** – Mechanizm frontendowy automatycznie przechwytujący każde wychodzące żądanie HTTP w celu dołączenia nagłówka autoryzacyjnego z tokenem JWT oraz obsługi błędów uwierzytelniania.
 * **Strażnik trasy (Guard / adminGuard)** – Kod zabezpieczający we frontendzie, blokujący ładowanie komponentów i nawigację do tras zastrzeżonych (np. panelu administratora) dla użytkowników bez wymaganych uprawnień (ról).

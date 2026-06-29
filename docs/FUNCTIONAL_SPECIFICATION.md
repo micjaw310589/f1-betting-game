@@ -19,7 +19,7 @@ W niniejszym dokumencie zastosowano następujące definicje i skróty terminolog
 
 ## 2. Założenia projektu
 Projekt `f1-betting-game` to internetowa platforma bazodanowa o charakterze grywalizacyjnym, przeznaczona dla fanów Formuły 1. Głównym celem systemu jest dostarczenie angażującej, bezpłatnej rozrywki polegającej na typowaniu wyników weekendów wyścigowych przy użyciu punktów wirtualnych.
-System opiera się na architekturze rozproszonej: nowoczesnym kliencie webowym oraz stabilnym i bezpiecznym API backendowym z bazą danych. Kluczowym elementem działania systemu jest pełna, zautomatyzowana integracja z OpenF1 API, co eliminuje konieczność ręcznego wprowadzania danych o kierowcach, torach i wynikach przez obsługę, zapewniając jednocześnie realizację założeń w czasie zbliżonym do rzeczywistego. Platforma dostarcza również podgląd statystyk indywidualnych graczy poprzez zaawansowaną analitykę własnych wyników (ROI, Win Rate) oraz system motywacyjny oparty na zadaniach (Quests) i bonusach za regularne logowanie.
+System opiera się na architekturze rozproszonej: nowoczesnym kliencie webowym oraz stabilnym i bezpiecznym API backendowym z bazą danych. Kluczowym elementem działania systemu jest zautomatyzowana integracja z OpenF1 API, co eliminuje konieczność ręcznego wprowadzania danych o kierowcach, torach i wynikach przez obsługę, zapewniając jednocześnie realizację założeń w czasie zbliżonym do rzeczywistego. Platforma dostarcza również podgląd statystyk indywidualnych graczy poprzez analitykę własnych wyników oraz system motywacyjny oparty na zadaniach (Quests) i bonusach za regularne logowanie.
 
 ## 3. Interesariusze
 W procesie tworzenia, wdrażania oraz eksploatacji systemu F1 Betting Game zdefiniowano następujących interesariuszy:
